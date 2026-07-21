@@ -23,4 +23,4 @@ npm run build
 
 ## Scope
 
-この版ではRoute詳細、Planning、Today、Route編集、参加者、Realtimeは未実装です。
+この版ではRoute詳細、Planning、Today、Route編集、参加者、Realtimeは未実装です。　
