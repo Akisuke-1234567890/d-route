@@ -18,18 +18,151 @@ const touringToday = {
 
 const placeholderSections = [
   {
-    key: 'planning',
-    eyebrow: 'PLANNING',
-    title: 'Routeを組み立てる',
-    description: '目的地、順番、分岐や再合流を計画する画面です。',
-  },
-  {
     key: 'members',
     eyebrow: 'MEMBERS',
     title: '参加者',
     description: '参加メンバーと役割を確認・管理する画面です。',
   },
 ] as const;
+
+
+type PlanningStop = {
+  kind: 'event' | 'mobility';
+  icon: string;
+  name: string;
+  time: string;
+  purpose: string;
+  locationStatus: string;
+};
+
+type PlanningLeg = {
+  mode: '車' | '徒歩';
+  icon: string;
+  duration: string;
+  distance: string;
+  road: string;
+  mapsUrl: string;
+};
+
+const planningStops: PlanningStop[] = [
+  {
+    kind: 'event',
+    icon: '🤝',
+    name: '海老名SA',
+    time: '08:30',
+    purpose: '集合・出発確認',
+    locationStatus: '検索地点を登録済み',
+  },
+  {
+    kind: 'mobility',
+    icon: '🅿️',
+    name: '大観山駐車場',
+    time: '09:45ごろ',
+    purpose: '駐車・徒歩へ切り替え',
+    locationStatus: '駐車場の地点を登録済み',
+  },
+  {
+    kind: 'event',
+    icon: '🏔️',
+    name: '大観山展望台',
+    time: '10:00',
+    purpose: '景色を見る・全員で休憩',
+    locationStatus: '目的地を登録済み',
+  },
+];
+
+const planningLegs: PlanningLeg[] = [
+  {
+    mode: '車',
+    icon: '🚗',
+    duration: '約1時間15分',
+    distance: '約72 km',
+    road: '高速道路・有料道路を使用',
+    mapsUrl: 'https://www.google.com/maps/dir/?api=1&origin=%E6%B5%B7%E8%80%81%E5%90%8DSA&destination=%E5%A4%A7%E8%A6%B3%E5%B1%B1%E9%A7%90%E8%BB%8A%E5%A0%B4&travelmode=driving',
+  },
+  {
+    mode: '徒歩',
+    icon: '🚶',
+    duration: '約10分',
+    distance: '約600 m',
+    road: '徒歩ルート',
+    mapsUrl: 'https://www.google.com/maps/dir/?api=1&origin=%E5%A4%A7%E8%A6%B3%E5%B1%B1%E9%A7%90%E8%BB%8A%E5%A0%B4&destination=%E5%A4%A7%E8%A6%B3%E5%B1%B1%E5%B1%95%E6%9C%9B%E5%8F%B0&travelmode=walking',
+  },
+];
+
+function PlanningStopCard({ stop }: { stop: PlanningStop }) {
+  const kindLabel = stop.kind === 'event' ? '目的・イベント' : '移動地点';
+
+  return (
+    <article className={`planning-stop planning-stop-${stop.kind}`}>
+      <div className="planning-stop-icon" aria-hidden="true">{stop.icon}</div>
+      <div className="planning-stop-copy">
+        <div className="planning-stop-meta">
+          <span className={`planning-kind-badge planning-kind-${stop.kind}`}>{kindLabel}</span>
+          <time>{stop.time}</time>
+        </div>
+        <h3>{stop.name}</h3>
+        <p className="planning-purpose">{stop.purpose}</p>
+        <p className="planning-location-status"><span aria-hidden="true">◎</span>{stop.locationStatus}</p>
+      </div>
+    </article>
+  );
+}
+
+function PlanningLegCard({ leg }: { leg: PlanningLeg }) {
+  return (
+    <div className="planning-leg">
+      <div className="planning-leg-rail" aria-hidden="true"><span /><strong>↓</strong><span /></div>
+      <div className="planning-leg-panel">
+        <div className="planning-leg-heading">
+          <span className="planning-mode-badge">{leg.icon} {leg.mode}</span>
+          <strong>{leg.duration}</strong>
+        </div>
+        <p>{leg.distance} ・ {leg.road}</p>
+        <a className="planning-map-link" href={leg.mapsUrl} target="_blank" rel="noreferrer">
+          この区間を外部地図で見る
+        </a>
+      </div>
+    </div>
+  );
+}
+
+function PlanningCard() {
+  return (
+    <article className="route-detail-card planning-card">
+      <div className="route-detail-card-heading">
+        <div>
+          <p className="eyebrow">PLANNING</p>
+          <h2>目的と移動を分けて組み立てる</h2>
+        </div>
+        <span className="planning-status-badge">設計サンプル</span>
+      </div>
+
+      <div className="planning-route-settings" aria-label="ルートの基本設定">
+        <span>基本：🚗 車</span>
+        <span>開始 08:30</span>
+        <span>高速 使用</span>
+        <span>有料 使用</span>
+      </div>
+
+      <div className="planning-timeline">
+        {planningStops.map((stop, index) => (
+          <div key={`${stop.name}-${stop.time}`}>
+            <PlanningStopCard stop={stop} />
+            {planningLegs[index] ? <PlanningLegCard leg={planningLegs[index]} /> : null}
+          </div>
+        ))}
+      </div>
+
+      <div className="planning-location-note">
+        <strong>場所の登録方法</strong>
+        <p>地点検索を基本にし、地図で調整・現在地登録・住所入力を補助として使う想定です。</p>
+      </div>
+
+      <p className="planning-demo-note">時刻・距離は開発用サンプルです。自動取得と手動補正は今後の工程で接続します。</p>
+    </article>
+  );
+}
 
 function TodayCard() {
   return (
@@ -151,6 +284,7 @@ export function RouteDetailPage() {
 
             <section className="route-detail-grid" aria-label="Route機能">
               <TodayCard />
+              <PlanningCard />
 
               {placeholderSections.map((section) => (
                 <article className="route-detail-card" key={section.key}>
@@ -172,7 +306,7 @@ export function RouteDetailPage() {
         )}
       </section>
 
-      <footer className="app-footer"><VersionBadge /><span>Today Touring Scenario</span></footer>
+      <footer className="app-footer"><VersionBadge /><span>Planning Purpose & Mobility</span></footer>
     </main>
   );
 }
