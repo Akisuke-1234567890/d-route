@@ -112,3 +112,27 @@ a { color: inherit; }
 .route-detail-card .secondary-button { max-width: 260px; }
 .coming-soon-badge { flex: 0 0 auto; border: 1px solid rgba(157, 146, 255, .3); border-radius: 999px; padding: 6px 10px; color: #cbc5ff; background: rgba(157, 146, 255, .08); font-size: .7rem; font-weight: 800; letter-spacing: .06em; }
 @media (max-width: 420px) { .route-detail-hero { padding: 19px 16px; } .route-detail-mark { width: 54px; height: 54px; flex-basis: 54px; border-radius: 17px; } .route-detail-card-heading { align-items: flex-start; } }
+
+/* v2.0.3 Today touring scenario */
+.today-card { position: relative; overflow: hidden; border-color: rgba(167, 240, 208, .23); background: radial-gradient(circle at 85% 0%, rgba(73, 184, 148, .14), transparent 42%), linear-gradient(155deg, rgba(25, 45, 75, .86), rgba(11, 16, 41, .94)); }
+.today-card::after { content: ''; position: absolute; inset: auto -60px -90px auto; width: 180px; height: 180px; border-radius: 50%; background: rgba(157, 146, 255, .07); filter: blur(2px); pointer-events: none; }
+.today-status-badge { flex: 0 0 auto; border: 1px solid rgba(167, 240, 208, .34); border-radius: 999px; padding: 7px 11px; color: #c9f8e7; background: rgba(62, 169, 132, .13); font-size: .72rem; font-weight: 900; letter-spacing: .05em; }
+.today-route-flow { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px; margin-top: 20px; padding: 17px; border: 1px solid rgba(196, 203, 255, .15); border-radius: 17px; background: rgba(6, 11, 33, .42); }
+.today-place { min-width: 0; display: flex; align-items: flex-start; gap: 10px; }
+.today-destination { justify-content: flex-start; }
+.today-item-icon { flex: 0 0 auto; width: 28px; height: 28px; display: grid; place-items: center; font-size: 1rem; border-radius: 9px; background: rgba(255,255,255,.05); }
+.today-item-label { margin: 0 0 5px; color: var(--muted); font-size: .68rem; font-weight: 800; letter-spacing: .08em; }
+.today-place-name { margin: 0; color: var(--text); font-size: 1rem; font-weight: 900; line-height: 1.35; overflow-wrap: anywhere; }
+.today-flow-line { display: flex; align-items: center; gap: 5px; color: #bdb6ff; }
+.today-flow-line span { width: 12px; height: 1px; background: rgba(189, 182, 255, .36); }
+.today-flow-line strong { font-size: 1.05rem; }
+.today-information-grid { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(110px, .72fr) minmax(0, 1.6fr); gap: 10px; margin-top: 10px; }
+.today-information-item { display: flex; align-items: flex-start; gap: 10px; min-width: 0; padding: 15px; border: 1px solid rgba(196, 203, 255, .14); border-radius: 16px; background: rgba(8, 13, 36, .4); }
+.today-item-value { margin: 0; color: var(--text); font-size: .9rem; font-weight: 850; line-height: 1.45; overflow-wrap: anywhere; }
+.today-next-action { border-color: rgba(157, 146, 255, .22); background: rgba(61, 52, 125, .16); }
+.today-demo-note { position: relative; z-index: 1; margin: 14px 2px 0 !important; color: #8f98bd !important; font-size: .72rem; line-height: 1.55 !important; }
+@media (max-width: 470px) {
+  .today-route-flow { grid-template-columns: 1fr; gap: 9px; }
+  .today-flow-line { justify-content: flex-start; padding-left: 9px; transform: rotate(90deg); transform-origin: left center; width: 34px; height: 18px; margin: -3px 0 -3px 2px; }
+  .today-information-grid { grid-template-columns: 1fr; }
+}
