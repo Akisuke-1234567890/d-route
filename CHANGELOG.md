@@ -1,5 +1,14 @@
 # Change Log
 
+## 2.0.2
+- RouteカードをタップしてRoute詳細画面へ移動できるように変更
+- Route IDを使った個別Route取得処理を追加
+- Route名と概要を表示する詳細画面のヘッダーを追加
+- Today・Planning・Membersの準備中セクションを追加
+- Route一覧へ戻る導線と読み込み・エラー表示を追加
+- Routeカードのタップ状態と詳細画面用スタイルを追加
+- バージョン表示を2.0.2へ更新
+
 ## 2.0.0-dev.1
 - React + TypeScript + Vite基盤
 - D Routeブランド、Design Token、App Shell

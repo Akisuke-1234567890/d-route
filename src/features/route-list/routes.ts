@@ -24,6 +24,25 @@ export async function listRoutes(): Promise<RouteSummary[]> {
   return (data ?? []) as RouteSummary[];
 }
 
+
+export async function getRoute(id: string): Promise<RouteSummary> {
+  const normalizedId = id.trim();
+  if (!normalizedId) throw new Error('Route IDを確認できませんでした。');
+
+  const supabase = getSupabaseClient();
+  if (!supabase) throw new Error('Supabaseの環境変数が設定されていません。');
+
+  const { data, error } = await supabase
+    .from('routes')
+    .select(routeSummaryColumns)
+    .eq('id', normalizedId)
+    .is('deleted_at', null)
+    .single();
+
+  if (error) throw error;
+  return data as RouteSummary;
+}
+
 export async function createRoute(name: string): Promise<RouteSummary> {
   const normalizedName = name.trim();
   if (!normalizedName) throw new Error('Route名を入力してください。');

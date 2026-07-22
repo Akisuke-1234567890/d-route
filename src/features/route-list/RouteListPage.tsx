@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { signOut } from '../auth/auth';
@@ -106,21 +107,22 @@ export function RouteListPage({ onSignedOut }: { onSignedOut: () => void }) {
             </div>
             <div className="route-card-grid">
               {routes.map((route) => (
-                <article className="route-card" key={route.id}>
+                <Link className="route-card route-card-link" key={route.id} to={`/routes/${route.id}`} aria-label={`${route.name}を開く`}>
                   <div className="route-card-mark" aria-hidden="true"><BrandMark size={32} /></div>
                   <div className="route-card-copy">
                     <p className="route-status">{route.status === 'draft' ? '下書き' : route.status}</p>
                     <h2>{route.name}</h2>
-                    <p>Routeを開く機能は次の工程で追加されます。</p>
+                    <p>Routeの詳細を開く</p>
                   </div>
-                </article>
+                  <span className="route-card-chevron" aria-hidden="true">›</span>
+                </Link>
               ))}
             </div>
           </section>
         )}
       </section>
 
-      <footer className="app-footer"><VersionBadge /><span>Route Creation</span></footer>
+      <footer className="app-footer"><VersionBadge /><span>Route List & Detail</span></footer>
 
       {isCreateOpen && (
         <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeCreateModal(); }}>
