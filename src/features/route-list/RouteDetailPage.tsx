@@ -16,7 +16,7 @@ const touringToday = {
   nextAction: '10:30までに展望台入口へ集合',
 } as const;
 
-type MemberStatus = 'joined' | 'on-the-way' | 'unconfirmed';
+type MemberStatus = 'participating' | 'unanswered' | 'declined';
 
 type RouteMember = {
   id: string;
@@ -27,16 +27,16 @@ type RouteMember = {
 };
 
 const sampleMembers: RouteMember[] = [
-  { id: 'member-self', name: 'あなた', initials: 'YOU', role: 'リーダー', status: 'joined' },
-  { id: 'member-a', name: 'メンバーA', initials: 'A', role: 'メンバー', status: 'joined' },
-  { id: 'member-b', name: 'メンバーB', initials: 'B', role: 'メンバー', status: 'on-the-way' },
-  { id: 'member-c', name: 'メンバーC', initials: 'C', role: 'メンバー', status: 'unconfirmed' },
+  { id: 'member-self', name: 'あなた', initials: 'YOU', role: 'リーダー', status: 'participating' },
+  { id: 'member-a', name: 'メンバーA', initials: 'A', role: 'メンバー', status: 'participating' },
+  { id: 'member-b', name: 'メンバーB', initials: 'B', role: 'メンバー', status: 'unanswered' },
+  { id: 'member-c', name: 'メンバーC', initials: 'C', role: 'メンバー', status: 'declined' },
 ];
 
 const memberStatusLabel: Record<MemberStatus, string> = {
-  joined: '参加予定',
-  'on-the-way': '向かっています',
-  unconfirmed: '未確認',
+  participating: '参加',
+  unanswered: '未回答',
+  declined: '不参加',
 };
 
 type PlanningStop = {
@@ -225,7 +225,7 @@ function MergePointCard() {
 }
 
 function MembersCard() {
-  const confirmedCount = sampleMembers.filter((member) => member.status !== 'unconfirmed').length;
+  const answeredCount = sampleMembers.filter((member) => member.status !== 'unanswered').length;
 
   return (
     <article className="route-detail-card members-card">
@@ -234,13 +234,13 @@ function MembersCard() {
           <p className="eyebrow">MEMBERS</p>
           <h2>参加メンバー</h2>
         </div>
-        <span className="members-count-badge">{confirmedCount}/{sampleMembers.length} 確認</span>
+        <span className="members-count-badge">{answeredCount}/{sampleMembers.length} 回答済み</span>
       </div>
 
       <div className="members-summary" aria-label="参加状況">
-        <span>参加予定 {sampleMembers.filter((member) => member.status === 'joined').length}人</span>
-        <span>移動中 {sampleMembers.filter((member) => member.status === 'on-the-way').length}人</span>
-        <span>未確認 {sampleMembers.filter((member) => member.status === 'unconfirmed').length}人</span>
+        <span>参加 {sampleMembers.filter((member) => member.status === 'participating').length}人</span>
+        <span>未回答 {sampleMembers.filter((member) => member.status === 'unanswered').length}人</span>
+        <span>不参加 {sampleMembers.filter((member) => member.status === 'declined').length}人</span>
       </div>
 
       <div className="members-list">
@@ -261,7 +261,7 @@ function MembersCard() {
         ))}
       </div>
 
-      <p className="members-demo-note">表示専用の開発サンプルです。招待・参加回答・到着共有は今後の工程で接続します。</p>
+      <p className="members-demo-note">表示専用の開発サンプルです。Membersでは参加可否のみを扱い、移動・到着などの連絡は今後チャット側で扱います。</p>
     </article>
   );
 }

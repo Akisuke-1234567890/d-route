@@ -412,22 +412,26 @@ a { color: inherit; }
   background: var(--muted);
   box-shadow: 0 0 0 3px rgba(174, 182, 216, .08);
 }
-.member-status-joined {
+.member-status-participating {
   color: var(--success);
 }
-.member-status-joined > span {
+.member-status-participating > span {
   background: var(--success);
   box-shadow: 0 0 0 3px rgba(167, 240, 208, .1);
 }
-.member-status-on-the-way {
-  color: #ffd58a;
-}
-.member-status-on-the-way > span {
-  background: #ffd58a;
-  box-shadow: 0 0 0 3px rgba(255, 213, 138, .1);
-}
-.member-status-unconfirmed {
+.member-status-unanswered {
   color: var(--muted);
+}
+.member-status-unanswered > span {
+  background: var(--muted);
+  box-shadow: 0 0 0 3px rgba(174, 182, 216, .08);
+}
+.member-status-declined {
+  color: var(--danger);
+}
+.member-status-declined > span {
+  background: var(--danger);
+  box-shadow: 0 0 0 3px rgba(255, 155, 168, .1);
 }
 .members-demo-note {
   margin: 14px 0 0;
