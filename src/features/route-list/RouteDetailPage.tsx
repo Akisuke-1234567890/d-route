@@ -16,15 +16,28 @@ const touringToday = {
   nextAction: '10:30までに展望台入口へ集合',
 } as const;
 
-const placeholderSections = [
-  {
-    key: 'members',
-    eyebrow: 'MEMBERS',
-    title: '参加者',
-    description: '参加メンバーと役割を確認・管理する画面です。',
-  },
-] as const;
+type MemberStatus = 'joined' | 'on-the-way' | 'unconfirmed';
 
+type RouteMember = {
+  id: string;
+  name: string;
+  initials: string;
+  role: 'リーダー' | 'メンバー';
+  status: MemberStatus;
+};
+
+const sampleMembers: RouteMember[] = [
+  { id: 'member-self', name: 'あなた', initials: 'YOU', role: 'リーダー', status: 'joined' },
+  { id: 'member-a', name: 'メンバーA', initials: 'A', role: 'メンバー', status: 'joined' },
+  { id: 'member-b', name: 'メンバーB', initials: 'B', role: 'メンバー', status: 'on-the-way' },
+  { id: 'member-c', name: 'メンバーC', initials: 'C', role: 'メンバー', status: 'unconfirmed' },
+];
+
+const memberStatusLabel: Record<MemberStatus, string> = {
+  joined: '参加予定',
+  'on-the-way': '向かっています',
+  unconfirmed: '未確認',
+};
 
 type PlanningStop = {
   kind: 'event' | 'mobility';
@@ -211,6 +224,48 @@ function MergePointCard() {
   );
 }
 
+function MembersCard() {
+  const confirmedCount = sampleMembers.filter((member) => member.status !== 'unconfirmed').length;
+
+  return (
+    <article className="route-detail-card members-card">
+      <div className="route-detail-card-heading">
+        <div>
+          <p className="eyebrow">MEMBERS</p>
+          <h2>参加メンバー</h2>
+        </div>
+        <span className="members-count-badge">{confirmedCount}/{sampleMembers.length} 確認</span>
+      </div>
+
+      <div className="members-summary" aria-label="参加状況">
+        <span>参加予定 {sampleMembers.filter((member) => member.status === 'joined').length}人</span>
+        <span>移動中 {sampleMembers.filter((member) => member.status === 'on-the-way').length}人</span>
+        <span>未確認 {sampleMembers.filter((member) => member.status === 'unconfirmed').length}人</span>
+      </div>
+
+      <div className="members-list">
+        {sampleMembers.map((member) => (
+          <section className="member-row" key={member.id}>
+            <div className="member-avatar" aria-hidden="true">{member.initials}</div>
+            <div className="member-copy">
+              <div className="member-name-line">
+                <h3>{member.name}</h3>
+                <span className="member-role">{member.role}</span>
+              </div>
+              <p className={`member-status member-status-${member.status}`}>
+                <span aria-hidden="true" />
+                {memberStatusLabel[member.status]}
+              </p>
+            </div>
+          </section>
+        ))}
+      </div>
+
+      <p className="members-demo-note">表示専用の開発サンプルです。招待・参加回答・到着共有は今後の工程で接続します。</p>
+    </article>
+  );
+}
+
 function TodayCard() {
   return (
     <article className="route-detail-card today-card">
@@ -333,28 +388,13 @@ export function RouteDetailPage() {
               <TodayCard />
               <MergePointCard />
               <PlanningCard />
-
-              {placeholderSections.map((section) => (
-                <article className="route-detail-card" key={section.key}>
-                  <div className="route-detail-card-heading">
-                    <div>
-                      <p className="eyebrow">{section.eyebrow}</p>
-                      <h2>{section.title}</h2>
-                    </div>
-                    <span className="coming-soon-badge">準備中</span>
-                  </div>
-                  <p>{section.description}</p>
-                  <button className="secondary-button" type="button" disabled>
-                    次の工程で実装
-                  </button>
-                </article>
-              ))}
+              <MembersCard />
             </section>
           </>
         )}
       </section>
 
-      <footer className="app-footer"><VersionBadge /><span>Merge Point UI</span></footer>
+      <footer className="app-footer"><VersionBadge /><span>Members UI</span></footer>
     </main>
   );
 }
