@@ -164,6 +164,53 @@ function PlanningCard() {
   );
 }
 
+const mergePoint = {
+  location: '大観山展望台 入口',
+  scheduledTime: '10:30',
+  participantCount: 4,
+} as const;
+
+function MergePointCard() {
+  return (
+    <article className="route-detail-card merge-point-card">
+      <div className="route-detail-card-heading">
+        <div>
+          <p className="eyebrow">MERGE POINT</p>
+          <h2>合流ポイント</h2>
+        </div>
+        <span className="merge-point-badge">集合予定</span>
+      </div>
+
+      <div className="merge-point-location">
+        <span className="merge-point-icon" aria-hidden="true">🤝</span>
+        <div>
+          <p className="merge-point-label">集合場所</p>
+          <p className="merge-point-place">{mergePoint.location}</p>
+        </div>
+      </div>
+
+      <div className="merge-point-details">
+        <section className="merge-point-detail">
+          <span aria-hidden="true">🕒</span>
+          <div>
+            <p className="merge-point-label">集合予定時刻</p>
+            <time className="merge-point-value">{mergePoint.scheduledTime}</time>
+          </div>
+        </section>
+        <section className="merge-point-detail">
+          <span aria-hidden="true">👥</span>
+          <div>
+            <p className="merge-point-label">参加人数</p>
+            <p className="merge-point-value">{mergePoint.participantCount}人</p>
+          </div>
+        </section>
+      </div>
+
+      <p className="merge-point-demo-note">表示専用の開発サンプルです。通信・保存・編集処理はまだ接続していません。</p>
+    </article>
+  );
+}
+
 function TodayCard() {
   return (
     <article className="route-detail-card today-card">
@@ -284,6 +331,7 @@ export function RouteDetailPage() {
 
             <section className="route-detail-grid" aria-label="Route機能">
               <TodayCard />
+              <MergePointCard />
               <PlanningCard />
 
               {placeholderSections.map((section) => (
@@ -306,7 +354,7 @@ export function RouteDetailPage() {
         )}
       </section>
 
-      <footer className="app-footer"><VersionBadge /><span>Planning Purpose & Mobility</span></footer>
+      <footer className="app-footer"><VersionBadge /><span>Merge Point UI</span></footer>
     </main>
   );
 }
