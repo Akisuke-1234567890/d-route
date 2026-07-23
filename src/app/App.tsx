@@ -8,6 +8,9 @@ import { SignInPage } from '../features/auth/SignInPage';
 import { RouteListPage } from '../features/route-list/RouteListPage';
 import { RouteDetailPage } from '../features/route-list/RouteDetailPage';
 import { RouteChatPage } from '../features/route-list/RouteChatPage';
+import { RoutePlacesPage } from '../features/route-list/RoutePlacesPage';
+import { RouteMembersPage } from '../features/route-list/RouteMembersPage';
+import { RouteMenuPage } from '../features/route-list/RouteMenuPage';
 
 export function App() {
   const [loading, setLoading] = useState(true);
@@ -29,7 +32,10 @@ export function App() {
         <Route path="/signin" element={session ? <Navigate to="/routes" replace /> : <SignInPage />} />
         <Route path="/routes" element={session ? <RouteListPage onSignedOut={() => setSession(null)} /> : <Navigate to="/signin" replace />} />
         <Route path="/routes/:routeId" element={session ? <RouteDetailPage /> : <Navigate to="/signin" replace />} />
+        <Route path="/routes/:routeId/places" element={session ? <RoutePlacesPage /> : <Navigate to="/signin" replace />} />
         <Route path="/routes/:routeId/chat" element={session ? <RouteChatPage /> : <Navigate to="/signin" replace />} />
+        <Route path="/routes/:routeId/members" element={session ? <RouteMembersPage /> : <Navigate to="/signin" replace />} />
+        <Route path="/routes/:routeId/menu" element={session ? <RouteMenuPage /> : <Navigate to="/signin" replace />} />
         <Route path="*" element={<Navigate to={session ? '/routes' : '/signin'} replace />} />
       </Routes>
     </BrowserRouter>

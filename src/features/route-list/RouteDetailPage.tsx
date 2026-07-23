@@ -4,6 +4,7 @@ import { BrandMark } from '../../shared/ui/BrandMark';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { getRoute, type RouteSummary } from './routes';
 import { loadChatState, phaseLabels } from './chat';
+import { RouteBottomNav } from './RouteBottomNav';
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback;
@@ -408,14 +409,14 @@ export function RouteDetailPage() {
               <TodayCard />
               <MergePointCard />
               <PlanningCard />
-              <MembersCard />
               <ChatSummaryCard routeId={routeId ?? route.id} />
             </section>
           </>
         )}
       </section>
 
-      <footer className="app-footer"><VersionBadge /><span>Independent Route Chat</span></footer>
+      <footer className="app-footer"><VersionBadge /><span>Route Workspace</span></footer>
+      {routeId ? <RouteBottomNav routeId={routeId} /> : null}
     </main>
   );
 }

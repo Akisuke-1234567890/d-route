@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
+import { RouteBottomNav } from './RouteBottomNav';
 import { formatChatTime, loadChatState, phaseLabels, saveChatState, type ChatPhase, type ChatState } from './chat';
 
 export function RouteChatPage() {
@@ -35,6 +36,7 @@ export function RouteChatPage() {
       <form className="chat-page-composer" onSubmit={(e) => { e.preventDefault(); sendMessage(); }}><textarea value={draft} maxLength={120} rows={1} placeholder="Routeに必要な連絡を入力" onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}/><button className="chat-send-button" type="submit" disabled={!draft.trim()}>送信</button></form>
       <div className="chat-composer-meta"><span>端末内の画面表示のみです</span><span>{draft.length}/120</span></div>
     </section>
-    <footer className="app-footer"><VersionBadge/><span>Independent Route Chat</span></footer>
+    <footer className="app-footer"><VersionBadge/><span>Route Workspace</span></footer>
+    <RouteBottomNav routeId={routeId}/>
   </main>;
 }

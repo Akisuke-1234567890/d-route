@@ -1,3 +1,11 @@
+## v2.0.5-p06
+
+- Routeを開いた後だけ表示されるBottom Navigationを追加
+- Route / Places / Chat / Members / Menuの5タブ構成を確立
+- Places・Members・Menuを独立画面として追加
+- Chat画面をRoute内ナビゲーションへ統合
+- Route一覧ではBottom Navigationを表示しない構成を維持
+
 # Changelog
 
 ## 2.0.4
