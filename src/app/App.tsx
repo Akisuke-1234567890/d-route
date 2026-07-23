@@ -7,6 +7,7 @@ import { SplashScreen } from '../features/auth/SplashScreen';
 import { SignInPage } from '../features/auth/SignInPage';
 import { RouteListPage } from '../features/route-list/RouteListPage';
 import { RouteDetailPage } from '../features/route-list/RouteDetailPage';
+import { RouteChatPage } from '../features/route-list/RouteChatPage';
 
 export function App() {
   const [loading, setLoading] = useState(true);
@@ -28,6 +29,7 @@ export function App() {
         <Route path="/signin" element={session ? <Navigate to="/routes" replace /> : <SignInPage />} />
         <Route path="/routes" element={session ? <RouteListPage onSignedOut={() => setSession(null)} /> : <Navigate to="/signin" replace />} />
         <Route path="/routes/:routeId" element={session ? <RouteDetailPage /> : <Navigate to="/signin" replace />} />
+        <Route path="/routes/:routeId/chat" element={session ? <RouteChatPage /> : <Navigate to="/signin" replace />} />
         <Route path="*" element={<Navigate to={session ? '/routes' : '/signin'} replace />} />
       </Routes>
     </BrowserRouter>
