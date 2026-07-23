@@ -39,6 +39,137 @@ const memberStatusLabel: Record<MemberStatus, string> = {
   declined: '不参加',
 };
 
+type ChatMessage =
+  | {
+      id: string;
+      type: 'message';
+      author: string;
+      initials: string;
+      body: string;
+      time: string;
+      isSelf?: boolean;
+    }
+  | {
+      id: string;
+      type: 'system';
+      body: string;
+      time?: string;
+    };
+
+const initialChatMessages: ChatMessage[] = [
+  { id: 'system-start', type: 'system', body: 'Routeを開始しました', time: '08:30' },
+  { id: 'chat-a', type: 'message', author: 'メンバーA', initials: 'A', body: '海老名SAに到着しました。入口近くで待っています。', time: '08:24' },
+  { id: 'chat-self', type: 'message', author: 'あなた', initials: 'YOU', body: 'あと5分ほどで到着します。先に休憩していてください。', time: '08:25', isSelf: true },
+  { id: 'system-join', type: 'system', body: 'メンバーBが参加しました', time: '08:27' },
+  { id: 'chat-b', type: 'message', author: 'メンバーB', initials: 'B', body: '少し遅れます。大観山駐車場で合流します。', time: '08:28' },
+];
+
+function formatChatTime(date: Date) {
+  return new Intl.DateTimeFormat('ja-JP', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(date);
+}
+
+function ChatCard() {
+  const [messages, setMessages] = useState<ChatMessage[]>(initialChatMessages);
+  const [draft, setDraft] = useState('');
+
+  function sendMessage() {
+    const body = draft.trim();
+    if (!body) return;
+
+    setMessages((current) => [
+      ...current,
+      {
+        id: `chat-local-${Date.now()}`,
+        type: 'message',
+        author: 'あなた',
+        initials: 'YOU',
+        body,
+        time: formatChatTime(new Date()),
+        isSelf: true,
+      },
+    ]);
+    setDraft('');
+  }
+
+  return (
+    <article className="route-detail-card chat-card">
+      <div className="route-detail-card-heading">
+        <div>
+          <p className="eyebrow">ROUTE CHAT</p>
+          <h2>移動中の連絡</h2>
+        </div>
+        <span className="chat-count-badge">{messages.filter((message) => message.type === 'message').length}件</span>
+      </div>
+
+      <p className="chat-intro">到着・遅れ・合流場所の変更など、Routeに必要な連絡をまとめます。</p>
+
+      <div className="chat-log" aria-label="Route Chatのメッセージ" aria-live="polite">
+        {messages.map((message) => {
+          if (message.type === 'system') {
+            return (
+              <div className="chat-system-row" key={message.id}>
+                <span />
+                <p>{message.body}{message.time ? <time>{message.time}</time> : null}</p>
+                <span />
+              </div>
+            );
+          }
+
+          return (
+            <section className={`chat-message-row${message.isSelf ? ' chat-message-self' : ''}`} key={message.id}>
+              {!message.isSelf ? <div className="chat-avatar" aria-hidden="true">{message.initials}</div> : null}
+              <div className="chat-message-copy">
+                <div className="chat-message-meta">
+                  <strong>{message.author}</strong>
+                  <time>{message.time}</time>
+                </div>
+                <p className="chat-bubble">{message.body}</p>
+              </div>
+            </section>
+          );
+        })}
+      </div>
+
+      <form
+        className="chat-composer"
+        onSubmit={(event) => {
+          event.preventDefault();
+          sendMessage();
+        }}
+      >
+        <label className="sr-only" htmlFor="route-chat-message">メッセージを入力</label>
+        <textarea
+          id="route-chat-message"
+          value={draft}
+          maxLength={120}
+          rows={1}
+          placeholder="Routeに必要な連絡を入力"
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' && !event.shiftKey) {
+              event.preventDefault();
+              sendMessage();
+            }
+          }}
+        />
+        <button className="chat-send-button" type="submit" disabled={!draft.trim()} aria-label="メッセージを送信">
+          送信
+        </button>
+      </form>
+
+      <div className="chat-composer-meta">
+        <span>Enterで送信・Shift＋Enterで改行</span>
+        <span>{draft.length}/120</span>
+      </div>
+      <p className="chat-demo-note">この版では端末内の画面表示のみです。保存・通知・リアルタイム同期は今後接続します。</p>
+    </article>
+  );
+}
+
 type PlanningStop = {
   kind: 'event' | 'mobility';
   icon: string;
@@ -389,12 +520,13 @@ export function RouteDetailPage() {
               <MergePointCard />
               <PlanningCard />
               <MembersCard />
+              <ChatCard />
             </section>
           </>
         )}
       </section>
 
-      <footer className="app-footer"><VersionBadge /><span>Members UI</span></footer>
+      <footer className="app-footer"><VersionBadge /><span>Route Chat UI</span></footer>
     </main>
   );
 }
