@@ -1,6 +1,8 @@
-# D Route v2.0.2
+# D Route v2.1.0-p01
 
-Route詳細画面の土台を追加したReact + TypeScript + Vite版です。Supabase Magic Link認証、Route一覧取得・作成に加えて、Routeカードから個別の詳細画面へ移動できるようになりました。
+Dream Routeの実地テストを踏まえて再設計した、React + TypeScript + Vite版のD Routeです。
+
+この版では、アプリ起動後に利用するRouteを選ぶ **Home（Route launcher）** を新設計へ更新しました。HomeではBottom Navigationを表示せず、Routeの選択と新規作成に役割を絞っています。
 
 ## Setup
 
@@ -21,6 +23,14 @@ npm run test
 npm run build
 ```
 
-## Scope
+## v2.1.0-p01 Scope
 
-この版ではRoute詳細画面の器と、Today・Planning・Membersの準備中セクションまでを実装しています。各セクションの実機能、Route編集、参加者管理、Realtimeは今後実装します。
+- HomeをRoute選択画面として再構成
+- ヘッダーにD Route、説明文、Route作成ボタンを配置
+- Routeカード全体をタップ領域化
+- Route作成導線を上部と一覧下部に統一
+- 空状態を簡素化
+- Route名を20文字までに制限
+- HomeではBottom Navigationを非表示
+
+現在のDB取得項目にはRoute利用日と参加人数がないため、この版のカードでは正確に取得できる「最終更新日」のみ表示します。利用日・参加人数はDatabase Baselineとデータモデル整備後に追加します。

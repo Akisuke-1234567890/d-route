@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
@@ -9,6 +9,16 @@ function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback;
 }
 
+function formatUpdatedAt(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '更新日不明';
+
+  return new Intl.DateTimeFormat('ja-JP', {
+    month: 'numeric',
+    day: 'numeric',
+  }).format(date) + ' 更新';
+}
+
 export function RouteListPage({ onSignedOut }: { onSignedOut: () => void }) {
   const [routes, setRoutes] = useState<RouteSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -17,6 +27,11 @@ export function RouteListPage({ onSignedOut }: { onSignedOut: () => void }) {
   const [isCreating, setIsCreating] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const routeNameInputRef = useRef<HTMLInputElement>(null);
+
+  const recentRoutes = useMemo(
+    () => [...routes].sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at)),
+    [routes],
+  );
 
   useEffect(() => {
     let active = true;
@@ -73,56 +88,61 @@ export function RouteListPage({ onSignedOut }: { onSignedOut: () => void }) {
   }
 
   return (
-    <main className="app-shell">
-      <header className="global-header">
-        <div className="header-brand"><BrandMark size={34} /><strong>D Route</strong></div>
-        <button className="icon-button" onClick={handleSignOut} aria-label="サインアウト">退出</button>
+    <main className="app-shell home-shell">
+      <header className="home-header">
+        <div className="home-brand">
+          <BrandMark size={36} />
+          <div>
+            <strong>D Route</strong>
+            <p>ルートを選ぶ</p>
+          </div>
+        </div>
+        <button className="home-add-button" type="button" onClick={openCreateModal} aria-label="新しいRouteを作る">＋</button>
       </header>
 
-      <section className="page-content" aria-labelledby="route-list-title">
-        <div className="page-heading">
-          <p className="eyebrow">MY ROUTES</p>
-          <h1 id="route-list-title">Route一覧</h1>
-          <p>参加中のRouteがここに表示されます。</p>
-        </div>
+      <section className="home-content" aria-labelledby="route-list-title">
+        <h1 id="route-list-title" className="visually-hidden">Routeを選ぶ</h1>
 
         {loading ? (
           <section className="route-loading" aria-live="polite">
             <span className="route-loading-spinner" aria-hidden="true" />
             <p>Routeを読み込んでいます</p>
           </section>
-        ) : routes.length === 0 ? (
-          <section className="empty-state">
-            <div className="empty-orbit" aria-hidden="true"><BrandMark size={60} /></div>
+        ) : recentRoutes.length === 0 ? (
+          <section className="home-empty-state">
+            <div className="empty-orbit" aria-hidden="true"><BrandMark size={58} /></div>
             <h2>Routeがまだありません</h2>
-            <p>目的地と行動方針を共有する、最初のRouteを作成しましょう。</p>
+            <p>最初のRouteを作って、みんなで目的地と順番を共有しましょう。</p>
             <button className="primary-button" type="button" onClick={openCreateModal}>最初のRouteを作る</button>
-            <button className="secondary-button" type="button" disabled>Templateから作る</button>
           </section>
         ) : (
-          <section className="route-list" aria-label="Route一覧">
-            <div className="route-list-toolbar">
-              <p>{routes.length}件のRoute</p>
-              <button className="compact-primary-button" type="button" onClick={openCreateModal}>＋ Routeを作る</button>
+          <section className="home-route-section" aria-labelledby="recent-routes-title">
+            <div className="home-section-heading">
+              <h2 id="recent-routes-title">最近使ったRoute</h2>
+              <span>{recentRoutes.length}件</span>
             </div>
-            <div className="route-card-grid">
-              {routes.map((route) => (
-                <Link className="route-card route-card-link" key={route.id} to={`/routes/${route.id}`} aria-label={`${route.name}を開く`}>
-                  <div className="route-card-mark" aria-hidden="true"><BrandMark size={32} /></div>
-                  <div className="route-card-copy">
-                    <p className="route-status">{route.status === 'draft' ? '下書き' : route.status}</p>
-                    <h2>{route.name}</h2>
-                    <p>Routeの詳細を開く</p>
+
+            <div className="home-route-list">
+              {recentRoutes.map((route) => (
+                <Link className="home-route-card" key={route.id} to={`/routes/${route.id}`} aria-label={`${route.name}を開く`}>
+                  <div className="home-route-card-copy">
+                    <h3>{route.name}</h3>
+                    <p>{formatUpdatedAt(route.updated_at)}</p>
                   </div>
-                  <span className="route-card-chevron" aria-hidden="true">›</span>
+                  <span className="home-route-chevron" aria-hidden="true">›</span>
                 </Link>
               ))}
             </div>
+
+            <button className="home-create-button" type="button" onClick={openCreateModal}>＋ 新しいRouteを作る</button>
           </section>
         )}
       </section>
 
-      <footer className="app-footer"><VersionBadge /><span>Route List & Detail</span></footer>
+      <footer className="home-footer">
+        <VersionBadge />
+        <button className="home-signout-button" type="button" onClick={handleSignOut}>サインアウト</button>
+      </footer>
 
       {isCreateOpen && (
         <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeCreateModal(); }}>
@@ -130,13 +150,13 @@ export function RouteListPage({ onSignedOut }: { onSignedOut: () => void }) {
             <div className="modal-header">
               <div>
                 <p className="eyebrow">NEW ROUTE</p>
-                <h2 id="create-route-title">Routeを作る</h2>
+                <h2 id="create-route-title">新しいRouteを作る</h2>
               </div>
               <button className="modal-close-button" type="button" onClick={closeCreateModal} aria-label="閉じる" disabled={isCreating}>×</button>
             </div>
             <form className="route-create-form" onSubmit={handleCreateRoute}>
               <div className="field-group">
-                <label htmlFor="route-name">Route名 <span aria-hidden="true">*</span></label>
+                <label htmlFor="route-name">Route名</label>
                 <input
                   ref={routeNameInputRef}
                   id="route-name"
@@ -144,12 +164,12 @@ export function RouteListPage({ onSignedOut }: { onSignedOut: () => void }) {
                   value={routeName}
                   onChange={(event) => setRouteName(event.target.value)}
                   placeholder="例：家族でディズニーシー"
-                  maxLength={100}
+                  maxLength={20}
                   autoComplete="off"
                   disabled={isCreating}
                   required
                 />
-                <p className="field-hint">あとから変更できます。</p>
+                <p className="field-hint">20文字まで。あとから変更できます。</p>
               </div>
               <div className="modal-actions">
                 <button className="secondary-button" type="button" onClick={closeCreateModal} disabled={isCreating}>キャンセル</button>
