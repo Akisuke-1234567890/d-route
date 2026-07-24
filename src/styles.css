@@ -811,7 +811,6 @@ a { color: inherit; }
 .home-route-card h3 { margin: 0; font-size: 1rem; line-height: 1.35; overflow-wrap: anywhere; }
 .home-route-card p { margin: 7px 0 0; color: var(--muted); font-size: .76rem; }
 .home-route-chevron { color: #c8c2ff; font-size: 1.8rem; font-weight: 300; line-height: 1; }
-.home-create-button { width: 100%; min-height: 52px; margin-top: 5px; border: 1px dashed rgba(157, 146, 255, .38); border-radius: 16px; color: #d8d3ff; background: rgba(157, 146, 255, .07); font-weight: 800; }
 .home-footer { width: min(100%, 720px); margin: 0 auto; padding: 12px 20px max(18px, env(safe-area-inset-bottom)); display: flex; align-items: center; justify-content: space-between; gap: 14px; color: var(--muted); }
 .home-signout-button { border: 0; padding: 8px 0; color: var(--muted); background: transparent; font-size: .72rem; }
 @media (min-width: 640px) { .home-route-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

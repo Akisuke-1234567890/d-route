@@ -134,7 +134,6 @@ export function RouteListPage({ onSignedOut }: { onSignedOut: () => void }) {
               ))}
             </div>
 
-            <button className="home-create-button" type="button" onClick={openCreateModal}>＋ 新しいRouteを作る</button>
           </section>
         )}
       </section>
