@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
+import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { RouteBottomNav } from './RouteBottomNav';
 
@@ -14,7 +15,7 @@ const items = [
 export function RouteMenuPage() {
   const { routeId = '' } = useParams<{ routeId: string }>();
   return <main className="app-shell route-tab-shell">
-    <header className="global-header"><div className="header-brand"><BrandMark size={34}/><strong>D Route</strong></div><Link className="icon-button header-link" to="/routes">一覧へ戻る</Link></header>
+    <header className="global-header"><div className="header-brand"><BrandMark size={34} /><strong>D Route</strong></div><div className="header-actions"><Link className="icon-button header-link" to="/routes">一覧へ戻る</Link><RefreshButton placement="header" /></div></header>
     <section className="page-content route-tab-content" aria-labelledby="menu-title">
       <div className="route-tab-heading"><div><p className="eyebrow">MENU</p><h1 id="menu-title">Route管理</h1><p>普段は触らない設定・共有・整理機能をまとめます。</p></div></div>
       <div className="route-menu-list">{items.map((item)=><button type="button" className="route-menu-item" key={item.title}><span className="route-menu-icon" aria-hidden="true">{item.icon}</span><span><strong>{item.title}</strong><small>{item.description}</small></span><span aria-hidden="true">›</span></button>)}</div>

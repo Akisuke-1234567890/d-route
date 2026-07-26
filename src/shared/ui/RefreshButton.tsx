@@ -1,11 +1,18 @@
 import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
-export function RefreshButton() {
+type RefreshButtonProps = {
+  placement?: 'auto' | 'header' | 'footer';
+};
+
+export function RefreshButton({ placement = 'auto' }: RefreshButtonProps) {
   const location = useLocation();
   const [refreshing, setRefreshing] = useState(false);
 
-  const hasBottomNav = /^\/routes\/[^/]+(?:\/places|\/chat|\/members|\/menu)?$/.test(location.pathname);
+  const isRouteList = location.pathname === '/routes';
+  const isRouteWorkspace = /^\/routes\/[^/]+(?:\/places|\/chat|\/members|\/menu)?$/.test(location.pathname);
+
+  if (placement === 'auto' && (isRouteList || isRouteWorkspace)) return null;
 
   function handleRefresh() {
     if (refreshing) return;
@@ -13,9 +20,15 @@ export function RefreshButton() {
     window.setTimeout(() => window.location.reload(), 360);
   }
 
+  const className = placement === 'header'
+    ? 'header-refresh-button'
+    : placement === 'footer'
+      ? 'home-footer-action home-footer-refresh'
+      : 'global-refresh-button';
+
   return (
     <button
-      className={`global-refresh-button${hasBottomNav ? ' is-above-nav' : ''}`}
+      className={className}
       type="button"
       onClick={handleRefresh}
       aria-label="現在の画面を更新"
@@ -44,6 +57,7 @@ export function RefreshButton() {
           strokeLinejoin="round"
         />
       </svg>
+      {placement === 'footer' ? <span>更新</span> : null}
     </button>
   );
 }

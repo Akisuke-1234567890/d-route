@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
+import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { RouteBottomNav } from './RouteBottomNav';
 import { formatChatTime, loadChatState, phaseLabels, saveChatState, type ChatPhase, type ChatState } from './chat';
@@ -26,7 +27,7 @@ export function RouteChatPage() {
   }
 
   return <main className="app-shell chat-page-shell">
-    <header className="global-header"><div className="header-brand"><BrandMark size={34} /><strong>D Route</strong></div><Link className="icon-button header-link" to={`/routes/${routeId}`}>Routeへ戻る</Link></header>
+    <header className="global-header"><div className="header-brand"><BrandMark size={34} /><strong>D Route</strong></div><div className="header-actions"><Link className="icon-button header-link" to={`/routes/${routeId}`}>Routeへ戻る</Link><RefreshButton placement="header" /></div></header>
     <section className="chat-page" aria-labelledby="chat-title">
       <div className="chat-page-heading"><div><p className="eyebrow">ROUTE CHAT</p><h1 id="chat-title">移動中の連絡</h1></div><label className="phase-select-label">フェーズ<select value={state.phase} onChange={(e) => changePhase(e.target.value as ChatPhase)}>{Object.entries(phaseLabels).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label></div>
       <div className="chat-page-log" aria-live="polite">

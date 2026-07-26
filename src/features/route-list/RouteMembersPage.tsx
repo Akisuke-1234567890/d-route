@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
+import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { RouteBottomNav } from './RouteBottomNav';
 
@@ -16,7 +17,7 @@ export function RouteMembersPage() {
   const { routeId = '' } = useParams<{ routeId: string }>();
   const answered = members.filter((m) => m.status !== 'unanswered').length;
   return <main className="app-shell route-tab-shell">
-    <header className="global-header"><div className="header-brand"><BrandMark size={34}/><strong>D Route</strong></div><Link className="icon-button header-link" to="/routes">一覧へ戻る</Link></header>
+    <header className="global-header"><div className="header-brand"><BrandMark size={34} /><strong>D Route</strong></div><div className="header-actions"><Link className="icon-button header-link" to="/routes">一覧へ戻る</Link><RefreshButton placement="header" /></div></header>
     <section className="page-content route-tab-content" aria-labelledby="members-title">
       <div className="route-tab-heading"><div><p className="eyebrow">MEMBERS</p><h1 id="members-title">参加メンバー</h1><p>このRouteへの参加可否だけを、シンプルに確認します。</p></div><button className="primary-button route-tab-action" type="button">＋ 招待</button></div>
       <div className="members-overview"><strong>{answered}/{members.length}</strong><span>回答済み</span><div><span>参加 {members.filter(m=>m.status==='participating').length}</span><span>未回答 {members.filter(m=>m.status==='unanswered').length}</span><span>不参加 {members.filter(m=>m.status==='declined').length}</span></div></div>

@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
+import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { RouteBottomNav } from './RouteBottomNav';
 
@@ -12,7 +13,7 @@ const places = [
 export function RoutePlacesPage() {
   const { routeId = '' } = useParams<{ routeId: string }>();
   return <main className="app-shell route-tab-shell">
-    <header className="global-header"><div className="header-brand"><BrandMark size={34}/><strong>D Route</strong></div><Link className="icon-button header-link" to="/routes">一覧へ戻る</Link></header>
+    <header className="global-header"><div className="header-brand"><BrandMark size={34} /><strong>D Route</strong></div><div className="header-actions"><Link className="icon-button header-link" to="/routes">一覧へ戻る</Link><RefreshButton placement="header" /></div></header>
     <section className="page-content route-tab-content" aria-labelledby="places-title">
       <div className="route-tab-heading"><div><p className="eyebrow">PLACES</p><h1 id="places-title">目的地</h1><p>グループが辿る場所と、その場所で行うことを確認します。</p></div><button className="primary-button route-tab-action" type="button">＋ 目的地を追加</button></div>
       <div className="places-list">

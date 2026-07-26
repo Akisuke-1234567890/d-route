@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
+import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { getRoute, type RouteSummary } from './routes';
 import { RouteBottomNav } from './RouteBottomNav';
@@ -223,10 +224,7 @@ export function RouteDetailPage() {
 
   return (
     <main className="app-shell v2-dashboard-shell">
-      <header className="global-header">
-        <div className="header-brand"><BrandMark size={34} /><strong>D Route</strong></div>
-        <Link className="icon-button header-link" to="/routes">一覧へ戻る</Link>
-      </header>
+      <header className="global-header"><div className="header-brand"><BrandMark size={34} /><strong>D Route</strong></div><div className="header-actions"><Link className="icon-button header-link" to="/routes">一覧へ戻る</Link><RefreshButton placement="header" /></div></header>
 
       <section className="page-content route-detail-content v2-dashboard-content" aria-labelledby="route-detail-title">
         {loading ? (

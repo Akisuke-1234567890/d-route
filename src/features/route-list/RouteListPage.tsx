@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
+import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { signOut } from '../auth/auth';
 import { createRoute, listRoutes, type RouteSummary } from './routes';
 
@@ -139,11 +140,11 @@ export function RouteListPage({ onSignedOut }: { onSignedOut: () => void }) {
       </section>
 
       <footer className="home-footer">
-        <VersionBadge />
+        <div className="home-footer-version"><VersionBadge /></div>
         <div className="home-footer-actions">
-          
-          <Link className="home-account-link" to="/account/profile">アカウント設定</Link>
-          <button className="home-signout-button" type="button" onClick={handleSignOut}>サインアウト</button>
+          <RefreshButton placement="footer" />
+          <Link className="home-footer-action" to="/account/profile">アカウント設定</Link>
+          <button className="home-footer-action" type="button" onClick={handleSignOut}>サインアウト</button>
         </div>
       </footer>
 
