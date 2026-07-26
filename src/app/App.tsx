@@ -5,6 +5,7 @@ import { getSupabaseClient } from '../shared/api/supabase';
 import { getInitialSession } from '../features/auth/auth';
 import { SplashScreen } from '../features/auth/SplashScreen';
 import { SignInPage } from '../features/auth/SignInPage';
+import { AuthPrototypePage } from '../features/auth/AuthPrototypePage';
 import { RouteListPage } from '../features/route-list/RouteListPage';
 import { RouteDetailPage } from '../features/route-list/RouteDetailPage';
 import { RouteChatPage } from '../features/route-list/RouteChatPage';
@@ -30,6 +31,7 @@ export function App() {
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Routes>
         <Route path="/signin" element={session ? <Navigate to="/routes" replace /> : <SignInPage />} />
+        <Route path="/auth-preview" element={<AuthPrototypePage />} />
         <Route path="/routes" element={session ? <RouteListPage onSignedOut={() => setSession(null)} /> : <Navigate to="/signin" replace />} />
         <Route path="/routes/:routeId" element={session ? <RouteDetailPage /> : <Navigate to="/signin" replace />} />
         <Route path="/routes/:routeId/places" element={session ? <RoutePlacesPage /> : <Navigate to="/signin" replace />} />
