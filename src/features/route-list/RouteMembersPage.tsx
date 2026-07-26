@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
+import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { RouteBottomNav } from './RouteBottomNav';
 
@@ -23,7 +24,7 @@ export function RouteMembersPage() {
       <div className="members-page-list">{members.map((member)=><article className="member-row member-page-row" key={member.id}><div className="member-avatar" aria-hidden="true">{member.initials}</div><div className="member-copy"><div className="member-name-line"><h2>{member.name}</h2><span className="member-role">{member.role}</span></div><p className={`member-status member-status-${member.status}`}><span aria-hidden="true"/>{labels[member.status]}</p></div></article>)}</div>
       <p className="route-tab-demo-note">Membersでは参加・未回答・不参加のみを扱います。移動状況や到着連絡はChatで共有します。</p>
     </section>
-    <footer className="app-footer"><VersionBadge/><span>Route Workspace</span></footer>
+    <footer className="app-footer"><RefreshButton/><VersionBadge/><span>Route Workspace</span></footer>
     <RouteBottomNav routeId={routeId}/>
   </main>;
 }

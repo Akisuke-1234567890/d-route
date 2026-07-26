@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeLoginId, validateLoginId, validatePassword } from './account';
+import { normalizeLoginId, validateDisplayName, validateLoginId, validatePassword } from './account';
 
 describe('v2 account validation', () => {
   it('normalizes login ids for stable lookup', () => {
@@ -13,6 +13,13 @@ describe('v2 account validation', () => {
   it('rejects short or unsupported login ids', () => {
     expect(validateLoginId('abc')).toBeTruthy();
     expect(validateLoginId('route user')).toBeTruthy();
+  });
+
+
+  it('requires a nickname and caps it at 30 characters', () => {
+    expect(validateDisplayName('')).toBeTruthy();
+    expect(validateDisplayName('たけだ')).toBeNull();
+    expect(validateDisplayName('a'.repeat(31))).toBeTruthy();
   });
 
   it('requires at least 8 password characters in the client guard', () => {

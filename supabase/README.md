@@ -2,11 +2,12 @@
 
 D Route v2 keeps database/auth changes under `supabase/` so GitHub is the source of truth for migrations and Edge Functions.
 
-## Current alpha.5 addition
+## Current authentication additions
 
 - `migrations/202607260001_v2_auth_profiles.sql`: additive v2 authentication profile layer.
 - `functions/login-with-id/index.ts`: server-side login ID resolver + Supabase password sign-in.
 - `config.toml`: marks the login function as callable before a user session exists.
+- `migrations/202607260002_v2_profile_nickname.sql`: adds the authenticated nickname update RPC used by alpha.8 account settings.
 
 ## Database Baseline
 

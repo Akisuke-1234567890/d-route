@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
+import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { RouteBottomNav } from './RouteBottomNav';
 
@@ -25,7 +26,7 @@ export function RoutePlacesPage() {
       </div>
       <p className="route-tab-demo-note">表示・追加ボタンはp06の画面構成確認用です。保存・編集・並び替えは次工程で接続します。</p>
     </section>
-    <footer className="app-footer"><VersionBadge/><span>Route Workspace</span></footer>
+    <footer className="app-footer"><RefreshButton/><VersionBadge/><span>Route Workspace</span></footer>
     <RouteBottomNav routeId={routeId}/>
   </main>;
 }

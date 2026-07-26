@@ -10,6 +10,7 @@ import { StartPage } from '../features/auth/StartPage';
 import { RecoveryPage } from '../features/auth/RecoveryPage';
 import { ResetPasswordPage } from '../features/auth/ResetPasswordPage';
 import { AccountSetupPage } from '../features/auth/AccountSetupPage';
+import { AccountProfilePage } from '../features/auth/AccountProfilePage';
 import { AuthPrototypePage } from '../features/auth/AuthPrototypePage';
 import { RouteListPage } from '../features/route-list/RouteListPage';
 import { RouteDetailPage } from '../features/route-list/RouteDetailPage';
@@ -57,7 +58,9 @@ export function App() {
 
   useEffect(() => { void refreshProfile(); }, [refreshProfile]);
 
-  const accountReady = Boolean(profile?.login_id && profile?.credentials_ready_at);
+  const credentialsReady = Boolean(profile?.login_id && profile?.credentials_ready_at);
+  const nicknameReady = Boolean(profile?.display_name?.trim());
+  const accountReady = credentialsReady && nicknameReady;
   const flow = useMemo(() => new URLSearchParams(window.location.search).get('flow'), []);
 
   if (loading || (session && profileLoading)) return <SplashScreen />;
@@ -65,18 +68,20 @@ export function App() {
   const protectedElement = (element: ReactNode) => {
     if (!session) return <Navigate to="/signin" replace />;
     if (profileError) return <Navigate to="/account/setup" replace />;
-    if (!accountReady) return <Navigate to="/account/setup" replace />;
+    if (!credentialsReady) return <Navigate to="/account/setup" replace />;
+    if (!nicknameReady) return <Navigate to="/account/profile" replace />;
     return element;
   };
 
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Routes>
-        <Route path="/signin" element={session ? <Navigate to={accountReady ? '/routes' : '/account/setup'} replace /> : <SignInPage />} />
-        <Route path="/start" element={session ? <Navigate to={accountReady ? '/routes' : '/account/setup'} replace /> : <StartPage />} />
-        <Route path="/recover" element={session ? <Navigate to={accountReady ? '/routes' : '/account/setup'} replace /> : <RecoveryPage />} />
+        <Route path="/signin" element={session ? <Navigate to={!credentialsReady ? '/account/setup' : !nicknameReady ? '/account/profile' : '/routes'} replace /> : <SignInPage />} />
+        <Route path="/start" element={session ? <Navigate to={!credentialsReady ? '/account/setup' : !nicknameReady ? '/account/profile' : '/routes'} replace /> : <StartPage />} />
+        <Route path="/recover" element={session ? <Navigate to={!credentialsReady ? '/account/setup' : !nicknameReady ? '/account/profile' : '/routes'} replace /> : <RecoveryPage />} />
         <Route path="/recover/reset" element={session ? <ResetPasswordPage /> : <Navigate to="/recover" replace />} />
-        <Route path="/account/setup" element={session ? (accountReady ? <Navigate to="/routes" replace /> : <AccountSetupPage user={session.user} onCompleted={refreshProfile} />) : <Navigate to="/signin" replace />} />
+        <Route path="/account/setup" element={session ? (credentialsReady ? <Navigate to={nicknameReady ? '/routes' : '/account/profile'} replace /> : <AccountSetupPage user={session.user} onCompleted={refreshProfile} />) : <Navigate to="/signin" replace />} />
+        <Route path="/account/profile" element={session ? <AccountProfilePage user={session.user} required={!nicknameReady} onCompleted={refreshProfile} /> : <Navigate to="/signin" replace />} />
         <Route path="/auth-preview" element={<AuthPrototypePage />} />
         <Route path="/routes" element={protectedElement(<RouteListPage onSignedOut={() => setSession(null)} />)} />
         <Route path="/routes/:routeId" element={protectedElement(<RouteDetailPage />)} />
@@ -84,7 +89,7 @@ export function App() {
         <Route path="/routes/:routeId/chat" element={protectedElement(<RouteChatPage />)} />
         <Route path="/routes/:routeId/members" element={protectedElement(<RouteMembersPage />)} />
         <Route path="/routes/:routeId/menu" element={protectedElement(<RouteMenuPage />)} />
-        <Route path="*" element={<Navigate to={flow === 'recovery' && session ? '/recover/reset' : flow === 'setup' && session ? '/account/setup' : session ? (accountReady ? '/routes' : '/account/setup') : '/signin'} replace />} />
+        <Route path="*" element={<Navigate to={flow === 'recovery' && session ? '/recover/reset' : flow === 'setup' && session ? (!credentialsReady ? '/account/setup' : !nicknameReady ? '/account/profile' : '/routes') : session ? (!credentialsReady ? '/account/setup' : !nicknameReady ? '/account/profile' : '/routes') : '/signin'} replace />} />
       </Routes>
     </BrowserRouter>
   );

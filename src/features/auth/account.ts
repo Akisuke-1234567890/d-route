@@ -59,6 +59,14 @@ export function validateLoginId(value: string): string | null {
   return null;
 }
 
+
+export function validateDisplayName(value: string): string | null {
+  const normalized = value.trim();
+  if (!normalized) return 'ニックネームを入力してください。';
+  if (normalized.length > 30) return 'ニックネームは30文字以内で入力してください。';
+  return null;
+}
+
 export function validatePassword(password: string): string | null {
   if (password.length < 8) return 'パスワードは8文字以上で入力してください。';
   return null;
@@ -132,6 +140,8 @@ export async function completeAccountSetup(params: {
   const passwordError = validatePassword(params.password);
   if (passwordError) throw new Error(passwordError);
   if (params.password !== params.passwordConfirm) throw new Error('パスワード確認が一致しません。');
+  const displayNameError = validateDisplayName(params.displayName ?? '');
+  if (displayNameError) throw new Error(displayNameError);
 
   const { error: passwordUpdateError } = await supabase.auth.updateUser({ password: params.password });
   if (passwordUpdateError) throw userFacingAuthError(passwordUpdateError, 'パスワードを設定できませんでした。もう一度お試しください。');
@@ -159,3 +169,17 @@ export async function resetSignedInPassword(password: string, passwordConfirm: s
   const { error } = await supabase.auth.updateUser({ password });
   if (error) throw userFacingAuthError(error, 'パスワードを変更できませんでした。もう一度お試しください。');
 }
+
+export async function updateDisplayName(displayName: string): Promise<UserProfile> {
+  const supabase = requireClient();
+  const validation = validateDisplayName(displayName);
+  if (validation) throw new Error(validation);
+
+  const { data, error } = await supabase.rpc('update_own_display_name', {
+    p_display_name: displayName.trim(),
+  });
+
+  if (error) throw new Error('ニックネームを保存できませんでした。もう一度お試しください。');
+  return data as UserProfile;
+}
+

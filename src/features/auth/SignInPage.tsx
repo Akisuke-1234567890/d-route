@@ -1,9 +1,14 @@
 import { FormEvent, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
+import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { env } from '../../shared/api/env';
 import { signInWithLoginId } from './account';
+
+function routesUrl() {
+  return new URL('routes', new URL(import.meta.env.BASE_URL, window.location.origin)).toString();
+}
 
 export function SignInPage() {
   const [loginId, setLoginId] = useState('');
@@ -13,14 +18,15 @@ export function SignInPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (loading) return;
     setError('');
     if (!navigator.onLine) { setError('ログインには通信が必要です。'); return; }
     setLoading(true);
     try {
       await signInWithLoginId(loginId, password);
+      window.location.replace(routesUrl());
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'ログインできませんでした。');
-    } finally {
       setLoading(false);
     }
   }
@@ -35,13 +41,13 @@ export function SignInPage() {
         <div className="auth-copy">
           <p className="eyebrow">WELCOME BACK</p>
           <h1 id="signin-title">D Routeにログイン</h1>
-          <p>一度ログインした端末では、セッションが有効な間はこの入力を省略します。</p>
+          <p>一度ログインすると、次回からはそのままD Routeを利用できます。</p>
         </div>
         <form onSubmit={handleSubmit} noValidate>
           <label htmlFor="login-id">ログインID</label>
-          <input id="login-id" name="username" autoComplete="username" autoCapitalize="none" spellCheck={false} placeholder="route_user" value={loginId} onChange={(event) => setLoginId(event.target.value)} />
+          <input id="login-id" name="username" autoComplete="username" autoCapitalize="none" spellCheck={false} placeholder="route_user" value={loginId} onChange={(event) => { setLoginId(event.target.value); if (error) setError(''); }} disabled={loading} />
           <label htmlFor="password">パスワード</label>
-          <input id="password" name="password" type="password" autoComplete="current-password" placeholder="••••••••" value={password} onChange={(event) => setPassword(event.target.value)} aria-describedby={error ? 'signin-error' : undefined} />
+          <input id="password" name="password" type="password" autoComplete="current-password" placeholder="••••••••" value={password} onChange={(event) => { setPassword(event.target.value); if (error) setError(''); }} aria-describedby={error ? 'signin-error' : undefined} disabled={loading} />
           {error && <p id="signin-error" className="field-error" role="alert">{error}</p>}
           <button className="primary-button" type="submit" disabled={loading}>{loading ? 'ログインしています…' : 'ログイン'}</button>
         </form>
@@ -51,7 +57,7 @@ export function SignInPage() {
         </div>
         {!env.hasSupabaseConfig && <p className="dev-notice">開発設定：`.env` にSupabase情報を設定すると認証が有効になります。</p>}
         <Link className="auth-preview-entry" to="/auth-preview">v2.0 認証フローを確認 ›</Link>
-        <footer className="auth-footer"><span>Privacy</span><span>Terms</span><VersionBadge /></footer>
+        <footer className="auth-footer"><span>Privacy</span><span>Terms</span><RefreshButton /><VersionBadge /></footer>
       </section>
     </main>
   );

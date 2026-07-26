@@ -1211,3 +1211,33 @@ a { color: inherit; }
   cursor: pointer;
 }
 
+
+/* v2.0.0-alpha.8: nickname profile + universal refresh control */
+.app-refresh-button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  min-height: 36px;
+  padding: 6px 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font: inherit;
+  font-size: .72rem;
+  cursor: pointer;
+  border-radius: 10px;
+}
+.app-refresh-button:active { background: rgba(255,255,255,.06); }
+.app-refresh-button span:first-child { font-size: 1rem; line-height: 1; }
+.auth-footer .app-refresh-button { margin-left: auto; }
+.auth-footer .app-refresh-button + .version-badge { margin-left: 0; }
+.home-footer-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.home-account-link { color: var(--muted); font-size: .75rem; font-weight: 700; text-decoration: none; padding: 7px 8px; border-radius: 10px; }
+.home-account-link:active { background: rgba(255,255,255,.06); }
+.app-footer .app-refresh-button { color: var(--muted); }
+@media (max-width: 420px) {
+  .home-footer { align-items: flex-start; }
+  .home-footer-actions { max-width: 72%; }
+}

@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
+import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { sendRegistrationLink } from './account';
 
@@ -35,6 +36,6 @@ export function StartPage() {
       <form onSubmit={handleSubmit} noValidate><label htmlFor="start-email">メールアドレス</label><input id="start-email" type="email" inputMode="email" autoComplete="email" placeholder="name@example.com" value={email} onChange={(event)=>setEmail(event.target.value)} />{error && <p className="field-error" role="alert">{error}</p>}<button className="primary-button" type="submit" disabled={status==='loading'}>{status==='loading'?'送信しています…':'確認メールを送信'}</button></form>
     </>}
     <Link className="text-button auth-link-button auth-centered-link" to="/signin">ログインへ戻る</Link>
-    <footer className="auth-footer"><span>Privacy</span><span>Terms</span><VersionBadge/></footer>
+    <footer className="auth-footer"><span>Privacy</span><span>Terms</span><RefreshButton/><VersionBadge/></footer>
   </section></main>;
 }
