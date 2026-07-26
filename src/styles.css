@@ -1173,3 +1173,8 @@ a { color: inherit; }
 .auth-preview-existing-panel strong {
   overflow-wrap: anywhere;
 }
+
+/* v2.0.0-alpha.5 authentication connection */
+.auth-entry-actions { display: grid; gap: 10px; margin-top: 12px; }
+.auth-link-button { text-decoration: none; text-align: center; justify-content: center; }
+.auth-centered-link { display: flex; width: fit-content; margin: 14px auto 0; }

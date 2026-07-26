@@ -9,14 +9,6 @@ export async function getInitialSession(): Promise<Session | null> {
   return data.session;
 }
 
-export async function sendMagicLink(email: string): Promise<void> {
-  const supabase = getSupabaseClient();
-  if (!supabase) throw new Error('Supabaseの環境変数が設定されていません。');
-  const redirectTo = new URL(import.meta.env.BASE_URL, window.location.origin).toString();
-  const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo } });
-  if (error) throw error;
-}
-
 export async function signOut(): Promise<void> {
   const supabase = getSupabaseClient();
   if (!supabase) return;

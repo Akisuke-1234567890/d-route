@@ -3,25 +3,25 @@ import { Link } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { env } from '../../shared/api/env';
-import { sendMagicLink } from './auth';
+import { signInWithLoginId } from './account';
 
 export function SignInPage() {
-  const [email, setEmail] = useState('');
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success'>('idle');
+  const [loginId, setLoginId] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError('');
     if (!navigator.onLine) { setError('ログインには通信が必要です。'); return; }
-    if (!email.trim()) { setError('メールアドレスを入力してください。'); return; }
-    setStatus('loading');
+    setLoading(true);
     try {
-      await sendMagicLink(email.trim());
-      setStatus('success');
+      await signInWithLoginId(loginId, password);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'ログインリンクを送信できませんでした。');
-      setStatus('idle');
+      setError(caught instanceof Error ? caught.message : 'ログインできませんでした。');
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -33,26 +33,23 @@ export function SignInPage() {
           <div><div className="brand-wordmark small">D Route</div><p>目的地とRouteを、みんなで共有。</p></div>
         </header>
         <div className="auth-copy">
-          <p className="eyebrow">WELCOME</p>
-          <h1 id="signin-title">D Routeにサインイン</h1>
-          <p>メールに届くリンクから、安全にサインインできます。</p>
+          <p className="eyebrow">WELCOME BACK</p>
+          <h1 id="signin-title">D Routeにログイン</h1>
+          <p>一度ログインした端末では、セッションが有効な間はこの入力を省略します。</p>
         </div>
-        {status === 'success' ? (
-          <div className="success-panel" role="status">
-            <strong>メールを確認してください</strong>
-            <p>{email} にログインリンクを送りました。</p>
-            <button className="text-button" onClick={() => setStatus('idle')}>別のメールアドレスを使う</button>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} noValidate>
-            <label htmlFor="email">メールアドレス</label>
-            <input id="email" name="email" type="email" inputMode="email" autoComplete="email" placeholder="name@example.com" value={email} onChange={(e) => setEmail(e.target.value)} aria-describedby={error ? 'signin-error' : undefined} />
-            {error && <p id="signin-error" className="field-error" role="alert">{error}</p>}
-            <button className="primary-button" type="submit" disabled={status === 'loading'}>{status === 'loading' ? '送信しています…' : 'ログインリンクを送る'}</button>
-          </form>
-        )}
+        <form onSubmit={handleSubmit} noValidate>
+          <label htmlFor="login-id">ログインID</label>
+          <input id="login-id" name="username" autoComplete="username" autoCapitalize="none" spellCheck={false} placeholder="route_user" value={loginId} onChange={(event) => setLoginId(event.target.value)} />
+          <label htmlFor="password">パスワード</label>
+          <input id="password" name="password" type="password" autoComplete="current-password" placeholder="••••••••" value={password} onChange={(event) => setPassword(event.target.value)} aria-describedby={error ? 'signin-error' : undefined} />
+          {error && <p id="signin-error" className="field-error" role="alert">{error}</p>}
+          <button className="primary-button" type="submit" disabled={loading}>{loading ? 'ログインしています…' : 'ログイン'}</button>
+        </form>
+        <div className="auth-entry-actions">
+          <Link className="text-button auth-link-button" to="/recover">ID・パスワードを忘れた方</Link>
+          <Link className="secondary-button auth-link-button" to="/start">D Routeをはじめる</Link>
+        </div>
         {!env.hasSupabaseConfig && <p className="dev-notice">開発設定：`.env` にSupabase情報を設定すると認証が有効になります。</p>}
-        <p className="guest-note">共有リンクから参加する場合は、招待リンクを開いてください。</p>
         <Link className="auth-preview-entry" to="/auth-preview">v2.0 認証フローを確認 ›</Link>
         <footer className="auth-footer"><span>Privacy</span><span>Terms</span><VersionBadge /></footer>
       </section>
