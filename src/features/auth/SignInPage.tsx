@@ -47,7 +47,7 @@ export function SignInPage() {
         </form>
         <div className="auth-entry-actions">
           <Link className="text-button auth-link-button" to="/recover">ID・パスワードを忘れた方</Link>
-          <Link className="secondary-button auth-link-button" to="/start">D Routeをはじめる</Link>
+          <Link className="secondary-button auth-link-button" to="/start">アカウント作成</Link>
         </div>
         {!env.hasSupabaseConfig && <p className="dev-notice">開発設定：`.env` にSupabase情報を設定すると認証が有効になります。</p>}
         <Link className="auth-preview-entry" to="/auth-preview">v2.0 認証フローを確認 ›</Link>

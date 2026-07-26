@@ -1178,3 +1178,21 @@ a { color: inherit; }
 .auth-entry-actions { display: grid; gap: 10px; margin-top: 12px; }
 .auth-link-button { text-decoration: none; text-align: center; justify-content: center; }
 .auth-centered-link { display: flex; width: fit-content; margin: 14px auto 0; }
+
+/* v2.0.0-alpha.6: auth secondary action alignment / tap target */
+.auth-start-link,
+.auth-secondary-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 48px;
+  box-sizing: border-box;
+  text-align: center;
+  cursor: pointer;
+}
+.auth-start-link > *,
+.auth-secondary-action > * {
+  pointer-events: none;
+}
+

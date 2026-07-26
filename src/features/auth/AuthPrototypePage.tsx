@@ -68,7 +68,7 @@ export function AuthPrototypePage() {
             </form>
             <div className="auth-preview-links">
               <button className="text-button" type="button" onClick={() => setStep('recover')}>ID・パスワードを忘れた方</button>
-              <button className="secondary-button" type="button" onClick={() => setStep('start')}>D Routeをはじめる</button>
+              <button className="secondary-button" type="button" onClick={() => setStep('start')}>アカウント作成</button>
             </div>
           </>
         )}
@@ -77,7 +77,7 @@ export function AuthPrototypePage() {
           <>
             <div className="auth-copy compact">
               <p className="eyebrow">GET STARTED</p>
-              <h1 id="auth-preview-title">D Routeをはじめる</h1>
+              <h1 id="auth-preview-title">アカウント作成</h1>
               <p>LINE公式アカウントなどからこの画面を開き、最初にメールアドレスを確認します。</p>
             </div>
             <form onSubmit={(event) => preventSubmit(event, 'mail-sent')} noValidate>
