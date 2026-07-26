@@ -167,7 +167,7 @@ function PhaseDashboard({ routeId }: { routeId: string }) {
         </div>
 
         <button className="v2-branch-summary" type="button">
-          <span><strong>※ 別行動あり</strong><small>タップして班の概要を確認</small></span>
+          <span><strong>※ 別行動複数あり</strong><small>班の概要を確認</small></span>
           <span aria-hidden="true">›</span>
         </button>
       </article>
@@ -246,7 +246,7 @@ export function RouteDetailPage() {
             <section className="v2-route-hero">
               <div className="v2-route-brand" aria-hidden="true"><BrandMark size={48} /></div>
               <div className="v2-route-hero-copy">
-                <p className="eyebrow">ROUTE DASHBOARD / PROTOTYPE</p>
+                <p className="eyebrow">ROUTE DASHBOARD / ALPHA.2</p>
                 <h1 id="route-detail-title">{route.name}</h1>
                 <p><time>8月10日 9:00〜</time><span>・</span><span>今日のRoute</span></p>
               </div>
@@ -263,7 +263,7 @@ export function RouteDetailPage() {
         )}
       </section>
 
-      <footer className="app-footer"><VersionBadge /><span>Dashboard Prototype</span></footer>
+      <footer className="app-footer"><VersionBadge /><span>Dashboard Alpha.2</span></footer>
       {routeId ? <RouteBottomNav routeId={routeId} /> : null}
     </main>
   );
