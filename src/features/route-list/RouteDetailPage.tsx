@@ -1,347 +1,194 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { getRoute, type RouteSummary } from './routes';
-import { loadChatState, phaseLabels } from './chat';
 import { RouteBottomNav } from './RouteBottomNav';
+
+type DestinationCard = {
+  id: string;
+  title: string;
+  time?: string;
+  note?: string;
+  attention?: boolean;
+  checked?: boolean;
+};
+
+const prototypePhase = {
+  name: '午後',
+  startTime: '12:00',
+  destinations: [
+    { id: 'd1', title: 'センター・オブ・ジ・アース', time: '12:30', checked: true },
+    { id: 'd2', title: 'お土産を見る', time: '13:00', checked: true },
+    {
+      id: 'd3',
+      title: 'レストラン',
+      time: '13:30',
+      note: '予約済み・時間厳守',
+      attention: true,
+      checked: false,
+    },
+    { id: 'd4', title: 'タワー・オブ・テラー', checked: false },
+    { id: 'd5', title: '写真を撮る', checked: false },
+  ] satisfies DestinationCard[],
+} as const;
+
+const prototypeChat = {
+  author: '佐藤',
+  body: '集合場所変更します',
+  time: '16:02',
+  priority: true,
+} as const;
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback;
 }
 
-const touringToday = {
-  currentLocation: '海老名SA',
-  destination: '大観山展望台',
-  status: '移動中',
-  memberCount: 4,
-  nextAction: '10:30までに展望台入口へ集合',
-} as const;
+function PhaseDashboard({ routeId }: { routeId: string }) {
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(() => new Set(prototypePhase.destinations.filter((item) => item.checked).map((item) => item.id)));
+  const [activeIndex, setActiveIndex] = useState(0);
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
 
-type MemberStatus = 'participating' | 'unanswered' | 'declined';
+  const destinations = useMemo<readonly DestinationCard[]>(() => prototypePhase.destinations, []);
 
-type RouteMember = {
-  id: string;
-  name: string;
-  initials: string;
-  role: 'リーダー' | 'メンバー';
-  status: MemberStatus;
-};
+  const scrollToIndex = (nextIndex: number) => {
+    const bounded = Math.max(0, Math.min(nextIndex, destinations.length - 1));
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    const card = scroller.querySelector<HTMLElement>(`[data-destination-index="${bounded}"]`);
+    card?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  };
 
-const sampleMembers: RouteMember[] = [
-  { id: 'member-self', name: 'あなた', initials: 'YOU', role: 'リーダー', status: 'participating' },
-  { id: 'member-a', name: 'メンバーA', initials: 'A', role: 'メンバー', status: 'participating' },
-  { id: 'member-b', name: 'メンバーB', initials: 'B', role: 'メンバー', status: 'unanswered' },
-  { id: 'member-c', name: 'メンバーC', initials: 'C', role: 'メンバー', status: 'declined' },
-];
+  const onScroll = () => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    const cards = Array.from(scroller.querySelectorAll<HTMLElement>('[data-destination-index]'));
+    const center = scroller.scrollLeft + scroller.clientWidth / 2;
+    let nearest = 0;
+    let nearestDistance = Number.POSITIVE_INFINITY;
+    cards.forEach((card, index) => {
+      const cardCenter = card.offsetLeft + card.offsetWidth / 2;
+      const distance = Math.abs(cardCenter - center);
+      if (distance < nearestDistance) {
+        nearest = index;
+        nearestDistance = distance;
+      }
+    });
+    setActiveIndex(nearest);
+  };
 
-const memberStatusLabel: Record<MemberStatus, string> = {
-  participating: '参加',
-  unanswered: '未回答',
-  declined: '不参加',
-};
-
-function ChatSummaryCard({ routeId }: { routeId: string }) {
-  const [chat, setChat] = useState(() => loadChatState(routeId));
-  useEffect(() => {
-    const refresh = () => setChat(loadChatState(routeId));
-    window.addEventListener('focus', refresh);
-    window.addEventListener('d-route-chat-updated', refresh);
-    return () => { window.removeEventListener('focus', refresh); window.removeEventListener('d-route-chat-updated', refresh); };
-  }, [routeId]);
-  const latest = [...chat.messages].reverse().find((message) => message.type === 'message');
-  return (
-    <article className="route-detail-card chat-summary-card">
-      <div className="route-detail-card-heading"><div><p className="eyebrow">ROUTE CHAT</p><h2>連絡を確認</h2></div><span className="chat-phase-badge">{phaseLabels[chat.phase]}</span></div>
-      {latest && latest.type === 'message' ? <div className="chat-latest"><div className="chat-avatar" aria-hidden="true">{latest.initials}</div><div><div className="chat-message-meta"><strong>{latest.author}</strong><time>{latest.time}</time></div><p>{latest.body}</p></div></div> : <p className="chat-intro">まだメッセージはありません。</p>}
-      <Link className="primary-button link-button chat-open-button" to={`/routes/${routeId}/chat`}>Chatを開く</Link>
-      <p className="chat-demo-note">Chatは独立画面で開き、最新メッセージ付近から確認できます。</p>
-    </article>
-  );
-}
-
-type PlanningStop = {
-  kind: 'event' | 'mobility';
-  icon: string;
-  name: string;
-  time: string;
-  purpose: string;
-  locationStatus: string;
-};
-
-type PlanningLeg = {
-  mode: '車' | '徒歩';
-  icon: string;
-  duration: string;
-  distance: string;
-  road: string;
-  mapsUrl: string;
-};
-
-const planningStops: PlanningStop[] = [
-  {
-    kind: 'event',
-    icon: '🤝',
-    name: '海老名SA',
-    time: '08:30',
-    purpose: '集合・出発確認',
-    locationStatus: '検索地点を登録済み',
-  },
-  {
-    kind: 'mobility',
-    icon: '🅿️',
-    name: '大観山駐車場',
-    time: '09:45ごろ',
-    purpose: '駐車・徒歩へ切り替え',
-    locationStatus: '駐車場の地点を登録済み',
-  },
-  {
-    kind: 'event',
-    icon: '🏔️',
-    name: '大観山展望台',
-    time: '10:00',
-    purpose: '景色を見る・全員で休憩',
-    locationStatus: '目的地を登録済み',
-  },
-];
-
-const planningLegs: PlanningLeg[] = [
-  {
-    mode: '車',
-    icon: '🚗',
-    duration: '約1時間15分',
-    distance: '約72 km',
-    road: '高速道路・有料道路を使用',
-    mapsUrl: 'https://www.google.com/maps/dir/?api=1&origin=%E6%B5%B7%E8%80%81%E5%90%8DSA&destination=%E5%A4%A7%E8%A6%B3%E5%B1%B1%E9%A7%90%E8%BB%8A%E5%A0%B4&travelmode=driving',
-  },
-  {
-    mode: '徒歩',
-    icon: '🚶',
-    duration: '約10分',
-    distance: '約600 m',
-    road: '徒歩ルート',
-    mapsUrl: 'https://www.google.com/maps/dir/?api=1&origin=%E5%A4%A7%E8%A6%B3%E5%B1%B1%E9%A7%90%E8%BB%8A%E5%A0%B4&destination=%E5%A4%A7%E8%A6%B3%E5%B1%B1%E5%B1%95%E6%9C%9B%E5%8F%B0&travelmode=walking',
-  },
-];
-
-function PlanningStopCard({ stop }: { stop: PlanningStop }) {
-  const kindLabel = stop.kind === 'event' ? '目的・イベント' : '移動地点';
+  const toggleCheck = (id: string) => {
+    setCheckedIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   return (
-    <article className={`planning-stop planning-stop-${stop.kind}`}>
-      <div className="planning-stop-icon" aria-hidden="true">{stop.icon}</div>
-      <div className="planning-stop-copy">
-        <div className="planning-stop-meta">
-          <span className={`planning-kind-badge planning-kind-${stop.kind}`}>{kindLabel}</span>
-          <time>{stop.time}</time>
-        </div>
-        <h3>{stop.name}</h3>
-        <p className="planning-purpose">{stop.purpose}</p>
-        <p className="planning-location-status"><span aria-hidden="true">◎</span>{stop.locationStatus}</p>
-      </div>
-    </article>
-  );
-}
-
-function PlanningLegCard({ leg }: { leg: PlanningLeg }) {
-  return (
-    <div className="planning-leg">
-      <div className="planning-leg-rail" aria-hidden="true"><span /><strong>↓</strong><span /></div>
-      <div className="planning-leg-panel">
-        <div className="planning-leg-heading">
-          <span className="planning-mode-badge">{leg.icon} {leg.mode}</span>
-          <strong>{leg.duration}</strong>
-        </div>
-        <p>{leg.distance} ・ {leg.road}</p>
-        <a className="planning-map-link" href={leg.mapsUrl} target="_blank" rel="noreferrer">
-          この区間を外部地図で見る
-        </a>
-      </div>
-    </div>
-  );
-}
-
-function PlanningCard() {
-  return (
-    <article className="route-detail-card planning-card">
-      <div className="route-detail-card-heading">
-        <div>
-          <p className="eyebrow">PLANNING</p>
-          <h2>目的と移動を分けて組み立てる</h2>
-        </div>
-        <span className="planning-status-badge">設計サンプル</span>
-      </div>
-
-      <div className="planning-route-settings" aria-label="ルートの基本設定">
-        <span>基本：🚗 車</span>
-        <span>開始 08:30</span>
-        <span>高速 使用</span>
-        <span>有料 使用</span>
-      </div>
-
-      <div className="planning-timeline">
-        {planningStops.map((stop, index) => (
-          <div key={`${stop.name}-${stop.time}`}>
-            <PlanningStopCard stop={stop} />
-            {planningLegs[index] ? <PlanningLegCard leg={planningLegs[index]} /> : null}
-          </div>
-        ))}
-      </div>
-
-      <div className="planning-location-note">
-        <strong>場所の登録方法</strong>
-        <p>地点検索を基本にし、地図で調整・現在地登録・住所入力を補助として使う想定です。</p>
-      </div>
-
-      <p className="planning-demo-note">時刻・距離は開発用サンプルです。自動取得と手動補正は今後の工程で接続します。</p>
-    </article>
-  );
-}
-
-const mergePoint = {
-  location: '大観山展望台 入口',
-  scheduledTime: '10:30',
-  participantCount: 4,
-} as const;
-
-function MergePointCard() {
-  return (
-    <article className="route-detail-card merge-point-card">
-      <div className="route-detail-card-heading">
-        <div>
-          <p className="eyebrow">MERGE POINT</p>
-          <h2>合流ポイント</h2>
-        </div>
-        <span className="merge-point-badge">集合予定</span>
-      </div>
-
-      <div className="merge-point-location">
-        <span className="merge-point-icon" aria-hidden="true">🤝</span>
-        <div>
-          <p className="merge-point-label">集合場所</p>
-          <p className="merge-point-place">{mergePoint.location}</p>
-        </div>
-      </div>
-
-      <div className="merge-point-details">
-        <section className="merge-point-detail">
-          <span aria-hidden="true">🕒</span>
+    <>
+      <article className="v2-phase-panel" aria-labelledby="v2-phase-title">
+        <div className="v2-phase-heading">
           <div>
-            <p className="merge-point-label">集合予定時刻</p>
-            <time className="merge-point-value">{mergePoint.scheduledTime}</time>
+            <p className="eyebrow">CURRENT PHASE</p>
+            <h2 id="v2-phase-title">{prototypePhase.name}</h2>
           </div>
-        </section>
-        <section className="merge-point-detail">
-          <span aria-hidden="true">👥</span>
-          <div>
-            <p className="merge-point-label">参加人数</p>
-            <p className="merge-point-value">{mergePoint.participantCount}人</p>
-          </div>
-        </section>
-      </div>
-
-      <p className="merge-point-demo-note">表示専用の開発サンプルです。通信・保存・編集処理はまだ接続していません。</p>
-    </article>
-  );
-}
-
-function MembersCard() {
-  const answeredCount = sampleMembers.filter((member) => member.status !== 'unanswered').length;
-
-  return (
-    <article className="route-detail-card members-card">
-      <div className="route-detail-card-heading">
-        <div>
-          <p className="eyebrow">MEMBERS</p>
-          <h2>参加メンバー</h2>
-        </div>
-        <span className="members-count-badge">{answeredCount}/{sampleMembers.length} 回答済み</span>
-      </div>
-
-      <div className="members-summary" aria-label="参加状況">
-        <span>参加 {sampleMembers.filter((member) => member.status === 'participating').length}人</span>
-        <span>未回答 {sampleMembers.filter((member) => member.status === 'unanswered').length}人</span>
-        <span>不参加 {sampleMembers.filter((member) => member.status === 'declined').length}人</span>
-      </div>
-
-      <div className="members-list">
-        {sampleMembers.map((member) => (
-          <section className="member-row" key={member.id}>
-            <div className="member-avatar" aria-hidden="true">{member.initials}</div>
-            <div className="member-copy">
-              <div className="member-name-line">
-                <h3>{member.name}</h3>
-                <span className="member-role">{member.role}</span>
-              </div>
-              <p className={`member-status member-status-${member.status}`}>
-                <span aria-hidden="true" />
-                {memberStatusLabel[member.status]}
-              </p>
-            </div>
-          </section>
-        ))}
-      </div>
-
-      <p className="members-demo-note">表示専用の開発サンプルです。Membersでは参加可否のみを扱い、移動・到着などの連絡は今後チャット側で扱います。</p>
-    </article>
-  );
-}
-
-function TodayCard() {
-  return (
-    <article className="route-detail-card today-card">
-      <div className="route-detail-card-heading">
-        <div>
-          <p className="eyebrow">TODAY</p>
-          <h2>今日のRoute</h2>
-        </div>
-        <span className="today-status-badge">{touringToday.status}</span>
-      </div>
-
-      <div className="today-route-flow" aria-label={`${touringToday.currentLocation}から${touringToday.destination}へ移動中`}>
-        <div className="today-place">
-          <span className="today-item-icon" aria-hidden="true">📍</span>
-          <div>
-            <p className="today-item-label">現在地</p>
-            <p className="today-place-name">{touringToday.currentLocation}</p>
-          </div>
+          <span className="v2-phase-time">{prototypePhase.startTime}〜</span>
         </div>
 
-        <div className="today-flow-line" aria-hidden="true">
-          <span />
-          <strong>→</strong>
-          <span />
+        <div className="v2-destination-stage">
+          <button
+            className="v2-carousel-button v2-carousel-prev"
+            type="button"
+            aria-label="前の予定を見る"
+            disabled={activeIndex === 0}
+            onClick={() => scrollToIndex(activeIndex - 1)}
+          >
+            ‹
+          </button>
+
+          <div className="v2-destination-scroller" ref={scrollerRef} onScroll={onScroll}>
+            {destinations.map((destination, index) => {
+              const checked = checkedIds.has(destination.id);
+              return (
+                <article
+                  className={`v2-destination-card${destination.attention ? ' is-attention' : ''}`}
+                  data-destination-index={index}
+                  key={destination.id}
+                  aria-label={`${index + 1}/${destinations.length} ${destination.title}`}
+                >
+                  <div className="v2-card-topline">
+                    <span className="v2-card-count">{index + 1} / {destinations.length}</span>
+                    {destination.attention ? <span className="v2-attention-badge" title="注目する予定">✦ 注目</span> : <span />}
+                  </div>
+
+                  <div className="v2-card-main">
+                    {destination.time ? <time className="v2-card-time">{destination.time}</time> : <span className="v2-card-time is-empty">PHASE TASK</span>}
+                    <h3>{destination.title}</h3>
+                    {destination.note ? <p className="v2-card-note">{destination.note}</p> : <p className="v2-card-note is-empty">このPhase内で確認する予定</p>}
+                  </div>
+
+                  <button
+                    className={`v2-check-button${checked ? ' is-checked' : ''}`}
+                    type="button"
+                    aria-pressed={checked}
+                    aria-label={`${destination.title}の確認チェック${checked ? 'を外す' : 'を付ける'}`}
+                    onClick={() => toggleCheck(destination.id)}
+                  >
+                    <span aria-hidden="true">{checked ? '✓' : ''}</span>
+                  </button>
+                </article>
+              );
+            })}
+          </div>
+
+          <button
+            className="v2-carousel-button v2-carousel-next"
+            type="button"
+            aria-label="次の予定を見る"
+            disabled={activeIndex === destinations.length - 1}
+            onClick={() => scrollToIndex(activeIndex + 1)}
+          >
+            ›
+          </button>
         </div>
 
-        <div className="today-place today-destination">
-          <span className="today-item-icon" aria-hidden="true">🎯</span>
+        <div className="v2-carousel-dots" aria-label={`全${destinations.length}件中${activeIndex + 1}件目`}>
+          {destinations.map((destination, index) => (
+            <button
+              key={destination.id}
+              type="button"
+              className={index === activeIndex ? 'is-active' : ''}
+              aria-label={`${index + 1}件目を見る`}
+              onClick={() => scrollToIndex(index)}
+            />
+          ))}
+        </div>
+
+        <button className="v2-branch-summary" type="button">
+          <span><strong>※ 別行動あり</strong><small>タップして班の概要を確認</small></span>
+          <span aria-hidden="true">›</span>
+        </button>
+      </article>
+
+      <article className="v2-chat-summary">
+        <div className="v2-section-heading">
           <div>
-            <p className="today-item-label">目的地</p>
-            <p className="today-place-name">{touringToday.destination}</p>
+            <p className="eyebrow">CHAT</p>
+            <h2>連絡</h2>
+          </div>
+          <Link className="v2-text-link" to={`/routes/${routeId}/chat`}>Chatを見る ›</Link>
+        </div>
+        <div className={`v2-latest-message${prototypeChat.priority ? ' is-priority' : ''}`}>
+          <span className="v2-priority-mark" aria-hidden="true">!</span>
+          <div>
+            <div className="v2-message-meta"><strong>{prototypeChat.author}</strong><time>{prototypeChat.time}</time></div>
+            <p>{prototypeChat.body}</p>
           </div>
         </div>
-      </div>
-
-      <div className="today-information-grid">
-        <section className="today-information-item">
-          <span className="today-item-icon" aria-hidden="true">👥</span>
-          <div>
-            <p className="today-item-label">同行</p>
-            <p className="today-item-value">{touringToday.memberCount}人</p>
-          </div>
-        </section>
-
-        <section className="today-information-item today-next-action">
-          <span className="today-item-icon" aria-hidden="true">➡️</span>
-          <div>
-            <p className="today-item-label">次の行動</p>
-            <p className="today-item-value">{touringToday.nextAction}</p>
-          </div>
-        </section>
-      </div>
-
-      <p className="today-demo-note">ツーリングを想定した開発用サンプルです。編集と同期は今後の工程で接続します。</p>
-    </article>
+      </article>
+    </>
   );
 }
 
@@ -375,13 +222,13 @@ export function RouteDetailPage() {
   }, [routeId]);
 
   return (
-    <main className="app-shell">
+    <main className="app-shell v2-dashboard-shell">
       <header className="global-header">
         <div className="header-brand"><BrandMark size={34} /><strong>D Route</strong></div>
         <Link className="icon-button header-link" to="/routes">一覧へ戻る</Link>
       </header>
 
-      <section className="page-content route-detail-content" aria-labelledby="route-detail-title">
+      <section className="page-content route-detail-content v2-dashboard-content" aria-labelledby="route-detail-title">
         {loading ? (
           <section className="route-loading" aria-live="polite">
             <span className="route-loading-spinner" aria-hidden="true" />
@@ -396,26 +243,27 @@ export function RouteDetailPage() {
           </section>
         ) : (
           <>
-            <div className="route-detail-hero">
-              <div className="route-detail-mark" aria-hidden="true"><BrandMark size={46} /></div>
-              <div>
-                <p className="eyebrow">ROUTE OVERVIEW</p>
+            <section className="v2-route-hero">
+              <div className="v2-route-brand" aria-hidden="true"><BrandMark size={48} /></div>
+              <div className="v2-route-hero-copy">
+                <p className="eyebrow">ROUTE DASHBOARD / PROTOTYPE</p>
                 <h1 id="route-detail-title">{route.name}</h1>
-                <p>現在の目的地と行動方針を確認し、グループの動きを共有します。</p>
+                <p><time>8月10日 9:00〜</time><span>・</span><span>今日のRoute</span></p>
               </div>
-            </div>
+            </section>
 
-            <section className="route-detail-grid" aria-label="Route機能">
-              <TodayCard />
-              <MergePointCard />
-              <PlanningCard />
-              <ChatSummaryCard routeId={routeId ?? route.id} />
+            <PhaseDashboard routeId={routeId ?? route.id} />
+
+            <section className="v2-admin-zone" aria-label="Route管理">
+              <p>Routeの管理</p>
+              <button type="button" className="v2-complete-button">Routeを完了する</button>
+              <small>プロトタイプのため、このボタンはまだ動作しません。</small>
             </section>
           </>
         )}
       </section>
 
-      <footer className="app-footer"><VersionBadge /><span>Route Workspace</span></footer>
+      <footer className="app-footer"><VersionBadge /><span>Dashboard Prototype</span></footer>
       {routeId ? <RouteBottomNav routeId={routeId} /> : null}
     </main>
   );
