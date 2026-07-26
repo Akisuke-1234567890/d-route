@@ -2,7 +2,6 @@ import { FormEvent, useEffect, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { Link, useNavigate } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
-import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { getOwnProfile, updateDisplayName, type UserProfile } from './account';
 
@@ -86,7 +85,7 @@ export function AccountProfilePage({
             maxLength={30}
             value={displayName}
             onChange={(event) => setDisplayName(event.target.value)}
-            placeholder="例：たけだ"
+            placeholder="ニックネームを入力"
             disabled={pageLoading || loading}
           />
           {error && <p className="field-error" role="alert">{error}</p>}
@@ -98,7 +97,7 @@ export function AccountProfilePage({
         {!required && <Link className="text-button auth-link-button auth-centered-link" to="/routes">Route一覧へ戻る</Link>}
 
         <footer className="auth-footer">
-          <RefreshButton />
+          
           <VersionBadge />
         </footer>
       </section>

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
-import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { getRoute, type RouteSummary } from './routes';
 import { RouteBottomNav } from './RouteBottomNav';
@@ -264,7 +263,7 @@ export function RouteDetailPage() {
         )}
       </section>
 
-      <footer className="app-footer"><RefreshButton/><VersionBadge /><span>Dashboard Alpha.3</span></footer>
+      <footer className="app-footer"><VersionBadge /><span>Dashboard Alpha.3</span></footer>
       {routeId ? <RouteBottomNav routeId={routeId} /> : null}
     </main>
   );

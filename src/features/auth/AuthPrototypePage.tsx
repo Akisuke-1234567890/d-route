@@ -112,7 +112,7 @@ export function AuthPrototypePage() {
               <label htmlFor="preview-setup-id">ログインID</label>
               <input id="preview-setup-id" autoComplete="username" value={loginId} onChange={(event) => setLoginId(event.target.value)} placeholder="route_user" />
               <label htmlFor="preview-display-name">表示名</label>
-              <input id="preview-display-name" autoComplete="nickname" value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="たけだ" />
+              <input id="preview-display-name" autoComplete="nickname" value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="ニックネームを入力" />
               <label htmlFor="preview-new-password">パスワード</label>
               <input id="preview-new-password" type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="••••••••" />
               <label htmlFor="preview-password-confirm">パスワード確認</label>

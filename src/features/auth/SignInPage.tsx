@@ -1,7 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
-import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { env } from '../../shared/api/env';
 import { signInWithLoginId } from './account';
@@ -57,7 +56,7 @@ export function SignInPage() {
         </div>
         {!env.hasSupabaseConfig && <p className="dev-notice">開発設定：`.env` にSupabase情報を設定すると認証が有効になります。</p>}
         <Link className="auth-preview-entry" to="/auth-preview">v2.0 認証フローを確認 ›</Link>
-        <footer className="auth-footer"><span>Privacy</span><span>Terms</span><RefreshButton /><VersionBadge /></footer>
+        <footer className="auth-footer"><span>Privacy</span><span>Terms</span><VersionBadge /></footer>
       </section>
     </main>
   );

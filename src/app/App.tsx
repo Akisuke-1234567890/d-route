@@ -18,6 +18,7 @@ import { RouteChatPage } from '../features/route-list/RouteChatPage';
 import { RoutePlacesPage } from '../features/route-list/RoutePlacesPage';
 import { RouteMembersPage } from '../features/route-list/RouteMembersPage';
 import { RouteMenuPage } from '../features/route-list/RouteMenuPage';
+import { RefreshButton } from '../shared/ui/RefreshButton';
 
 export function App() {
   const [loading, setLoading] = useState(true);
@@ -91,6 +92,7 @@ export function App() {
         <Route path="/routes/:routeId/menu" element={protectedElement(<RouteMenuPage />)} />
         <Route path="*" element={<Navigate to={flow === 'recovery' && session ? '/recover/reset' : flow === 'setup' && session ? (!credentialsReady ? '/account/setup' : !nicknameReady ? '/account/profile' : '/routes') : session ? (!credentialsReady ? '/account/setup' : !nicknameReady ? '/account/profile' : '/routes') : '/signin'} replace />} />
       </Routes>
+      <RefreshButton />
     </BrowserRouter>
   );
 }

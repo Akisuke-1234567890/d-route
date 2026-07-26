@@ -1,6 +1,5 @@
 import { Link, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
-import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { RouteBottomNav } from './RouteBottomNav';
 
@@ -22,7 +21,7 @@ export function RouteMenuPage() {
       <button type="button" className="route-danger-button">Routeを削除</button>
       <p className="route-tab-demo-note">p06ではRoute内の情報設計を確立します。各管理機能の処理は後続Patchで接続します。</p>
     </section>
-    <footer className="app-footer"><RefreshButton/><VersionBadge/><span>Route Workspace</span></footer>
+    <footer className="app-footer"><VersionBadge/><span>Route Workspace</span></footer>
     <RouteBottomNav routeId={routeId}/>
   </main>;
 }
