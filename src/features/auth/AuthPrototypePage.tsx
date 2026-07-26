@@ -3,19 +3,24 @@ import { Link } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 
-type PreviewStep = 'login' | 'start' | 'mail-sent' | 'setup' | 'recover' | 'reset';
+type PreviewStep = 'login' | 'start' | 'mail-sent' | 'setup' | 'existing' | 'recover' | 'reset';
 
 const STEP_LABELS: Record<PreviewStep, string> = {
   login: 'ログイン',
   start: '初回登録',
   'mail-sent': 'メール送信後',
   setup: 'ID・パスワード設定',
+  existing: '既存ユーザー移行',
   recover: 'アカウント復旧',
   reset: '復旧メール後',
 };
 
 export function AuthPrototypePage() {
-  const [step, setStep] = useState<PreviewStep>('login');
+  const requestedStep = useMemo<PreviewStep>(() => {
+    const value = new URLSearchParams(window.location.search).get('step');
+    return value && value in STEP_LABELS ? (value as PreviewStep) : 'login';
+  }, []);
+  const [step, setStep] = useState<PreviewStep>(requestedStep);
   const [email, setEmail] = useState('');
   const [loginId, setLoginId] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -114,6 +119,31 @@ export function AuthPrototypePage() {
               <input id="preview-password-confirm" type="password" autoComplete="new-password" value={passwordConfirm} onChange={(event) => setPasswordConfirm(event.target.value)} placeholder="••••••••" />
               <button className="primary-button" type="submit" onClick={() => setMessage('設定完了後はセッションを保持し、Homeへ進む想定です。')}>設定を完了</button>
             </form>
+          </>
+        )}
+
+        {step === 'existing' && (
+          <>
+            <div className="auth-copy compact">
+              <p className="eyebrow">ACCOUNT UPGRADE</p>
+              <h1 id="auth-preview-title">D Route v2のログイン情報を設定</h1>
+              <p>現在ログイン中のアカウントをそのまま引き継ぎ、今後使うログインIDとパスワードだけ追加します。</p>
+            </div>
+            <div className="auth-preview-existing-panel">
+              <span>現在のアカウント</span>
+              <strong>{email || '登録済みメールアドレス'}</strong>
+              <small>既存Route・Admin権限・メンバー情報はそのまま引き継ぎます。</small>
+            </div>
+            <form onSubmit={(event) => preventSubmit(event)} noValidate>
+              <label htmlFor="preview-existing-id">ログインID</label>
+              <input id="preview-existing-id" autoComplete="username" value={loginId} onChange={(event) => setLoginId(event.target.value)} placeholder="route_user" />
+              <label htmlFor="preview-existing-password">新しいパスワード</label>
+              <input id="preview-existing-password" type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="••••••••" />
+              <label htmlFor="preview-existing-confirm">パスワード確認</label>
+              <input id="preview-existing-confirm" type="password" autoComplete="new-password" value={passwordConfirm} onChange={(event) => setPasswordConfirm(event.target.value)} placeholder="••••••••" />
+              <button className="primary-button" type="submit" onClick={() => setMessage('設定完了後は現在のアカウントのままHomeへ進む想定です。')}>設定して続ける</button>
+            </form>
+            <p className="auth-preview-subcopy">メール認証のやり直しや、新しいアカウントの作成は行いません。</p>
           </>
         )}
 
