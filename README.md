@@ -1,4 +1,4 @@
-# D Route v2.1.0-p03
+# D Route v2.1.0-p04
 
 Dream Routeの実地テストを踏まえて再設計した、React + TypeScript + Vite版のD Routeです。
 
@@ -23,6 +23,13 @@ npm run test
 npm run build
 ```
 
+
+## v2.1.0-p04 Scope
+
+- Route / Places / Chat / Members / Menu の画面切り替えにフェードアウト→フェードインを追加
+- 140msずつの短い遷移で操作感を損なわず、瞬間的な切り替わりを緩和
+- OSの「視差効果を減らす」設定ではアニメーションを無効化
+- DB変更なし（Supabase migration追加なし）
 
 ## v2.1.0-p03 Scope
 

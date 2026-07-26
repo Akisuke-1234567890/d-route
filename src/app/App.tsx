@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { getSupabaseClient } from '../shared/api/supabase';
 import { getInitialSession } from '../features/auth/auth';
 import { getOwnProfile, type UserProfile } from '../features/auth/account';
@@ -19,6 +19,34 @@ import { RoutePlacesPage } from '../features/route-list/RoutePlacesPage';
 import { RouteMembersPage } from '../features/route-list/RouteMembersPage';
 import { RouteMenuPage } from '../features/route-list/RouteMenuPage';
 import { RefreshButton } from '../shared/ui/RefreshButton';
+
+type FadeRoutesProps = {
+  children: ReactNode;
+};
+
+function FadeRoutes({ children }: FadeRoutesProps) {
+  const location = useLocation();
+  const [displayLocation, setDisplayLocation] = useState(location);
+  const [phase, setPhase] = useState<'in' | 'out'>('in');
+
+  useEffect(() => {
+    if (location.key === displayLocation.key) return;
+
+    setPhase('out');
+    const timer = window.setTimeout(() => {
+      setDisplayLocation(location);
+      setPhase('in');
+    }, 140);
+
+    return () => window.clearTimeout(timer);
+  }, [displayLocation.key, location]);
+
+  return (
+    <div className={`route-page-transition is-${phase}`}>
+      <Routes location={displayLocation}>{children}</Routes>
+    </div>
+  );
+}
 
 export function App() {
   const [loading, setLoading] = useState(true);
@@ -76,7 +104,7 @@ export function App() {
 
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
-      <Routes>
+      <FadeRoutes>
         <Route path="/signin" element={session ? <Navigate to={!credentialsReady ? '/account/setup' : !nicknameReady ? '/account/profile' : '/routes'} replace /> : <SignInPage />} />
         <Route path="/start" element={session ? <Navigate to={!credentialsReady ? '/account/setup' : !nicknameReady ? '/account/profile' : '/routes'} replace /> : <StartPage />} />
         <Route path="/recover" element={session ? <Navigate to={!credentialsReady ? '/account/setup' : !nicknameReady ? '/account/profile' : '/routes'} replace /> : <RecoveryPage />} />
@@ -91,7 +119,7 @@ export function App() {
         <Route path="/routes/:routeId/members" element={protectedElement(<RouteMembersPage />)} />
         <Route path="/routes/:routeId/menu" element={protectedElement(<RouteMenuPage />)} />
         <Route path="*" element={<Navigate to={flow === 'recovery' && session ? '/recover/reset' : flow === 'setup' && session ? (!credentialsReady ? '/account/setup' : !nicknameReady ? '/account/profile' : '/routes') : session ? (!credentialsReady ? '/account/setup' : !nicknameReady ? '/account/profile' : '/routes') : '/signin'} replace />} />
-      </Routes>
+      </FadeRoutes>
       <RefreshButton />
     </BrowserRouter>
   );

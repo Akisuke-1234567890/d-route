@@ -1369,3 +1369,25 @@ a { color: inherit; }
   .header-actions { gap: 6px; }
   .header-refresh-button { flex-basis: 36px; width: 36px; height: 36px; border-radius: 13px; }
 }
+
+
+/* v2.1.0-p04: Route内タブ切り替えを穏やかなフェード遷移にする */
+.route-page-transition {
+  opacity: 1;
+  transition: opacity 140ms ease-in-out;
+}
+
+.route-page-transition.is-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.route-page-transition.is-in {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-page-transition {
+    transition: none;
+  }
+}
