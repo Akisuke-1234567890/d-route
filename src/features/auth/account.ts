@@ -10,6 +10,38 @@ export type UserProfile = {
   updated_at: string;
 };
 
+
+function userFacingAuthError(error: unknown, fallback: string): Error {
+  const message = error instanceof Error ? error.message : String(error ?? '');
+  const normalized = message.toLowerCase();
+
+  if (
+    normalized.includes('email rate limit exceeded') ||
+    normalized.includes('rate limit') ||
+    normalized.includes('too many requests')
+  ) {
+    return new Error('メールの送信回数が上限に達しました。しばらく時間をおいてから、もう一度お試しください。');
+  }
+
+  if (normalized.includes('invalid login credentials')) {
+    return new Error('ログインIDまたはパスワードが正しくありません。');
+  }
+
+  if (normalized.includes('email not confirmed')) {
+    return new Error('メールアドレスの確認が完了していません。確認メールをご確認ください。');
+  }
+
+  if (normalized.includes('user already registered')) {
+    return new Error('このメールアドレスはすでに登録されています。ログインまたはアカウント復旧をお試しください。');
+  }
+
+  if (normalized.includes('password should be at least')) {
+    return new Error('パスワードは8文字以上で入力してください。');
+  }
+
+  return new Error(fallback);
+}
+
 function requireClient() {
   const supabase = getSupabaseClient();
   if (!supabase) throw new Error('Supabaseの環境変数が設定されていません。');
@@ -76,7 +108,7 @@ export async function sendRegistrationLink(email: string): Promise<void> {
     email: normalizedEmail,
     options: { emailRedirectTo: redirectTo, shouldCreateUser: true },
   });
-  if (error) throw error;
+  if (error) throw userFacingAuthError(error, '確認メールを送信できませんでした。しばらくしてからもう一度お試しください。');
 }
 
 export async function requestAccountRecovery(email: string): Promise<void> {
@@ -85,7 +117,7 @@ export async function requestAccountRecovery(email: string): Promise<void> {
   if (!normalizedEmail) throw new Error('登録メールアドレスを入力してください。');
   const redirectTo = `${new URL(import.meta.env.BASE_URL, window.location.origin).toString()}?flow=recovery`;
   const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, { redirectTo });
-  if (error) throw error;
+  if (error) throw userFacingAuthError(error, '復旧メールを送信できませんでした。しばらくしてからもう一度お試しください。');
 }
 
 export async function completeAccountSetup(params: {
@@ -102,7 +134,7 @@ export async function completeAccountSetup(params: {
   if (params.password !== params.passwordConfirm) throw new Error('パスワード確認が一致しません。');
 
   const { error: passwordUpdateError } = await supabase.auth.updateUser({ password: params.password });
-  if (passwordUpdateError) throw passwordUpdateError;
+  if (passwordUpdateError) throw userFacingAuthError(passwordUpdateError, 'パスワードを設定できませんでした。もう一度お試しください。');
 
   const { data, error } = await supabase.rpc('complete_v2_account_setup', {
     p_login_id: normalizeLoginId(params.loginId),
@@ -125,5 +157,5 @@ export async function resetSignedInPassword(password: string, passwordConfirm: s
   if (passwordError) throw new Error(passwordError);
   if (password !== passwordConfirm) throw new Error('パスワード確認が一致しません。');
   const { error } = await supabase.auth.updateUser({ password });
-  if (error) throw error;
+  if (error) throw userFacingAuthError(error, 'パスワードを変更できませんでした。もう一度お試しください。');
 }

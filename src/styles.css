@@ -1196,3 +1196,18 @@ a { color: inherit; }
   pointer-events: none;
 }
 
+/* v2.0.0-alpha.7: production account-create button */
+.auth-entry-actions .auth-secondary-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 52px;
+  box-sizing: border-box;
+  padding: 0 20px;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
