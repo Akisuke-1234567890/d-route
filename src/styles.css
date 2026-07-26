@@ -1209,4 +1209,80 @@ a { color: inherit; }
   text-align: center;
   text-decoration: none;
   cursor: pointer;
-}\n\n/* v2.0.0-alpha.9: global floating refresh */\n.app-refresh-button {\n  appearance: none;\n  position: fixed;\n  right: 14px;\n  bottom: calc(14px + env(safe-area-inset-bottom));\n  z-index: 90;\n  width: 38px;\n  height: 38px;\n  padding: 0;\n  display: grid;\n  place-items: center;\n  border: 1px solid rgba(255,255,255,.15);\n  border-radius: 999px;\n  background: rgba(15, 18, 42, .56);\n  color: rgba(238, 242, 255, .78);\n  box-shadow: 0 8px 20px rgba(0,0,0,.22);\n  -webkit-backdrop-filter: blur(10px);\n  backdrop-filter: blur(10px);\n  cursor: pointer;\n  transition: background .18s ease, border-color .18s ease, opacity .18s ease, transform .18s ease;\n}\n.app-refresh-button:hover { background: rgba(25, 29, 62, .72); border-color: rgba(255,255,255,.24); }\n.app-refresh-button:active { transform: scale(.94); }\n.app-refresh-button:disabled { cursor: default; opacity: .72; }\n.app-refresh-icon {\n  width: 20px;\n  height: 20px;\n  display: block;\n  overflow: visible;\n  transform-box: fill-box;\n  transform-origin: center center;\n  fill: none;\n  stroke: currentColor;\n  stroke-width: 1.9;\n  stroke-linecap: round;\n  stroke-linejoin: round;\n  will-change: transform;\n}\n.app-refresh-button.is-refreshing .app-refresh-icon { animation: d-route-refresh-spin .42s linear infinite; }\n@keyframes d-route-refresh-spin {\n  from { transform: rotate(0deg); }\n  to { transform: rotate(360deg); }\n}\nbody:has(.route-bottom-nav) .app-refresh-button {\n  bottom: calc(82px + env(safe-area-inset-bottom));\n}\n@media (max-width: 420px) {\n  .app-refresh-button { right: 11px; width: 36px; height: 36px; }\n  .app-refresh-icon { width: 19px; height: 19px; }\n}\n
+}
+
+
+/* v2.0.0-alpha.8: nickname profile + universal refresh control */
+.app-refresh-button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  min-height: 36px;
+  padding: 6px 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font: inherit;
+  font-size: .72rem;
+  cursor: pointer;
+  border-radius: 10px;
+}
+.app-refresh-button:active { background: rgba(255,255,255,.06); }
+.app-refresh-button span:first-child { font-size: 1rem; line-height: 1; }
+.auth-footer .app-refresh-button { margin-left: auto; }
+.auth-footer .app-refresh-button + .version-badge { margin-left: 0; }
+.home-footer-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.home-account-link { color: var(--muted); font-size: .75rem; font-weight: 700; text-decoration: none; padding: 7px 8px; border-radius: 10px; }
+.home-account-link:active { background: rgba(255,255,255,.06); }
+.app-footer .app-refresh-button { color: var(--muted); }
+@media (max-width: 420px) {
+  .home-footer { align-items: flex-start; }
+  .home-footer-actions { max-width: 72%; }
+}
+
+
+/* v2.0.0-alpha.10: isolated floating refresh control */
+.global-refresh-button {
+  position: fixed;
+  right: max(14px, env(safe-area-inset-right));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: 120;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: rgba(236, 239, 255, .78);
+  background: rgba(12, 17, 43, .58);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .18);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  cursor: pointer;
+}
+.global-refresh-button.is-above-nav {
+  bottom: calc(82px + env(safe-area-inset-bottom));
+}
+.global-refresh-button:active {
+  background: rgba(28, 37, 79, .78);
+}
+.global-refresh-icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  transform-origin: 50% 50%;
+  transform-box: fill-box;
+}
+.global-refresh-icon.is-spinning {
+  animation: droute-refresh-spin .72s linear infinite;
+}
+@keyframes droute-refresh-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .global-refresh-icon.is-spinning { animation: none; }
+}

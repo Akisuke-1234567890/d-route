@@ -1,31 +1,48 @@
 import { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 
-export function RefreshButton({ className = '' }: { className?: string }) {
+export function RefreshButton() {
+  const location = useLocation();
   const [refreshing, setRefreshing] = useState(false);
-  const classes = ['app-refresh-button', 'app-refresh-float', refreshing ? 'is-refreshing' : '', className]
-    .filter(Boolean)
-    .join(' ');
 
-  const refresh = () => {
+  const hasBottomNav = /^\/routes\/[^/]+(?:\/places|\/chat|\/members|\/menu)?$/.test(location.pathname);
+
+  function handleRefresh() {
     if (refreshing) return;
     setRefreshing(true);
-    window.setTimeout(() => window.location.reload(), 420);
-  };
+    window.setTimeout(() => window.location.reload(), 360);
+  }
 
   return (
     <button
-      className={classes}
+      className={`global-refresh-button${hasBottomNav ? ' is-above-nav' : ''}`}
       type="button"
-      onClick={refresh}
+      onClick={handleRefresh}
       aria-label="現在の画面を更新"
       title="更新"
-      disabled={refreshing}
     >
-      <svg className="app-refresh-icon" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M20 6v5h-5" />
-        <path d="M4 18v-5h5" />
-        <path d="M6.1 8.2A7 7 0 0 1 18.7 7L20 11" />
-        <path d="M17.9 15.8A7 7 0 0 1 5.3 17L4 13" />
+      <svg
+        className={`global-refresh-icon${refreshing ? ' is-spinning' : ''}`}
+        viewBox="0 0 24 24"
+        width="20"
+        height="20"
+        aria-hidden="true"
+      >
+        <path
+          d="M20 11a8 8 0 1 0-2.34 5.66"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+        <path
+          d="M20 5v6h-6"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </svg>
     </button>
   );
