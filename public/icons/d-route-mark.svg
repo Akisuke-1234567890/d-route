@@ -1,7 +1,32 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <defs><linearGradient id="bg" x1="64" y1="32" x2="448" y2="480"><stop stop-color="#171f49"/><stop offset="1" stop-color="#090d20"/></linearGradient><linearGradient id="pin" x1="150" y1="90" x2="370" y2="430"><stop stop-color="#c0adff"/><stop offset="1" stop-color="#756fff"/></linearGradient></defs>
+  <defs>
+    <linearGradient id="bg" x1="55" y1="25" x2="455" y2="486" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#071531"/>
+      <stop offset=".52" stop-color="#161044"/>
+      <stop offset="1" stop-color="#2A0D52"/>
+    </linearGradient>
+    <radialGradient id="nebulaA" cx="0" cy="0" r="1" gradientTransform="translate(374 369) rotate(139) scale(205 166)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7C3AED" stop-opacity=".48"/>
+      <stop offset="1" stop-color="#7C3AED" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="nebulaB" cx="0" cy="0" r="1" gradientTransform="translate(123 157) rotate(34) scale(218 164)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#22D3EE" stop-opacity=".27"/>
+      <stop offset="1" stop-color="#22D3EE" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="route" x1="136" y1="104" x2="398" y2="418" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38E0C6"/>
+      <stop offset=".45" stop-color="#38BDF8"/>
+      <stop offset=".72" stop-color="#5B8CFF"/>
+      <stop offset="1" stop-color="#7C3AED"/>
+    </linearGradient>
+  </defs>
   <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <circle cx="110" cy="105" r="3" fill="#fff" opacity=".7"/><circle cx="410" cy="145" r="4" fill="#a99fff"/><circle cx="390" cy="380" r="3" fill="#fff" opacity=".55"/>
-  <path d="M256 76c-104 0-181 75-181 174 0 132 181 266 181 266s181-134 181-266C437 151 360 76 256 76Z" fill="url(#pin)" transform="scale(.72) translate(99 54)"/>
-  <path d="m256 150 24 69 69 24-69 24-24 69-24-69-69-24 69-24 24-69Z" fill="#fff"/>
+  <rect width="512" height="512" rx="112" fill="url(#nebulaA)"/>
+  <rect width="512" height="512" rx="112" fill="url(#nebulaB)"/>
+  <path d="M150 130H274C359 130 428 199 428 284C428 369 359 438 274 438H150" fill="none" stroke="url(#route)" stroke-width="45" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M150 130V438" fill="none" stroke="url(#route)" stroke-width="45" stroke-linecap="round"/>
+  <circle cx="150" cy="130" r="47" fill="#38E0C6"/><circle cx="150" cy="130" r="23" fill="#F8FAFF"/>
+  <circle cx="150" cy="284" r="47" fill="#F8B63F"/><circle cx="150" cy="284" r="23" fill="#F8FAFF"/>
+  <circle cx="150" cy="438" r="47" fill="#7C3AED"/><circle cx="150" cy="438" r="23" fill="#F8FAFF"/>
+  <circle cx="428" cy="284" r="47" fill="#38BDF8"/><circle cx="428" cy="284" r="23" fill="#F8FAFF"/>
 </svg>

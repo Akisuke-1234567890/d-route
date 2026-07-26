@@ -1,4 +1,4 @@
-# D Route v2.1.0-p02
+# D Route v2.1.0-p03
 
 Dream Routeの実地テストを踏まえて再設計した、React + TypeScript + Vite版のD Routeです。
 
@@ -22,6 +22,15 @@ npm run lint
 npm run test
 npm run build
 ```
+
+
+## v2.1.0-p03 Scope
+
+- 正式採用した「RouteがDを描く」新ロゴへブランドマークを更新
+- ターコイズ → ブルー → 紫のRouteグラデーションと4つのノードを採用
+- PWAアイコン／maskableアイコン／Apple Touch Iconを新ロゴへ統一
+- アプリ背景をネイビー〜紫を軸にしたグラデーションへ調整
+- DB変更なし（Supabase migration追加なし）
 
 ## v2.1.0-p02 Scope
 

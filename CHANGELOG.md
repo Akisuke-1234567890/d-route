@@ -59,3 +59,12 @@ Known issues: Supabase ProjectとRedirect URLは配布先で設定が必要。Ro
 - Route一覧の取得・再読み込み後の永続表示に対応
 - 作成・一覧取得エラーのトースト表示を追加
 - モバイル優先のガラス調モーダル／Routeカードを追加
+
+## v2.1.0-p03
+
+- D Route正式ロゴを「RouteそのものがDを描く」デザインへ更新
+- BrandMarkをターコイズ／ブルー／紫のRouteと4ノード構成へ変更
+- PWA icon、maskable icon、Apple Touch Iconを新ブランドへ統一
+- 全体背景をネイビー〜紫のグラデーションへ調整
+- APP_VERSIONをv2.1.0-p03へ同期
+- DB変更なし
