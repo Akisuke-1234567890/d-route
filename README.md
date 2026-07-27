@@ -1,14 +1,15 @@
-# D Route v2.1.0-p17
+# D Route v2.1.0-p18
 
-Current baseline: v2.1.0-p17
+Current baseline: v2.1.0-p18
 
-## p17 Places UI Fix
+## p18 Add/Edit Place UI Unification
 
-- Destinationカードの配置崩れを修正
-- 番号 / ピン / 目的地情報 / 編集ボタンを横方向に整理
-- 「予定」は目的地情報側へ移動
-- Add Place / Edit Placeの重要度を「必須 / 任意」に簡略化
-- 既存の want / information は編集時に「必須」扱いで表示
+- Add Place / Edit Placeの入力UIを同じ見た目へ統一
+- 重要度をselectではなく「必須 / 任意」の2択セグメントUIへ変更
+- メモ欄を他入力と同じ角丸・境界線・背景へ統一
+- 場所名 / メモの任意表示をラベル側へ整理
+- 入力欄、補助テキスト、フォーカス表示を統一
+- p17のPlacesカード配置修正は維持
 - DB schema変更なし
 
 ## Current database migrations

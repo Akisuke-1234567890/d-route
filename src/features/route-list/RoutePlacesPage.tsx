@@ -238,7 +238,7 @@ export function RoutePlacesPage() {
               <button className="modal-close-button" type="button" onClick={closeCreateModal} aria-label="閉じる" disabled={saving}>×</button>
             </div>
 
-            <form className="route-create-form" onSubmit={handleCreate}>
+            <form className="route-create-form place-form" onSubmit={handleCreate}>
               <div className="field-group">
                 <label htmlFor="destination-name">目的地名</label>
                 <input ref={nameInputRef} id="destination-name" value={name}
@@ -248,27 +248,41 @@ export function RoutePlacesPage() {
               </div>
 
               <div className="field-group">
-                <label htmlFor="destination-location">場所名</label>
+                <label htmlFor="destination-location">場所名 <span className="field-optional">任意</span></label>
                 <input id="destination-location" value={locationName}
                   onChange={(event) => setLocationName(event.target.value)}
-                  placeholder="例：箱根町" maxLength={80} autoComplete="off" disabled={saving} />
+                  placeholder="例：淵野辺駅" maxLength={80} autoComplete="off" disabled={saving} />
               </div>
 
               <div className="field-group">
-                <label htmlFor="destination-importance">重要度</label>
-                <select id="destination-importance" value={importance}
-                  onChange={(event) => setImportance(event.target.value as DestinationImportance)}
-                  disabled={saving}>
-                  <option value="must">必須</option>
-                  <option value="optional">任意</option>
-                </select>
+                <span className="field-label">重要度</span>
+                <div className="importance-segment" role="group" aria-label="重要度">
+                  <button
+                    className={`importance-option ${importance === 'must' ? 'is-active' : ''}`}
+                    type="button"
+                    onClick={() => setImportance('must')}
+                    disabled={saving}
+                    aria-pressed={importance === 'must'}
+                  >
+                    必須
+                  </button>
+                  <button
+                    className={`importance-option ${importance === 'optional' ? 'is-active' : ''}`}
+                    type="button"
+                    onClick={() => setImportance('optional')}
+                    disabled={saving}
+                    aria-pressed={importance === 'optional'}
+                  >
+                    任意
+                  </button>
+                </div>
               </div>
 
               <div className="field-group">
-                <label htmlFor="destination-description">メモ</label>
+                <label htmlFor="destination-description">メモ <span className="field-optional">任意</span></label>
                 <textarea id="destination-description" value={description}
                   onChange={(event) => setDescription(event.target.value)}
-                  placeholder="集合場所や補足など" maxLength={200} rows={3} disabled={saving} />
+                  placeholder="例：改札を出て右側に集合" maxLength={200} rows={3} disabled={saving} />
                 <p className="field-hint">任意・200文字まで</p>
               </div>
 
@@ -298,7 +312,7 @@ export function RoutePlacesPage() {
               <button className="modal-close-button" type="button" onClick={closeEditModal} aria-label="閉じる" disabled={editSaving}>×</button>
             </div>
 
-            <form className="route-create-form" onSubmit={handleEdit}>
+            <form className="route-create-form place-form" onSubmit={handleEdit}>
               <div className="field-group">
                 <label htmlFor="edit-destination-name">目的地名</label>
                 <input ref={editNameInputRef} id="edit-destination-name" value={editName}
@@ -308,24 +322,38 @@ export function RoutePlacesPage() {
               </div>
 
               <div className="field-group">
-                <label htmlFor="edit-destination-location">場所名</label>
+                <label htmlFor="edit-destination-location">場所名 <span className="field-optional">任意</span></label>
                 <input id="edit-destination-location" value={editLocationName}
                   onChange={(event) => setEditLocationName(event.target.value)}
                   maxLength={80} autoComplete="off" disabled={editSaving} />
               </div>
 
               <div className="field-group">
-                <label htmlFor="edit-destination-importance">重要度</label>
-                <select id="edit-destination-importance" value={editImportance}
-                  onChange={(event) => setEditImportance(event.target.value as DestinationImportance)}
-                  disabled={editSaving}>
-                  <option value="must">必須</option>
-                  <option value="optional">任意</option>
-                </select>
+                <span className="field-label">重要度</span>
+                <div className="importance-segment" role="group" aria-label="重要度">
+                  <button
+                    className={`importance-option ${editImportance === 'must' ? 'is-active' : ''}`}
+                    type="button"
+                    onClick={() => setEditImportance('must')}
+                    disabled={editSaving}
+                    aria-pressed={editImportance === 'must'}
+                  >
+                    必須
+                  </button>
+                  <button
+                    className={`importance-option ${editImportance === 'optional' ? 'is-active' : ''}`}
+                    type="button"
+                    onClick={() => setEditImportance('optional')}
+                    disabled={editSaving}
+                    aria-pressed={editImportance === 'optional'}
+                  >
+                    任意
+                  </button>
+                </div>
               </div>
 
               <div className="field-group">
-                <label htmlFor="edit-destination-description">メモ</label>
+                <label htmlFor="edit-destination-description">メモ <span className="field-optional">任意</span></label>
                 <textarea id="edit-destination-description" value={editDescription}
                   onChange={(event) => setEditDescription(event.target.value)}
                   maxLength={200} rows={3} disabled={editSaving} />
