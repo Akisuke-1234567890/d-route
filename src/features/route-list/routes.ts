@@ -2,13 +2,14 @@ import { getSupabaseClient } from '../../shared/api/supabase';
 
 export type RouteSummary = {
   id: string;
+  owner_user_id: string;
   name: string;
   status: string;
   created_at: string;
   updated_at: string;
 };
 
-const routeSummaryColumns = 'id,name,status,created_at,updated_at';
+const routeSummaryColumns = 'id,owner_user_id,name,status,created_at,updated_at';
 
 export async function listRoutes(): Promise<RouteSummary[]> {
   const supabase = getSupabaseClient();
@@ -65,4 +66,19 @@ export async function createRoute(name: string): Promise<RouteSummary> {
 
   if (error) throw error;
   return data as RouteSummary;
+}
+
+
+export async function deleteOwnedRoute(routeId: string): Promise<void> {
+  const normalizedId = routeId.trim();
+  if (!normalizedId) throw new Error('Route IDを確認できませんでした。');
+
+  const supabase = getSupabaseClient();
+  if (!supabase) throw new Error('Supabaseの環境変数が設定されていません。');
+
+  const { error } = await supabase.rpc('delete_owned_route', {
+    p_route_id: normalizedId,
+  });
+
+  if (error) throw error;
 }

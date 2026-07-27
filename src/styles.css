@@ -1438,3 +1438,61 @@ a { color: inherit; }
     transform: none;
   }
 }
+
+
+/* v2.1.0-p09: owner-only Route deletion */
+.route-danger-zone {
+  margin-top: 28px;
+  padding: 18px;
+  border: 1px solid rgba(255, 102, 128, 0.34);
+  border-radius: 18px;
+  background: rgba(91, 18, 40, 0.22);
+}
+
+.route-danger-zone h2 {
+  margin: 4px 0 8px;
+  font-size: 1.05rem;
+}
+
+.route-danger-zone p {
+  margin: 0;
+}
+
+.route-danger-zone .route-danger-button {
+  width: 100%;
+  margin-top: 16px;
+}
+
+.route-danger-eyebrow {
+  color: #ff9aac;
+}
+
+.route-delete-description {
+  margin: 12px 0 4px;
+  line-height: 1.7;
+}
+
+.route-danger-confirm-button {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 110, 132, 0.72);
+  border-radius: 12px;
+  background: rgba(174, 34, 63, 0.95);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+}
+
+.route-danger-confirm-button:disabled,
+.route-danger-button:disabled {
+  opacity: 0.55;
+}
+
+.route-inline-error {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 110, 132, 0.38);
+  border-radius: 12px;
+  background: rgba(91, 18, 40, 0.22);
+  color: #ffd8df;
+}
