@@ -1,4 +1,4 @@
-# D Route v2.1.0-p11
+# D Route v2.1.0-p12
 
 Dream Routeの実地テストを踏まえて再設計した、React + TypeScript + Vite版のD Routeです。
 
@@ -24,7 +24,7 @@ npm run build
 ```
 
 
-## v2.1.0-p11 Scope
+## v2.1.0-p12 Scope
 
 - Route / Places / Chat / Members / Menu の画面切り替えにフェードアウト→フェードインを追加
 - 140msずつの短い遷移で操作感を損なわず、瞬間的な切り替わりを緩和
@@ -52,7 +52,7 @@ npm run build
 現在のDB取得項目にはRoute利用日と参加人数がないため、この版のカードでは正確に取得できる「最終更新日」のみ表示します。利用日・参加人数はDatabase Baselineとデータモデル整備後に追加します。
 
 
-## v2.1.0-p11 Scope
+## v2.1.0-p12 Scope
 
 - LINE公式など外部導線からアカウント作成画面を直接開ける入口を追加
 - `?flow=signup` または `?mode=signup` で未ログイン時に `/start` を初期表示
@@ -61,7 +61,7 @@ npm run build
 - DB変更なし
 
 
-## v2.1.0-p11 Scope
+## v2.1.0-p12 Scope
 
 - Route管理画面にRoute削除機能を接続
 - 削除操作はRoute作成者（owner）のみに表示
@@ -72,7 +72,7 @@ npm run build
 - Database Baselineとして削除RPC migrationを追加
 
 
-## v2.1.0-p11 Scope
+## v2.1.0-p12 Scope
 
 - Route削除確認モーダルをスマホ画面中央へ配置
 - 下部ナビより前面に表示して重なりを防止
@@ -81,10 +81,20 @@ npm run build
 - DB変更なし
 
 
-## v2.1.0-p11 Scope
+## v2.1.0-p12 Scope
 
 - iPhoneでRoute削除ボタンを押しても確認画面が出ない問題を修正
 - 削除確認モーダルの背景タップ閉じを廃止し、意図しない即時クローズを防止
 - モーダルは画面中央表示を維持し、下部ナビ分の余白を確保
 - 閉じる操作は「×」または「キャンセル」に限定
+- DB変更なし
+
+
+## v2.1.0-p12 Scope
+
+- Routeを開いた後の下部ナビ（Route / Places / Chat / Members / Menu）を画面最下部へ固定
+- Route内を縦スクロールしても下部ナビは追従せず常時表示
+- iOS/WebKitでfixed配置を崩す原因になるRoute画面遷移のtransformを廃止
+- Route画面遷移のフェードは維持
+- 本文が下部ナビに隠れないよう下余白を拡張
 - DB変更なし

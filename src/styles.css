@@ -1569,3 +1569,39 @@ a { color: inherit; }
   z-index: 1;
   touch-action: manipulation;
 }
+
+
+/* v2.1.0-p12: keep Route workspace bottom navigation fixed to the viewport.
+   A transformed ancestor makes position:fixed behave like it is fixed to that
+   ancestor on iOS/WebKit, so Route page transitions use opacity only. */
+.route-page-transition,
+.route-page-transition.is-in,
+.route-page-transition.is-pre-in,
+.route-page-transition.is-out {
+  transform: none !important;
+  will-change: opacity;
+}
+
+.route-bottom-nav {
+  position: fixed;
+  left: 50%;
+  right: auto;
+  bottom: 0;
+  z-index: 80;
+  width: min(760px, 100%);
+  transform: translateX(-50%);
+  -webkit-transform: translateX(-50%);
+  isolation: isolate;
+}
+
+.route-tab-shell,
+.route-detail-content,
+.chat-page-shell {
+  padding-bottom: calc(94px + env(safe-area-inset-bottom));
+}
+
+@supports (height: 100dvh) {
+  .route-bottom-nav {
+    bottom: 0;
+  }
+}
