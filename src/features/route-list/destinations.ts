@@ -24,6 +24,8 @@ export type CreateDestinationInput = {
   importance?: DestinationImportance;
 };
 
+export type UpdateDestinationInput = CreateDestinationInput;
+
 type DestinationRow = {
   id: string;
   route_id: string;
@@ -121,6 +123,43 @@ export async function createRouteDestination(
       is_optional: input.importance === 'optional',
       record_status: 'active',
     })
+    .select(
+      'id, route_id, phase_id, name, description, location_name, map_url, meeting_point, importance, order_value, estimated_duration_minutes, is_optional'
+    )
+    .single();
+
+  if (error) throw error;
+  return toDestinationSummary(data as DestinationRow);
+}
+
+
+export async function updateRouteDestination(
+  routeId: string,
+  destinationId: string,
+  input: UpdateDestinationInput
+): Promise<DestinationSummary> {
+  if (!routeId) throw new Error('Route IDがありません。');
+  if (!destinationId) throw new Error('Destination IDがありません。');
+
+  const name = input.name.trim();
+  if (!name) throw new Error('目的地名を入力してください。');
+  if (name.length > 40) throw new Error('目的地名は40文字以内で入力してください。');
+
+  const supabase = requireSupabase();
+
+  const { data, error } = await supabase
+    .from('destinations')
+    .update({
+      name,
+      location_name: input.locationName?.trim() || null,
+      description: input.description?.trim() || null,
+      importance: input.importance ?? 'want',
+      is_optional: input.importance === 'optional',
+    })
+    .eq('id', destinationId)
+    .eq('route_id', routeId)
+    .eq('record_status', 'active')
+    .is('deleted_at', null)
     .select(
       'id, route_id, phase_id, name, description, location_name, map_url, meeting_point, importance, order_value, estimated_duration_minutes, is_optional'
     )

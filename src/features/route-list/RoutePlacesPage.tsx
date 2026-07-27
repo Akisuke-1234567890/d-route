@@ -7,6 +7,7 @@ import { RouteBottomNav } from './RouteBottomNav';
 import {
   createRouteDestination,
   getRouteDestinations,
+  updateRouteDestination,
   type DestinationImportance,
   type DestinationSummary,
 } from './destinations';
@@ -37,7 +38,15 @@ export function RoutePlacesPage() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [editing, setEditing] = useState<DestinationSummary | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editLocationName, setEditLocationName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editImportance, setEditImportance] = useState<DestinationImportance>('want');
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const editNameInputRef = useRef<HTMLInputElement>(null);
 
   async function loadDestinations() {
     setLoading(true);
@@ -58,6 +67,12 @@ export function RoutePlacesPage() {
     const timer = window.setTimeout(() => nameInputRef.current?.focus(), 80);
     return () => window.clearTimeout(timer);
   }, [createOpen]);
+
+  useEffect(() => {
+    if (!editing) return;
+    const timer = window.setTimeout(() => editNameInputRef.current?.focus(), 80);
+    return () => window.clearTimeout(timer);
+  }, [editing]);
 
   useEffect(() => {
     if (!toast) return;
@@ -98,6 +113,45 @@ export function RoutePlacesPage() {
       setFormError(getErrorMessage(err, '目的地を追加できませんでした。'));
     } finally {
       setSaving(false);
+    }
+  }
+
+
+  function openEditModal(destination: DestinationSummary) {
+    setEditing(destination);
+    setEditName(destination.name);
+    setEditLocationName(destination.locationName ?? '');
+    setEditDescription(destination.description ?? '');
+    setEditImportance(destination.importance);
+    setEditError(null);
+  }
+
+  function closeEditModal() {
+    if (!editSaving) setEditing(null);
+  }
+
+  async function handleEdit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!editing || editSaving) return;
+
+    setEditSaving(true);
+    setEditError(null);
+    try {
+      const updated = await updateRouteDestination(routeId, editing.id, {
+        name: editName,
+        locationName: editLocationName,
+        description: editDescription,
+        importance: editImportance,
+      });
+      setDestinations((current) =>
+        current.map((item) => item.id === updated.id ? updated : item)
+      );
+      setEditing(null);
+      setToast('目的地を更新しました');
+    } catch (err) {
+      setEditError(getErrorMessage(err, '目的地を更新できませんでした。'));
+    } finally {
+      setEditSaving(false);
     }
   }
 
@@ -155,7 +209,17 @@ export function RoutePlacesPage() {
                   <h2>{destination.name}</h2>
                   <p>{destination.description ?? '説明はまだありません。'}</p>
                 </div>
-                <span className="place-status place-status-planned">予定</span>
+                <div className="place-card-actions">
+                  <span className="place-status place-status-planned">予定</span>
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    onClick={() => openEditModal(destination)}
+                    aria-label={`${destination.name}を編集`}
+                  >
+                    編集
+                  </button>
+                </div>
               </article>
             ))}
           </div>
@@ -220,6 +284,68 @@ export function RoutePlacesPage() {
                 <button className="secondary-button" type="button" onClick={closeCreateModal} disabled={saving}>キャンセル</button>
                 <button className="primary-button" type="submit" disabled={!name.trim() || saving}>
                   {saving ? '追加中…' : '追加'}
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
+
+      {editing && (
+        <div className="modal-backdrop" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) closeEditModal();
+        }}>
+          <section className="route-modal" role="dialog" aria-modal="true" aria-labelledby="edit-destination-title">
+            <div className="modal-header">
+              <div>
+                <p className="eyebrow">EDIT PLACE</p>
+                <h2 id="edit-destination-title">目的地を編集</h2>
+              </div>
+              <button className="modal-close-button" type="button" onClick={closeEditModal} aria-label="閉じる" disabled={editSaving}>×</button>
+            </div>
+
+            <form className="route-create-form" onSubmit={handleEdit}>
+              <div className="field-group">
+                <label htmlFor="edit-destination-name">目的地名</label>
+                <input ref={editNameInputRef} id="edit-destination-name" value={editName}
+                  onChange={(event) => setEditName(event.target.value)}
+                  maxLength={40} autoComplete="off" disabled={editSaving} required />
+                <p className="field-hint">必須・40文字まで</p>
+              </div>
+
+              <div className="field-group">
+                <label htmlFor="edit-destination-location">場所名</label>
+                <input id="edit-destination-location" value={editLocationName}
+                  onChange={(event) => setEditLocationName(event.target.value)}
+                  maxLength={80} autoComplete="off" disabled={editSaving} />
+              </div>
+
+              <div className="field-group">
+                <label htmlFor="edit-destination-importance">重要度</label>
+                <select id="edit-destination-importance" value={editImportance}
+                  onChange={(event) => setEditImportance(event.target.value as DestinationImportance)}
+                  disabled={editSaving}>
+                  <option value="must">必須</option>
+                  <option value="want">行きたい</option>
+                  <option value="optional">任意</option>
+                  <option value="information">情報</option>
+                </select>
+              </div>
+
+              <div className="field-group">
+                <label htmlFor="edit-destination-description">メモ</label>
+                <textarea id="edit-destination-description" value={editDescription}
+                  onChange={(event) => setEditDescription(event.target.value)}
+                  maxLength={200} rows={3} disabled={editSaving} />
+                <p className="field-hint">任意・200文字まで</p>
+              </div>
+
+              {editError && <p className="form-error" role="alert">{editError}</p>}
+
+              <div className="modal-actions">
+                <button className="secondary-button" type="button" onClick={closeEditModal} disabled={editSaving}>キャンセル</button>
+                <button className="primary-button" type="submit" disabled={!editName.trim() || editSaving}>
+                  {editSaving ? '保存中…' : '保存'}
                 </button>
               </div>
             </form>

@@ -1,15 +1,14 @@
-# D Route v2.1.0-p15
+# D Route v2.1.0-p16
 
-Current baseline: v2.1.0-p15
+Current baseline: v2.1.0-p16
 
-## p15 Destination Create
+## p16 Destination Edit
 
-- Placesの「＋ 目的地を追加」を有効化
-- 目的地名、場所名、重要度、メモを入力
-- Supabase public.destinations へINSERT
-- 登録後にPlaces一覧へ即時反映
-- order_valueは既存末尾 + 1000 で採番
-- p14で作成したOwner-only RLSをそのまま利用
+- Placesの各Destinationに「編集」を追加
+- 目的地名、場所名、重要度、メモを編集可能
+- Supabase public.destinations をUPDATE
+- p14のOwner-only RLSを利用
+- 更新後はPlaces一覧へ即時反映
 - DB schema変更なし
 
 ## Current database migrations
@@ -19,4 +18,4 @@ Current baseline: v2.1.0-p15
 
 ## Next
 
-Destinationの編集、soft delete、並び替えを順に実装する。
+Destinationのsoft delete、その後に並び替えを実装する。
