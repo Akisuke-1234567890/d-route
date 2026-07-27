@@ -124,18 +124,23 @@ export function App() {
   useEffect(() => {
     if (appLoading || !showSplash) return;
 
-    setSplashPhase('out');
+    const holdTimer = window.setTimeout(() => {
+      setSplashPhase('out');
+    }, 1500);
 
-    const timer = window.setTimeout(() => {
+    const finishTimer = window.setTimeout(() => {
       setShowSplash(false);
       setAppEntryPhase('pre-in');
 
       window.requestAnimationFrame(() => {
         window.requestAnimationFrame(() => setAppEntryPhase('in'));
       });
-    }, 250);
+    }, 1750);
 
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.clearTimeout(holdTimer);
+      window.clearTimeout(finishTimer);
+    };
   }, [appLoading, showSplash]);
 
   if (showSplash) {

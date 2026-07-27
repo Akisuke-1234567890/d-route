@@ -11,7 +11,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icons/d-route-mark.svg', 'icons/d-route-maskable.svg', 'icons/d-route-symbol.svg', 'icons/d-route-192.png', 'icons/d-route-512.png', 'icons/d-route-maskable-512.png', 'icons/apple-touch-icon.png'],
+      includeAssets: ['icons/d-route-mark.svg', 'icons/d-route-maskable.svg', 'icons/d-route-symbol.svg', 'icons/apple-touch-icon.svg', 'icons/d-route-192.png', 'icons/d-route-512.png', 'icons/d-route-maskable-512.png'],
       manifest: {
         name: 'D Route',
         short_name: 'D Route',
@@ -23,9 +23,8 @@ export default defineConfig({
         scope: '.',
         orientation: 'portrait-primary',
         icons: [
-          { src: 'icons/d-route-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-          { src: 'icons/d-route-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-          { src: 'icons/d-route-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+          { src: 'icons/d-route-mark.svg?v=2.1.0-p07', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+          { src: 'icons/d-route-maskable.svg?v=2.1.0-p07', sizes: 'any', type: 'image/svg+xml', purpose: 'maskable' }
         ]
       },
       workbox: {

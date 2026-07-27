@@ -10,10 +10,10 @@
     <linearGradient id="route" x1="150" y1="126" x2="382" y2="401" gradientUnits="userSpaceOnUse"><stop stop-color="#38E0C6"/><stop offset=".45" stop-color="#38BDF8"/><stop offset=".72" stop-color="#5B8CFF"/><stop offset="1" stop-color="#7C3AED"/></linearGradient>
   </defs>
   <rect width="512" height="512" fill="url(#bg)"/><rect width="512" height="512" fill="url(#nebulaA)"/><rect width="512" height="512" fill="url(#nebulaB)"/>
-  <path d="M160 148H271C348 148 410 210 410 287C410 364 348 426 271 426H160" fill="none" stroke="url(#route)" stroke-width="41" stroke-linecap="round" stroke-linejoin="round"/>
+  <g transform="translate(-32.5 -27.5)">\n  <path d="M160 148H271C348 148 410 210 410 287C410 364 348 426 271 426H160" fill="none" stroke="url(#route)" stroke-width="41" stroke-linecap="round" stroke-linejoin="round"/>
   <path d="M160 148V426" fill="none" stroke="url(#route)" stroke-width="41" stroke-linecap="round"/>
   <circle cx="160" cy="148" r="42" fill="#38E0C6"/><circle cx="160" cy="148" r="20" fill="#F8FAFF"/>
   <circle cx="160" cy="287" r="42" fill="#F8B63F"/><circle cx="160" cy="287" r="20" fill="#F8FAFF"/>
   <circle cx="160" cy="426" r="42" fill="#7C3AED"/><circle cx="160" cy="426" r="20" fill="#F8FAFF"/>
   <circle cx="410" cy="287" r="42" fill="#38BDF8"/><circle cx="410" cy="287" r="20" fill="#F8FAFF"/>
-</svg>
+  </g>\n</svg>

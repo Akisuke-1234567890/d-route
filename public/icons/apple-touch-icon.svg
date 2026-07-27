@@ -23,10 +23,10 @@
   <rect width="512" height="512" rx="112" fill="url(#bg)"/>
   <rect width="512" height="512" rx="112" fill="url(#nebulaA)"/>
   <rect width="512" height="512" rx="112" fill="url(#nebulaB)"/>
-  <path d="M150 130H274C359 130 428 199 428 284C428 369 359 438 274 438H150" fill="none" stroke="url(#route)" stroke-width="45" stroke-linecap="round" stroke-linejoin="round"/>
+  <g transform="translate(-32.5 -27.5)">\n  <path d="M150 130H274C359 130 428 199 428 284C428 369 359 438 274 438H150" fill="none" stroke="url(#route)" stroke-width="45" stroke-linecap="round" stroke-linejoin="round"/>
   <path d="M150 130V438" fill="none" stroke="url(#route)" stroke-width="45" stroke-linecap="round"/>
   <circle cx="150" cy="130" r="47" fill="#38E0C6"/><circle cx="150" cy="130" r="23" fill="#F8FAFF"/>
   <circle cx="150" cy="284" r="47" fill="#F8B63F"/><circle cx="150" cy="284" r="23" fill="#F8FAFF"/>
   <circle cx="150" cy="438" r="47" fill="#7C3AED"/><circle cx="150" cy="438" r="23" fill="#F8FAFF"/>
   <circle cx="428" cy="284" r="47" fill="#38BDF8"/><circle cx="428" cy="284" r="23" fill="#F8FAFF"/>
-</svg>
+  </g>\n</svg>
