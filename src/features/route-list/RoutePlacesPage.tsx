@@ -5,6 +5,7 @@ import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { RouteBottomNav } from './RouteBottomNav';
 import './RoutePlacesPage.css';
+import { useBodyScrollLock } from '../../shared/hooks/useBodyScrollLock';
 import {
   createRouteDestination,
   getRouteDestinations,
@@ -47,6 +48,8 @@ export function RoutePlacesPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const editNameInputRef = useRef<HTMLInputElement>(null);
+
+  useBodyScrollLock(createOpen || Boolean(editing) || Boolean(deleteTarget));
 
   async function loadDestinations() {
     setLoading(true);

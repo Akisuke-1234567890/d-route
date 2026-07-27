@@ -1,15 +1,16 @@
-# D Route v2.1.0-p19.2
+# D Route v2.1.0-p19.3
 
-Current baseline: v2.1.0-p19.2
+Current baseline: v2.1.0-p19.3
 
-## p19.2 Edit Place Compact Layout
+## p19.3 Modal Background Scroll Lock
 
-- Edit Placeをスクロール前提ではなく1画面に収まる方向へ圧縮
-- タイトル周辺、入力欄、項目間余白、メモ欄の縦幅を縮小
-- 小さい画面ではさらに縦幅を圧縮
-- 操作順を「保存 → キャンセル → この目的地を削除」に変更
-- 削除確認ダイアログはp19.1のRoute削除統一レイアウトを維持
-- soft delete処理は変更なし
+- Route削除確認ダイアログ表示中は背面ページを固定
+- Placeの追加・編集・削除確認中も背面ページを固定
+- iOS向けにbodyをfixed化し、現在のスクロール位置を保持
+- モーダルを閉じると元の位置へ復帰
+- overscrollも抑制
+- p19.2のEdit Place 1画面表示を維持
+- p19.1のRoute / Place削除ダイアログ統一を維持
 - DB schema変更なし
 
 ## Current database migrations

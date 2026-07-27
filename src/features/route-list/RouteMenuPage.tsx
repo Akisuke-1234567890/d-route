@@ -6,6 +6,7 @@ import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { getSupabaseClient } from '../../shared/api/supabase';
 import { RouteBottomNav } from './RouteBottomNav';
 import { deleteOwnedRoute, getRoute, type RouteSummary } from './routes';
+import { useBodyScrollLock } from '../../shared/hooks/useBodyScrollLock';
 
 const items = [
   { icon:'⚙️', title:'Route設定', description:'名前・説明・基本情報を管理' },
@@ -27,6 +28,8 @@ export function RouteMenuPage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  useBodyScrollLock(isDeleteOpen);
 
   useEffect(() => {
     let active = true;
