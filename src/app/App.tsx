@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { getSupabaseClient } from '../shared/api/supabase';
@@ -27,19 +27,44 @@ type FadeRoutesProps = {
 function FadeRoutes({ children }: FadeRoutesProps) {
   const location = useLocation();
   const [displayLocation, setDisplayLocation] = useState(location);
-  const [phase, setPhase] = useState<'in' | 'out'>('in');
+  const [phase, setPhase] = useState<'in' | 'out' | 'pre-in'>('in');
+  const transitionIdRef = useRef(0);
 
   useEffect(() => {
-    if (location.key === displayLocation.key) return;
+    if (
+      location.pathname === displayLocation.pathname &&
+      location.search === displayLocation.search &&
+      location.hash === displayLocation.hash
+    ) {
+      return;
+    }
 
+    const transitionId = transitionIdRef.current + 1;
+    transitionIdRef.current = transitionId;
     setPhase('out');
-    const timer = window.setTimeout(() => {
+
+    const swapTimer = window.setTimeout(() => {
+      if (transitionIdRef.current !== transitionId) return;
+
       setDisplayLocation(location);
-      setPhase('in');
+      setPhase('pre-in');
+
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          if (transitionIdRef.current === transitionId) {
+            setPhase('in');
+          }
+        });
+      });
     }, 250);
 
-    return () => window.clearTimeout(timer);
-  }, [displayLocation.key, location]);
+    return () => window.clearTimeout(swapTimer);
+  }, [
+    displayLocation.hash,
+    displayLocation.pathname,
+    displayLocation.search,
+    location,
+  ]);
 
   return (
     <div className={`route-page-transition is-${phase}`}>
@@ -54,6 +79,9 @@ export function App() {
   const [profileLoading, setProfileLoading] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [profileError, setProfileError] = useState('');
+  const [showSplash, setShowSplash] = useState(true);
+  const [splashPhase, setSplashPhase] = useState<'in' | 'out'>('in');
+  const [appEntryPhase, setAppEntryPhase] = useState<'pre-in' | 'in'>('pre-in');
 
   const refreshProfile = useCallback(async () => {
     if (!session) {
@@ -91,8 +119,32 @@ export function App() {
   const nicknameReady = Boolean(profile?.display_name?.trim());
   const accountReady = credentialsReady && nicknameReady;
   const flow = useMemo(() => new URLSearchParams(window.location.search).get('flow'), []);
+  const appLoading = loading || Boolean(session && profileLoading);
 
-  if (loading || (session && profileLoading)) return <SplashScreen />;
+  useEffect(() => {
+    if (appLoading || !showSplash) return;
+
+    setSplashPhase('out');
+
+    const timer = window.setTimeout(() => {
+      setShowSplash(false);
+      setAppEntryPhase('pre-in');
+
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => setAppEntryPhase('in'));
+      });
+    }, 250);
+
+    return () => window.clearTimeout(timer);
+  }, [appLoading, showSplash]);
+
+  if (showSplash) {
+    return (
+      <div className={`app-splash-transition is-${splashPhase}`}>
+        <SplashScreen />
+      </div>
+    );
+  }
 
   const protectedElement = (element: ReactNode) => {
     if (!session) return <Navigate to="/signin" replace />;
@@ -103,8 +155,9 @@ export function App() {
   };
 
   return (
-    <BrowserRouter basename={import.meta.env.BASE_URL}>
-      <FadeRoutes>
+    <div className={`app-entry-transition is-${appEntryPhase}`}>
+      <BrowserRouter basename={import.meta.env.BASE_URL}>
+        <FadeRoutes>
         <Route path="/signin" element={session ? <Navigate to={!credentialsReady ? '/account/setup' : !nicknameReady ? '/account/profile' : '/routes'} replace /> : <SignInPage />} />
         <Route path="/start" element={session ? <Navigate to={!credentialsReady ? '/account/setup' : !nicknameReady ? '/account/profile' : '/routes'} replace /> : <StartPage />} />
         <Route path="/recover" element={session ? <Navigate to={!credentialsReady ? '/account/setup' : !nicknameReady ? '/account/profile' : '/routes'} replace /> : <RecoveryPage />} />
@@ -119,8 +172,9 @@ export function App() {
         <Route path="/routes/:routeId/members" element={protectedElement(<RouteMembersPage />)} />
         <Route path="/routes/:routeId/menu" element={protectedElement(<RouteMenuPage />)} />
         <Route path="*" element={<Navigate to={flow === 'recovery' && session ? '/recover/reset' : flow === 'setup' && session ? (!credentialsReady ? '/account/setup' : !nicknameReady ? '/account/profile' : '/routes') : session ? (!credentialsReady ? '/account/setup' : !nicknameReady ? '/account/profile' : '/routes') : '/signin'} replace />} />
-      </FadeRoutes>
-      <RefreshButton />
-    </BrowserRouter>
+        </FadeRoutes>
+        <RefreshButton />
+      </BrowserRouter>
+    </div>
   );
 }
