@@ -1,16 +1,15 @@
-# D Route v2.1.0-p19.4
+# D Route v2.1.0-p19.5
 
-Current baseline: v2.1.0-p19.4
+Current baseline: v2.1.0-p19.5
 
-## p19.4 Edit Place Modal Position / Internal Scroll
+## p19.5 Edit Place Balanced Modal Position
 
-- Edit Placeモーダルを従来より少し上へ配置
-- 現在の短いフォームは1画面表示を維持
-- 将来項目が増えて画面高を超えた場合はモーダル内部だけ縦スクロール
+- Edit Placeを上下ほぼ均等の余白で中央配置
+- p19.4の上寄せ配置を廃止
+- 現在のフォームは1画面表示を維持
+- 将来項目が増えた場合はモーダル内部のみスクロール
 - 背景ページはp19.3のscroll lockを維持
 - iPhone safe-areaを考慮
-- overscrollをモーダル内部で抑制
-- スクロールバーは控えめな表示
 - DB schema変更なし
 
 ## Current database migrations

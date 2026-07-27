@@ -379,3 +379,45 @@
     );
   }
 }
+
+
+/* v2.1.0-p19.5 Edit Place centered modal with balanced vertical margins */
+.modal-backdrop:has(.edit-place-modal) {
+  align-items: center;
+  justify-items: center;
+  overflow: hidden;
+  padding:
+    max(18px, env(safe-area-inset-top))
+    12px
+    max(18px, env(safe-area-inset-bottom));
+}
+
+.edit-place-modal {
+  margin: auto;
+  max-height: calc(
+    100dvh
+    - max(36px, env(safe-area-inset-top))
+    - max(36px, env(safe-area-inset-bottom))
+  );
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-height: 740px) {
+  .modal-backdrop:has(.edit-place-modal) {
+    padding:
+      max(12px, env(safe-area-inset-top))
+      10px
+      max(12px, env(safe-area-inset-bottom));
+  }
+
+  .edit-place-modal {
+    margin: auto;
+    max-height: calc(
+      100dvh
+      - max(24px, env(safe-area-inset-top))
+      - max(24px, env(safe-area-inset-bottom))
+    );
+  }
+}
