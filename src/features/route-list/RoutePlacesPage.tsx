@@ -416,12 +416,24 @@ export function RoutePlacesPage() {
       )}
 
       {deleteTarget && (
-        <div className="modal-backdrop delete-confirm-backdrop">
-          <section className="route-modal delete-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="delete-destination-title">
+        <div
+          className="modal-backdrop route-delete-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !deleting) closeDeleteDialog();
+          }}
+        >
+          <section
+            className="route-modal route-delete-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-destination-title"
+            aria-describedby="delete-destination-description"
+          >
             <div className="modal-header">
               <div>
-                <p className="eyebrow">DELETE PLACE</p>
-                <h2 id="delete-destination-title">目的地を削除しますか？</h2>
+                <p className="eyebrow route-danger-eyebrow">DELETE PLACE</p>
+                <h2 id="delete-destination-title">この目的地を削除しますか？</h2>
               </div>
               <button
                 className="modal-close-button"
@@ -434,19 +446,28 @@ export function RoutePlacesPage() {
               </button>
             </div>
 
-            <div className="delete-confirm-copy">
-              <strong>{deleteTarget.name}</strong>
-              <p>このRouteの一覧から削除します。現在は物理削除ではなくsoft deleteで保持します。</p>
-            </div>
+            <p id="delete-destination-description" className="route-delete-description">
+              「{deleteTarget.name}」を削除します。削除後はD Routeから元に戻せません。
+            </p>
 
-            {deleteError && <p className="form-error" role="alert">{deleteError}</p>}
+            {deleteError && <div className="route-inline-error" role="alert">{deleteError}</div>}
 
             <div className="modal-actions">
-              <button className="secondary-button" type="button" onClick={closeDeleteDialog} disabled={deleting}>
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={closeDeleteDialog}
+                disabled={deleting}
+              >
                 キャンセル
               </button>
-              <button className="danger-button" type="button" onClick={() => void handleDeleteDestination()} disabled={deleting}>
-                {deleting ? '削除中…' : '削除する'}
+              <button
+                className="route-danger-confirm-button"
+                type="button"
+                onClick={() => void handleDeleteDestination()}
+                disabled={deleting}
+              >
+                {deleting ? '削除中…' : '目的地を削除'}
               </button>
             </div>
           </section>

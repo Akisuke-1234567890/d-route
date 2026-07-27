@@ -184,7 +184,7 @@
 }
 
 
-/* v2.1.0-p19 Destination soft delete */
+/* v2.1.0-p19.1 Destination delete entry */
 .place-delete-button {
   width: 100%;
   min-height: 46px;
@@ -200,48 +200,4 @@
 
 .place-delete-button:active {
   background: rgba(255, 155, 168, .13);
-}
-
-.delete-confirm-backdrop {
-  z-index: 260;
-}
-
-.delete-confirm-modal {
-  max-width: 460px;
-}
-
-.delete-confirm-copy {
-  display: grid;
-  gap: 8px;
-  margin: 20px 0;
-  padding: 15px;
-  border: 1px solid rgba(255, 155, 168, .16);
-  border-radius: 15px;
-  background: rgba(255, 155, 168, .05);
-}
-
-.delete-confirm-copy strong {
-  overflow-wrap: anywhere;
-}
-
-.delete-confirm-copy p {
-  margin: 0;
-  color: var(--muted);
-  font-size: .8rem;
-  line-height: 1.55;
-}
-
-.danger-button {
-  width: 100%;
-  min-height: 52px;
-  border: 1px solid rgba(255, 155, 168, .34);
-  border-radius: 15px;
-  background: linear-gradient(135deg, rgba(204, 69, 92, .88), rgba(154, 44, 67, .94));
-  color: white;
-  font: inherit;
-  font-weight: 900;
-}
-
-.danger-button:disabled {
-  opacity: .55;
 }
