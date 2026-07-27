@@ -4,6 +4,7 @@ import { BrandMark } from '../../shared/ui/BrandMark';
 import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { RouteBottomNav } from './RouteBottomNav';
+import './RoutePlacesPage.css';
 import {
   createRouteDestination,
   getRouteDestinations,
@@ -17,12 +18,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 function getImportanceLabel(importance: DestinationSummary['importance']) {
-  switch (importance) {
-    case 'must': return '必須';
-    case 'optional': return '任意';
-    case 'information': return '情報';
-    default: return '行きたい';
-  }
+  return importance === 'optional' ? '任意' : '必須';
 }
 
 export function RoutePlacesPage() {
@@ -34,7 +30,7 @@ export function RoutePlacesPage() {
   const [name, setName] = useState('');
   const [locationName, setLocationName] = useState('');
   const [description, setDescription] = useState('');
-  const [importance, setImportance] = useState<DestinationImportance>('want');
+  const [importance, setImportance] = useState<DestinationImportance>('must');
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -42,7 +38,7 @@ export function RoutePlacesPage() {
   const [editName, setEditName] = useState('');
   const [editLocationName, setEditLocationName] = useState('');
   const [editDescription, setEditDescription] = useState('');
-  const [editImportance, setEditImportance] = useState<DestinationImportance>('want');
+  const [editImportance, setEditImportance] = useState<DestinationImportance>('must');
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -84,7 +80,7 @@ export function RoutePlacesPage() {
     setName('');
     setLocationName('');
     setDescription('');
-    setImportance('want');
+    setImportance('must');
     setFormError(null);
     setCreateOpen(true);
   }
@@ -122,7 +118,7 @@ export function RoutePlacesPage() {
     setEditName(destination.name);
     setEditLocationName(destination.locationName ?? '');
     setEditDescription(destination.description ?? '');
-    setEditImportance(destination.importance);
+    setEditImportance(destination.importance === 'optional' ? 'optional' : 'must');
     setEditError(null);
   }
 
@@ -205,14 +201,14 @@ export function RoutePlacesPage() {
                   <div className="place-meta">
                     <span>{getImportanceLabel(destination.importance)}</span>
                     {destination.locationName ? <span>{destination.locationName}</span> : null}
+                    <span className="place-status place-status-planned">予定</span>
                   </div>
                   <h2>{destination.name}</h2>
                   <p>{destination.description ?? '説明はまだありません。'}</p>
                 </div>
                 <div className="place-card-actions">
-                  <span className="place-status place-status-planned">予定</span>
                   <button
-                    className="secondary-button"
+                    className="place-edit-button"
                     type="button"
                     onClick={() => openEditModal(destination)}
                     aria-label={`${destination.name}を編集`}
@@ -264,9 +260,7 @@ export function RoutePlacesPage() {
                   onChange={(event) => setImportance(event.target.value as DestinationImportance)}
                   disabled={saving}>
                   <option value="must">必須</option>
-                  <option value="want">行きたい</option>
                   <option value="optional">任意</option>
-                  <option value="information">情報</option>
                 </select>
               </div>
 
@@ -326,9 +320,7 @@ export function RoutePlacesPage() {
                   onChange={(event) => setEditImportance(event.target.value as DestinationImportance)}
                   disabled={editSaving}>
                   <option value="must">必須</option>
-                  <option value="want">行きたい</option>
                   <option value="optional">任意</option>
-                  <option value="information">情報</option>
                 </select>
               </div>
 

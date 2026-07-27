@@ -1,0 +1,53 @@
+.place-card {
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.place-copy {
+  min-width: 0;
+}
+
+.place-meta {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.place-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.place-edit-button {
+  min-width: 70px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid rgba(196, 203, 255, .18);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, .045);
+  color: var(--text);
+  font: inherit;
+  font-size: .78rem;
+  font-weight: 850;
+}
+
+.place-edit-button:active {
+  background: rgba(157, 146, 255, .14);
+}
+
+@media (max-width: 520px) {
+  .place-card {
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+
+  .place-card-actions {
+    grid-column: 4;
+    justify-self: end;
+  }
+
+  .place-edit-button {
+    min-width: 62px;
+    padding-inline: 11px;
+  }
+}
