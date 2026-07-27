@@ -8,6 +8,7 @@ import './RoutePlacesPage.css';
 import {
   createRouteDestination,
   getRouteDestinations,
+  softDeleteRouteDestination,
   updateRouteDestination,
   type DestinationImportance,
   type DestinationSummary,
@@ -41,6 +42,9 @@ export function RoutePlacesPage() {
   const [editImportance, setEditImportance] = useState<DestinationImportance>('must');
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DestinationSummary | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const editNameInputRef = useRef<HTMLInputElement>(null);
 
@@ -148,6 +152,35 @@ export function RoutePlacesPage() {
       setEditError(getErrorMessage(err, '目的地を更新できませんでした。'));
     } finally {
       setEditSaving(false);
+    }
+  }
+
+
+  function askDeleteDestination() {
+    if (!editing || editSaving) return;
+    setDeleteError(null);
+    setDeleteTarget(editing);
+  }
+
+  function closeDeleteDialog() {
+    if (!deleting) setDeleteTarget(null);
+  }
+
+  async function handleDeleteDestination() {
+    if (!deleteTarget || deleting) return;
+
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await softDeleteRouteDestination(routeId, deleteTarget.id);
+      setDestinations((current) => current.filter((item) => item.id !== deleteTarget.id));
+      setDeleteTarget(null);
+      setEditing(null);
+      setToast('目的地を削除しました');
+    } catch (err) {
+      setDeleteError(getErrorMessage(err, '目的地を削除できませんでした。'));
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -362,6 +395,15 @@ export function RoutePlacesPage() {
 
               {editError && <p className="form-error" role="alert">{editError}</p>}
 
+              <button
+                className="place-delete-button"
+                type="button"
+                onClick={askDeleteDestination}
+                disabled={editSaving}
+              >
+                この目的地を削除
+              </button>
+
               <div className="modal-actions">
                 <button className="secondary-button" type="button" onClick={closeEditModal} disabled={editSaving}>キャンセル</button>
                 <button className="primary-button" type="submit" disabled={!editName.trim() || editSaving}>
@@ -369,6 +411,44 @@ export function RoutePlacesPage() {
                 </button>
               </div>
             </form>
+          </section>
+        </div>
+      )}
+
+      {deleteTarget && (
+        <div className="modal-backdrop delete-confirm-backdrop">
+          <section className="route-modal delete-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="delete-destination-title">
+            <div className="modal-header">
+              <div>
+                <p className="eyebrow">DELETE PLACE</p>
+                <h2 id="delete-destination-title">目的地を削除しますか？</h2>
+              </div>
+              <button
+                className="modal-close-button"
+                type="button"
+                onClick={closeDeleteDialog}
+                aria-label="閉じる"
+                disabled={deleting}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="delete-confirm-copy">
+              <strong>{deleteTarget.name}</strong>
+              <p>このRouteの一覧から削除します。現在は物理削除ではなくsoft deleteで保持します。</p>
+            </div>
+
+            {deleteError && <p className="form-error" role="alert">{deleteError}</p>}
+
+            <div className="modal-actions">
+              <button className="secondary-button" type="button" onClick={closeDeleteDialog} disabled={deleting}>
+                キャンセル
+              </button>
+              <button className="danger-button" type="button" onClick={() => void handleDeleteDestination()} disabled={deleting}>
+                {deleting ? '削除中…' : '削除する'}
+              </button>
+            </div>
           </section>
         </div>
       )}

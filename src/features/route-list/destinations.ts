@@ -168,3 +168,26 @@ export async function updateRouteDestination(
   if (error) throw error;
   return toDestinationSummary(data as DestinationRow);
 }
+
+
+export async function softDeleteRouteDestination(
+  routeId: string,
+  destinationId: string
+): Promise<void> {
+  if (!routeId) throw new Error('Route IDがありません。');
+  if (!destinationId) throw new Error('Destination IDがありません。');
+
+  const supabase = requireSupabase();
+
+  const { error } = await supabase
+    .from('destinations')
+    .update({
+      deleted_at: new Date().toISOString(),
+    })
+    .eq('id', destinationId)
+    .eq('route_id', routeId)
+    .eq('record_status', 'active')
+    .is('deleted_at', null);
+
+  if (error) throw error;
+}

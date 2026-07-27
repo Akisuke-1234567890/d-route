@@ -1,18 +1,22 @@
-# D Route v2.1.0-p18
+# D Route v2.1.0-p19
 
-Current baseline: v2.1.0-p18
+Current baseline: v2.1.0-p19
 
-## p18 Add/Edit Place UI Unification
+## p19 Destination Soft Delete
 
-- Add Place / Edit Placeの入力UIを同じ見た目へ統一
-- 重要度をselectではなく「必須 / 任意」の2択セグメントUIへ変更
-- メモ欄を他入力と同じ角丸・境界線・背景へ統一
-- 場所名 / メモの任意表示をラベル側へ整理
-- 入力欄、補助テキスト、フォーカス表示を統一
-- p17のPlacesカード配置修正は維持
+- Edit Placeに「この目的地を削除」を追加
+- 削除前にDestination名を含む確認ダイアログを表示
+- public.destinations.deleted_at を使ったsoft delete
+- p14で作成済みのOwner-only UPDATE RLSを利用
+- 削除成功後はPlaces一覧から即時除外
 - DB schema変更なし
+- 物理DELETEは行わない
 
 ## Current database migrations
 
 - supabase/migrations/202607270001_route_owner_soft_delete.sql
 - supabase/migrations/202607280001_planning_core_foundation.sql
+
+## Next
+
+Destination並び替えを実装し、Destination基本CRUDを一区切りにする。
