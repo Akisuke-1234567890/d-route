@@ -83,7 +83,7 @@ export function RouteMenuPage() {
             <h2 id="route-danger-title">Routeを削除</h2>
             <p>この操作を行うと、このRouteは一覧やRoute内から利用できなくなります。</p>
           </div>
-          <button type="button" className="route-danger-button" onClick={() => setIsDeleteOpen(true)}>Routeを削除</button>
+          <button type="button" className="route-danger-button" aria-haspopup="dialog" onClick={() => setIsDeleteOpen(true)}>Routeを削除</button>
         </section>
       )}
 
@@ -94,7 +94,7 @@ export function RouteMenuPage() {
     <RouteBottomNav routeId={routeId}/>
 
     {isDeleteOpen && route && (
-      <div className="modal-backdrop route-delete-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !isDeleting) setIsDeleteOpen(false); }}>
+      <div className="modal-backdrop route-delete-backdrop" role="presentation">
         <section className="route-modal route-delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-route-title" aria-describedby="delete-route-description">
           <div className="modal-header">
             <div>

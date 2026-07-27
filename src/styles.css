@@ -1542,3 +1542,30 @@ a { color: inherit; }
     order: 2;
   }
 }
+
+
+/* v2.1.0-p11: robust iOS delete dialog opening/positioning */
+.route-delete-backdrop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  padding:
+    max(20px, env(safe-area-inset-top))
+    18px
+    calc(max(20px, env(safe-area-inset-bottom)) + 78px);
+}
+
+.route-delete-modal {
+  width: min(calc(100vw - 36px), 520px);
+  max-height: calc(100dvh - 140px);
+  margin: auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.route-danger-button {
+  position: relative;
+  z-index: 1;
+  touch-action: manipulation;
+}
