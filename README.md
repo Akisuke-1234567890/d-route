@@ -1,16 +1,16 @@
-# D Route v2.1.0-p19.3
+# D Route v2.1.0-p19.4
 
-Current baseline: v2.1.0-p19.3
+Current baseline: v2.1.0-p19.4
 
-## p19.3 Modal Background Scroll Lock
+## p19.4 Edit Place Modal Position / Internal Scroll
 
-- Route削除確認ダイアログ表示中は背面ページを固定
-- Placeの追加・編集・削除確認中も背面ページを固定
-- iOS向けにbodyをfixed化し、現在のスクロール位置を保持
-- モーダルを閉じると元の位置へ復帰
-- overscrollも抑制
-- p19.2のEdit Place 1画面表示を維持
-- p19.1のRoute / Place削除ダイアログ統一を維持
+- Edit Placeモーダルを従来より少し上へ配置
+- 現在の短いフォームは1画面表示を維持
+- 将来項目が増えて画面高を超えた場合はモーダル内部だけ縦スクロール
+- 背景ページはp19.3のscroll lockを維持
+- iPhone safe-areaを考慮
+- overscrollをモーダル内部で抑制
+- スクロールバーは控えめな表示
 - DB schema変更なし
 
 ## Current database migrations
