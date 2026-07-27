@@ -336,7 +336,7 @@ export function RoutePlacesPage() {
         <div className="modal-backdrop" onMouseDown={(event) => {
           if (event.target === event.currentTarget) closeEditModal();
         }}>
-          <section className="route-modal" role="dialog" aria-modal="true" aria-labelledby="edit-destination-title">
+          <section className="route-modal edit-place-modal" role="dialog" aria-modal="true" aria-labelledby="edit-destination-title">
             <div className="modal-header">
               <div>
                 <p className="eyebrow">EDIT PLACE</p>
@@ -389,11 +389,20 @@ export function RoutePlacesPage() {
                 <label htmlFor="edit-destination-description">メモ <span className="field-optional">任意</span></label>
                 <textarea id="edit-destination-description" value={editDescription}
                   onChange={(event) => setEditDescription(event.target.value)}
-                  maxLength={200} rows={3} disabled={editSaving} />
+                  maxLength={200} rows={2} disabled={editSaving} />
                 <p className="field-hint">任意・200文字まで</p>
               </div>
 
               {editError && <p className="form-error" role="alert">{editError}</p>}
+
+              <div className="modal-actions edit-place-actions">
+                <button className="primary-button" type="submit" disabled={!editName.trim() || editSaving}>
+                  {editSaving ? '保存中…' : '保存'}
+                </button>
+                <button className="secondary-button" type="button" onClick={closeEditModal} disabled={editSaving}>
+                  キャンセル
+                </button>
+              </div>
 
               <button
                 className="place-delete-button"
@@ -403,13 +412,6 @@ export function RoutePlacesPage() {
               >
                 この目的地を削除
               </button>
-
-              <div className="modal-actions">
-                <button className="secondary-button" type="button" onClick={closeEditModal} disabled={editSaving}>キャンセル</button>
-                <button className="primary-button" type="submit" disabled={!editName.trim() || editSaving}>
-                  {editSaving ? '保存中…' : '保存'}
-                </button>
-              </div>
             </form>
           </section>
         </div>
