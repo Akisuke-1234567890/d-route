@@ -1,4 +1,4 @@
-# D Route v2.1.0-p09
+# D Route v2.1.0-p10
 
 Dream Routeの実地テストを踏まえて再設計した、React + TypeScript + Vite版のD Routeです。
 
@@ -24,7 +24,7 @@ npm run build
 ```
 
 
-## v2.1.0-p09 Scope
+## v2.1.0-p10 Scope
 
 - Route / Places / Chat / Members / Menu の画面切り替えにフェードアウト→フェードインを追加
 - 140msずつの短い遷移で操作感を損なわず、瞬間的な切り替わりを緩和
@@ -52,7 +52,7 @@ npm run build
 現在のDB取得項目にはRoute利用日と参加人数がないため、この版のカードでは正確に取得できる「最終更新日」のみ表示します。利用日・参加人数はDatabase Baselineとデータモデル整備後に追加します。
 
 
-## v2.1.0-p09 Scope
+## v2.1.0-p10 Scope
 
 - LINE公式など外部導線からアカウント作成画面を直接開ける入口を追加
 - `?flow=signup` または `?mode=signup` で未ログイン時に `/start` を初期表示
@@ -61,7 +61,7 @@ npm run build
 - DB変更なし
 
 
-## v2.1.0-p09 Scope
+## v2.1.0-p10 Scope
 
 - Route管理画面にRoute削除機能を接続
 - 削除操作はRoute作成者（owner）のみに表示
@@ -70,3 +70,12 @@ npm run build
 - 物理DELETEではなく既存のdeleted_atを使ったsoft delete
 - 削除完了後はRoute一覧へ戻り、削除済みRouteは一覧・詳細から除外
 - Database Baselineとして削除RPC migrationを追加
+
+
+## v2.1.0-p10 Scope
+
+- Route削除確認モーダルをスマホ画面中央へ配置
+- 下部ナビより前面に表示して重なりを防止
+- 短い画面ではモーダル内をスクロール可能にして見切れを防止
+- スマホ幅では削除／キャンセルを縦配置
+- DB変更なし

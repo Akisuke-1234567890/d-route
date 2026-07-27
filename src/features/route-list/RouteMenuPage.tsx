@@ -94,7 +94,7 @@ export function RouteMenuPage() {
     <RouteBottomNav routeId={routeId}/>
 
     {isDeleteOpen && route && (
-      <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !isDeleting) setIsDeleteOpen(false); }}>
+      <div className="modal-backdrop route-delete-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !isDeleting) setIsDeleteOpen(false); }}>
         <section className="route-modal route-delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-route-title" aria-describedby="delete-route-description">
           <div className="modal-header">
             <div>
