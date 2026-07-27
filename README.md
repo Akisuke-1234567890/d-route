@@ -1,4 +1,4 @@
-# D Route v2.1.0-p07
+# D Route v2.1.0-p08
 
 Dream Routeの実地テストを踏まえて再設計した、React + TypeScript + Vite版のD Routeです。
 
@@ -24,7 +24,7 @@ npm run build
 ```
 
 
-## v2.1.0-p07 Scope
+## v2.1.0-p08 Scope
 
 - Route / Places / Chat / Members / Menu の画面切り替えにフェードアウト→フェードインを追加
 - 140msずつの短い遷移で操作感を損なわず、瞬間的な切り替わりを緩和
@@ -50,3 +50,12 @@ npm run build
 - HomeではBottom Navigationを非表示
 
 現在のDB取得項目にはRoute利用日と参加人数がないため、この版のカードでは正確に取得できる「最終更新日」のみ表示します。利用日・参加人数はDatabase Baselineとデータモデル整備後に追加します。
+
+
+## v2.1.0-p08 Scope
+
+- LINE公式など外部導線からアカウント作成画面を直接開ける入口を追加
+- `?flow=signup` または `?mode=signup` で未ログイン時に `/start` を初期表示
+- ログイン済みユーザーは従来どおりアカウント状態に応じてD Routeへ遷移
+- p07のロゴ・アイコン・画面遷移仕様は維持
+- DB変更なし

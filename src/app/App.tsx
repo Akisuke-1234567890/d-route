@@ -119,6 +119,8 @@ export function App() {
   const nicknameReady = Boolean(profile?.display_name?.trim());
   const accountReady = credentialsReady && nicknameReady;
   const flow = useMemo(() => new URLSearchParams(window.location.search).get('flow'), []);
+  const mode = useMemo(() => new URLSearchParams(window.location.search).get('mode'), []);
+  const signupRequested = flow === 'signup' || mode === 'signup';
   const appLoading = loading || Boolean(session && profileLoading);
 
   useEffect(() => {
@@ -176,7 +178,7 @@ export function App() {
         <Route path="/routes/:routeId/chat" element={protectedElement(<RouteChatPage />)} />
         <Route path="/routes/:routeId/members" element={protectedElement(<RouteMembersPage />)} />
         <Route path="/routes/:routeId/menu" element={protectedElement(<RouteMenuPage />)} />
-        <Route path="*" element={<Navigate to={flow === 'recovery' && session ? '/recover/reset' : flow === 'setup' && session ? (!credentialsReady ? '/account/setup' : !nicknameReady ? '/account/profile' : '/routes') : session ? (!credentialsReady ? '/account/setup' : !nicknameReady ? '/account/profile' : '/routes') : '/signin'} replace />} />
+        <Route path="*" element={<Navigate to={flow === 'recovery' && session ? '/recover/reset' : flow === 'setup' && session ? (!credentialsReady ? '/account/setup' : !nicknameReady ? '/account/profile' : '/routes') : signupRequested && !session ? '/start' : session ? (!credentialsReady ? '/account/setup' : !nicknameReady ? '/account/profile' : '/routes') : '/signin'} replace />} />
         </FadeRoutes>
         <RefreshButton />
       </BrowserRouter>
