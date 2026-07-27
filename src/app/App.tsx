@@ -36,7 +36,7 @@ function FadeRoutes({ children }: FadeRoutesProps) {
     const timer = window.setTimeout(() => {
       setDisplayLocation(location);
       setPhase('in');
-    }, 140);
+    }, 250);
 
     return () => window.clearTimeout(timer);
   }, [displayLocation.key, location]);

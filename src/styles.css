@@ -1374,16 +1374,24 @@ a { color: inherit; }
 /* v2.1.0-p04: Route内タブ切り替えを穏やかなフェード遷移にする */
 .route-page-transition {
   opacity: 1;
-  transition: opacity 140ms ease-in-out;
+  transform: translateY(0);
+  transition:
+    opacity 300ms ease,
+    transform 300ms ease;
+  will-change: opacity, transform;
 }
 
 .route-page-transition.is-out {
   opacity: 0;
+  transform: translateY(4px);
+  transition-duration: 250ms;
   pointer-events: none;
 }
 
 .route-page-transition.is-in {
   opacity: 1;
+  transform: translateY(0);
+  transition-duration: 300ms;
 }
 
 @media (prefers-reduced-motion: reduce) {
