@@ -1605,3 +1605,51 @@ a { color: inherit; }
     bottom: 0;
   }
 }
+
+
+/* v2.1.0-p13: viewport-fixed Route bottom navigation on iPhone/PWA.
+   Any transformed ancestor turns position:fixed into ancestor-relative
+   positioning in WebKit. Keep both transition wrappers transform-free. */
+.app-entry-transition,
+.app-entry-transition.is-in,
+.app-entry-transition.is-pre-in,
+.route-page-transition,
+.route-page-transition.is-in,
+.route-page-transition.is-pre-in,
+.route-page-transition.is-out {
+  transform: none !important;
+  -webkit-transform: none !important;
+}
+
+.app-entry-transition {
+  transition: opacity 300ms ease-in-out;
+}
+
+.route-page-transition {
+  transition: opacity 300ms ease-in-out;
+  will-change: opacity;
+}
+
+.route-bottom-nav {
+  position: fixed !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: 0 !important;
+  z-index: 120;
+  width: min(760px, 100vw);
+  margin: 0;
+  transform: translateX(-50%) !important;
+  -webkit-transform: translateX(-50%) !important;
+}
+
+.route-tab-shell,
+.route-detail-content,
+.chat-page-shell {
+  padding-bottom: calc(104px + env(safe-area-inset-bottom));
+}
+
+/* Keep modal layers above the persistent navigation. */
+.route-delete-backdrop,
+.modal-backdrop {
+  z-index: 220;
+}
