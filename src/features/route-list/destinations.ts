@@ -17,6 +17,13 @@ export type DestinationSummary = {
   isOptional: boolean;
 };
 
+export type CreateDestinationInput = {
+  name: string;
+  locationName?: string;
+  description?: string;
+  importance?: DestinationImportance;
+};
+
 type DestinationRow = {
   id: string;
   route_id: string;
@@ -49,14 +56,18 @@ function toDestinationSummary(row: DestinationRow): DestinationSummary {
   };
 }
 
-export async function getRouteDestinations(routeId: string): Promise<DestinationSummary[]> {
-  if (!routeId) return [];
-
+function requireSupabase() {
   const supabase = getSupabaseClient();
   if (!supabase) {
     throw new Error('Supabaseの環境変数が設定されていません。');
   }
+  return supabase;
+}
 
+export async function getRouteDestinations(routeId: string): Promise<DestinationSummary[]> {
+  if (!routeId) return [];
+
+  const supabase = requireSupabase();
   const { data, error } = await supabase
     .from('destinations')
     .select(
@@ -69,6 +80,52 @@ export async function getRouteDestinations(routeId: string): Promise<Destination
     .order('created_at', { ascending: true });
 
   if (error) throw error;
-
   return ((data ?? []) as DestinationRow[]).map(toDestinationSummary);
+}
+
+export async function createRouteDestination(
+  routeId: string,
+  input: CreateDestinationInput
+): Promise<DestinationSummary> {
+  if (!routeId) throw new Error('Route IDがありません。');
+
+  const name = input.name.trim();
+  if (!name) throw new Error('目的地名を入力してください。');
+  if (name.length > 40) throw new Error('目的地名は40文字以内で入力してください。');
+
+  const supabase = requireSupabase();
+
+  const { data: lastRows, error: orderError } = await supabase
+    .from('destinations')
+    .select('order_value')
+    .eq('route_id', routeId)
+    .eq('record_status', 'active')
+    .is('deleted_at', null)
+    .order('order_value', { ascending: false })
+    .limit(1);
+
+  if (orderError) throw orderError;
+
+  const lastOrder = lastRows?.length ? Number(lastRows[0].order_value) : 0;
+  const nextOrder = Number.isFinite(lastOrder) ? lastOrder + 1000 : 1000;
+
+  const { data, error } = await supabase
+    .from('destinations')
+    .insert({
+      route_id: routeId,
+      name,
+      location_name: input.locationName?.trim() || null,
+      description: input.description?.trim() || null,
+      importance: input.importance ?? 'want',
+      order_value: nextOrder,
+      is_optional: input.importance === 'optional',
+      record_status: 'active',
+    })
+    .select(
+      'id, route_id, phase_id, name, description, location_name, map_url, meeting_point, importance, order_value, estimated_duration_minutes, is_optional'
+    )
+    .single();
+
+  if (error) throw error;
+  return toDestinationSummary(data as DestinationRow);
 }

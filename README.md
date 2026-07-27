@@ -1,33 +1,22 @@
-# D Route v2.1.0-p14
+# D Route v2.1.0-p15
 
-Current baseline: v2.1.0-p14
+Current baseline: v2.1.0-p15
 
-## p14 Planning Core / Destination DB Foundation
+## p15 Destination Create
 
-Database:
-- public.phases added
-- public.destinations added
-- RLS enabled for both tables
-- current MVP permissions are Route owner only
-- Destination Phase/Route consistency trigger added
-- updated_at / version trigger added
-- Planning indexes added
+- Placesの「＋ 目的地を追加」を有効化
+- 目的地名、場所名、重要度、メモを入力
+- Supabase public.destinations へINSERT
+- 登録後にPlaces一覧へ即時反映
+- order_valueは既存末尾 + 1000 で採番
+- p14で作成したOwner-only RLSをそのまま利用
+- DB schema変更なし
 
-Frontend:
-- Places no longer uses the hard-coded Ebina / Daikanzan sample data
-- Places reads public.destinations from Supabase
-- Loading / error / empty states added
-- Existing Route / Places / Chat / Members / Menu bottom navigation remains unchanged
-- Destination creation UI is intentionally not connected yet; it is the next implementation step
+## Current database migrations
 
-## Database migration
-
-The p14 database migration must be stored in:
-
-supabase/migrations/202607280001_planning_core_foundation.sql
-
-The migration has already been applied to the current Supabase project through the D Route SQL Runner.
+- supabase/migrations/202607270001_route_owner_soft_delete.sql
+- supabase/migrations/202607280001_planning_core_foundation.sql
 
 ## Next
 
-Connect the 「＋ 目的地を追加」 flow to destinations INSERT, then add edit / soft-delete / reorder.
+Destinationの編集、soft delete、並び替えを順に実装する。
