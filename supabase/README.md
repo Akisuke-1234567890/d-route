@@ -19,3 +19,10 @@ Recommended workflow:
 2. Commit the baseline before or alongside the first production v2 database rollout.
 3. Apply subsequent changes only through ordered migration files.
 4. Keep Edge Function source in this directory and deploy from the repository rather than editing production-only code in the dashboard.
+
+## Planning Core baseline
+
+- `migrations/202607280001_planning_core_foundation.sql`: p14で2026-07-28にD Route SQL Runnerから適用済みのPlanning Core Foundation。
+- `public.phases` / `public.destinations`、index、RLS、Destination→Phase Route整合性Trigger、Planning `updated_at` / `version` Triggerを定義。
+- 後続スナップショットから欠落していたため、v2.1.0-p21で元のp14更新Artifactから復元。
+- 現在のSupabase Projectではp21のために再実行しない。ライブDBにはすでに適用済み。新規環境ではmigration順に適用する。

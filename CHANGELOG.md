@@ -1,3 +1,9 @@
+## v2.1.0-p21
+- p14でSupabaseへ適用済みだった `202607280001_planning_core_foundation.sql` をリポジトリへ復元。
+- `phases` / `destinations`、index、RLS、Route整合性Trigger、`updated_at` / `version` TriggerのGitHub管理を回復。
+- ライブDBへの新規schema変更なし。D Route SQL Runner実行不要。
+- README / supabase READMEへBaseline運用を反映。
+
 ## v2.1.0-p20.7
 - Destination並び替え成功時の「並び順を保存しました」通知を削除。
 - ドラッグ操作、保存処理、保存失敗時のエラー表示・順序復元はp20.6のまま維持。

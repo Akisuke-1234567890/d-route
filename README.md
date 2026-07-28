@@ -1,6 +1,16 @@
-# D Route v2.1.0-p20.7
+# D Route v2.1.0-p21
 
-Current baseline: v2.1.0-p20.7
+Current baseline: v2.1.0-p21
+
+## v2.1.0-p21 Planning Core DB Baseline recovery
+
+- p14でD Route SQL RunnerからSupabaseへ適用済みだったPlanning Core migrationをGitHubへ復元。
+- `public.phases` / `public.destinations` の定義、index、RLS、DestinationとPhaseのRoute整合性Trigger、`updated_at` / `version` 自動更新Triggerを履歴として再収録。
+- 現在のSupabase DBへ新しいschema変更は行わない。p21ではSQL Runner実行不要。
+- 復元migration: `supabase/migrations/202607280001_planning_core_foundation.sql`
+- Planning権限は現段階ではRoute Ownerのみ。
+- 次工程はPhase CRUD。将来の並び順ルールは「時刻あり=時刻順で固定、時刻なし=自由並び替え・Phase間移動可能」を前提とする。
+
 
 ## p19.5 Edit Place Balanced Modal Position
 
