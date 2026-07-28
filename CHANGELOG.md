@@ -1,3 +1,13 @@
+## v2.1.0-p22
+
+- Phase一覧画面を追加
+- Supabase `public.phases` のRoute別一覧取得を実装
+- Phase追加（Phase名 / メモ）を実装
+- Phase追加時の `order_value` 末尾採番を実装
+- PhaseごとのDestination件数とPhase未設定Destination件数を表示
+- Route画面からPhase管理への導線を追加
+- DB migration変更なし
+
 ## v2.1.0-p21
 - p14でSupabaseへ適用済みだった `202607280001_planning_core_foundation.sql` をリポジトリへ復元。
 - `phases` / `destinations`、index、RLS、Route整合性Trigger、`updated_at` / `version` TriggerのGitHub管理を回復。

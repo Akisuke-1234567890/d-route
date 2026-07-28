@@ -16,6 +16,7 @@ import { RouteListPage } from '../features/route-list/RouteListPage';
 import { RouteDetailPage } from '../features/route-list/RouteDetailPage';
 import { RouteChatPage } from '../features/route-list/RouteChatPage';
 import { RoutePlacesPage } from '../features/route-list/RoutePlacesPage';
+import { RoutePhasesPage } from '../features/route-list/RoutePhasesPage';
 import { RouteMembersPage } from '../features/route-list/RouteMembersPage';
 import { RouteMenuPage } from '../features/route-list/RouteMenuPage';
 import { RefreshButton } from '../shared/ui/RefreshButton';
@@ -175,6 +176,7 @@ export function App() {
         <Route path="/routes" element={protectedElement(<RouteListPage onSignedOut={() => setSession(null)} />)} />
         <Route path="/routes/:routeId" element={protectedElement(<RouteDetailPage />)} />
         <Route path="/routes/:routeId/places" element={protectedElement(<RoutePlacesPage />)} />
+        <Route path="/routes/:routeId/phases" element={protectedElement(<RoutePhasesPage />)} />
         <Route path="/routes/:routeId/chat" element={protectedElement(<RouteChatPage />)} />
         <Route path="/routes/:routeId/members" element={protectedElement(<RouteMembersPage />)} />
         <Route path="/routes/:routeId/menu" element={protectedElement(<RouteMenuPage />)} />
