@@ -1,3 +1,12 @@
+## v2.1.0-p22.4
+
+- Destinationカードをコンパクト化
+- 必須のみ★マーク表示
+- Destination保存成功Toastを削除
+- Phase操作ボタンを横並び化
+- iPhoneのPhase開始時間入力レイアウトを再調整
+- DB変更なし
+
 ## v2.1.0-p22.3
 
 - iPhoneのPhase開始時間表示を左寄せに修正

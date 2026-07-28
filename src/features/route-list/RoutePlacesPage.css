@@ -669,3 +669,108 @@
   text-align: left;
   margin: 0;
 }
+
+
+/* v2.1.0-p22.4 Places density / Phase actions */
+@media (max-width: 520px) {
+  .places-phase-actions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .phase-edit-button,
+  .phase-add-place-button {
+    min-width: 0;
+    min-height: 36px;
+    padding-inline: 10px;
+    white-space: nowrap;
+  }
+}
+
+.places-phase-section > .places-list {
+  padding: 10px;
+}
+
+.place-card {
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 10px;
+  padding: 12px;
+  min-height: 0;
+}
+
+.place-order {
+  grid-column: 1;
+}
+
+.place-icon {
+  display: none;
+}
+
+.place-copy {
+  grid-column: 2;
+}
+
+.place-card-actions {
+  grid-column: 3;
+  gap: 6px;
+}
+
+.place-meta {
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.place-meta > span:first-child {
+  display: none;
+}
+
+.place-copy h2 {
+  margin: 0;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.place-copy p {
+  margin-top: 4px;
+  line-height: 1.35;
+}
+
+.place-edit-button {
+  min-width: 54px;
+  min-height: 36px;
+  padding-inline: 10px;
+}
+
+.place-drag-handle {
+  width: 36px;
+  min-width: 36px;
+}
+
+.phase-time-control input[type="time"] {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  text-align: left;
+  padding-inline: 14px;
+}
+
+.phase-time-control input[type="time"]::-webkit-date-and-time-value {
+  width: 100%;
+  text-align: left;
+  margin: 0;
+}
+
+
+.place-required-mark {
+  display: inline-grid !important;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: rgba(255, 184, 86, .12);
+  color: #ffd08a;
+  font-size: .72rem;
+  line-height: 1;
+}
