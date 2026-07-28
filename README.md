@@ -1,4 +1,4 @@
-# D Route v2.1.0-p22.1
+# D Route v2.1.0-p22.2
 
 Current baseline: v2.1.0-p22.1
 
@@ -84,3 +84,14 @@ Phase-first Planningへ設計変更。
 
 Migration:
 - `supabase/migrations/202607280002_default_phase_model.sql`
+
+
+## v2.1.0-p22.2
+
+Phase追加UIの実機不具合修正。
+
+- Supabase/PostgRESTの実エラー内容を画面に表示できるよう修正
+- Phase開始時間に「時刻を解除」を追加
+- iPhoneのtime入力がモーダル幅を超える問題を修正
+- Phase保存処理・DB構造はp22.1から変更なし
+- DB変更なし

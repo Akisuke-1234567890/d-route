@@ -1,3 +1,10 @@
+## v2.1.0-p22.2
+
+- Phase追加失敗時にSupabase/PostgRESTの実エラー内容を表示
+- Phase開始時間に「時刻を解除」を追加
+- iPhoneでtime入力欄がモーダルからはみ出す問題を修正
+- DB変更なし
+
 ## v2.1.0-p22.1
 
 - Phase-first Planningへ設計変更

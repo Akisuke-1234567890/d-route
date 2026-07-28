@@ -18,7 +18,27 @@ import {
 import { createRoutePhase, getRoutePhases, updateRoutePhase, type PhaseSummary } from './phases';
 
 function getErrorMessage(error: unknown, fallback: string) {
-  return error instanceof Error && error.message ? error.message : fallback;
+  if (error instanceof Error && error.message) return error.message;
+
+  if (error && typeof error === 'object') {
+    const candidate = error as {
+      message?: unknown;
+      details?: unknown;
+      hint?: unknown;
+      code?: unknown;
+    };
+
+    const parts = [
+      typeof candidate.message === 'string' ? candidate.message : '',
+      typeof candidate.details === 'string' ? candidate.details : '',
+      typeof candidate.hint === 'string' ? candidate.hint : '',
+      typeof candidate.code === 'string' ? `code: ${candidate.code}` : '',
+    ].filter(Boolean);
+
+    if (parts.length > 0) return parts.join(' / ');
+  }
+
+  return fallback;
 }
 
 function getImportanceLabel(importance: DestinationSummary['importance']) {
@@ -811,7 +831,29 @@ export function RoutePlacesPage() {
             <div className="modal-header"><div><p className="eyebrow">{phaseEditing ? 'EDIT PHASE' : 'NEW PHASE'}</p><h2>{phaseEditing ? 'Phaseを編集' : 'Phaseを追加'}</h2></div><button className="modal-close-button" type="button" disabled={phaseSaving} onClick={() => { setPhaseCreateOpen(false); setPhaseEditing(null); }}>×</button></div>
             <form className="route-create-form place-form" onSubmit={phaseEditing ? handlePhaseEdit : handlePhaseCreate}>
               <div className="field-group"><label htmlFor="phase-name">Phase名 {phaseEditing?.isDefault && <span className="field-optional">空欄可</span>}</label><input id="phase-name" value={phaseName} onChange={(event) => setPhaseName(event.target.value)} placeholder="例：午前" maxLength={40} disabled={phaseSaving} /></div>
-              <div className="field-group"><label htmlFor="phase-start-time">開始時間 <span className="field-optional">任意</span></label><input id="phase-start-time" type="time" value={phaseStartTime} onChange={(event) => setPhaseStartTime(event.target.value)} disabled={phaseSaving} /><p className="field-hint">終了時間は設定しません。Route画面の優先表示に使う開始時刻です。</p></div>
+              <div className="field-group">
+                <label htmlFor="phase-start-time">開始時間 <span className="field-optional">任意</span></label>
+                <div className="phase-time-control">
+                  <input
+                    id="phase-start-time"
+                    type="time"
+                    value={phaseStartTime}
+                    onChange={(event) => setPhaseStartTime(event.target.value)}
+                    disabled={phaseSaving}
+                  />
+                  {phaseStartTime ? (
+                    <button
+                      className="phase-time-clear"
+                      type="button"
+                      disabled={phaseSaving}
+                      onClick={() => setPhaseStartTime('')}
+                    >
+                      時刻を解除
+                    </button>
+                  ) : null}
+                </div>
+                <p className="field-hint">終了時間は設定しません。Route画面の優先表示に使う開始時刻です。</p>
+              </div>
               <div className="field-group"><label htmlFor="phase-description">メモ <span className="field-optional">任意</span></label><textarea id="phase-description" value={phaseDescription} onChange={(event) => setPhaseDescription(event.target.value)} maxLength={200} rows={3} disabled={phaseSaving} /></div>
               {phaseError && <p className="form-error" role="alert">{phaseError}</p>}
               <div className="modal-actions"><button className="secondary-button" type="button" disabled={phaseSaving} onClick={() => { setPhaseCreateOpen(false); setPhaseEditing(null); }}>キャンセル</button><button className="primary-button" type="submit" disabled={phaseSaving || (!phaseEditing?.isDefault && !phaseName.trim())}>{phaseSaving ? '保存中…' : phaseEditing ? '保存' : '追加'}</button></div>
