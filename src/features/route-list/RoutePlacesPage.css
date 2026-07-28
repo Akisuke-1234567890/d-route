@@ -422,7 +422,7 @@
   }
 }
 
-/* v2.1.0-p20.4 Stable finger-follow drag reorder */
+/* v2.1.0-p20.5 Stable bidirectional finger-follow drag reorder */
 .place-card-actions {
   display: flex;
   align-items: center;
@@ -506,14 +506,19 @@
   z-index: 1200;
   margin: 0;
   pointer-events: none;
-  transform: scale(1.018);
-  border-color: rgba(157, 146, 255, .78);
+  transform: translateY(-7px) scale(1.045);
+  border-color: rgba(178, 169, 255, .92);
   background:
-    linear-gradient(135deg, rgba(157, 146, 255, .14), rgba(77, 188, 255, .07)),
-    rgba(18, 27, 63, .99);
-  box-shadow: 0 22px 42px rgba(3, 7, 24, .48), 0 0 0 1px rgba(157, 146, 255, .14);
-  transition: box-shadow 120ms ease, border-color 120ms ease;
-  will-change: top;
+    linear-gradient(135deg, rgba(157, 146, 255, .22), rgba(77, 188, 255, .11)),
+    rgba(21, 31, 70, .995);
+  box-shadow:
+    0 34px 64px rgba(1, 4, 18, .62),
+    0 14px 28px rgba(5, 10, 34, .56),
+    0 0 0 2px rgba(178, 169, 255, .20),
+    inset 0 1px 0 rgba(255, 255, 255, .10);
+  filter: saturate(1.08) brightness(1.06);
+  transition: box-shadow 120ms ease, border-color 120ms ease, transform 120ms ease;
+  will-change: top, transform;
 }
 
 .place-drag-overlay .place-edit-button-ghost {
@@ -544,4 +549,11 @@
   .place-drag-handle {
     transition: none;
   }
+}
+
+
+/* p20.5: insertion cue without moving the captured DOM node during drag */
+.place-card[data-drag-target="true"]:not(.is-drag-placeholder) {
+  border-color: rgba(114, 218, 255, .72);
+  box-shadow: 0 10px 26px rgba(3, 7, 24, .28), inset 0 0 0 1px rgba(114, 218, 255, .16);
 }

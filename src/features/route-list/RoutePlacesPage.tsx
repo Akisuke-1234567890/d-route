@@ -49,6 +49,7 @@ export function RoutePlacesPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [reorderingId, setReorderingId] = useState<string | null>(null);
   const [reorderOverId, setReorderOverId] = useState<string | null>(null);
+  const [dragTargetIndex, setDragTargetIndex] = useState<number | null>(null);
   const [reorderSaving, setReorderSaving] = useState(false);
   const [dragOverlay, setDragOverlay] = useState<{ destinationId: string; top: number; left: number; width: number; height: number } | null>(null);
   const dragStartOrderRef = useRef<DestinationSummary[] | null>(null);
@@ -62,6 +63,8 @@ export function RoutePlacesPage() {
     grabOffsetY: number;
     target: HTMLButtonElement;
     active: boolean;
+    sourceIndex: number;
+    targetIndex: number;
   } | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const editNameInputRef = useRef<HTMLInputElement>(null);
@@ -220,6 +223,7 @@ export function RoutePlacesPage() {
     if (options?.releasePointer !== false) releaseDestinationPointer(session);
     setDragOverlay(null);
     setReorderOverId(null);
+    setDragTargetIndex(null);
     setReorderingId(null);
   }
 
@@ -244,6 +248,8 @@ export function RoutePlacesPage() {
       grabOffsetY: 0,
       target,
       active: false,
+      sourceIndex: destinations.findIndex((item) => item.id === destinationId),
+      targetIndex: destinations.findIndex((item) => item.id === destinationId),
     };
 
     clearDestinationDragTimer();
@@ -262,8 +268,11 @@ export function RoutePlacesPage() {
       session.grabOffsetY = Math.max(0, Math.min(rect.height, session.startY - rect.top));
       dragStartOrderRef.current = destinations.map((item) => ({ ...item }));
       dragCurrentOrderRef.current = destinations.map((item) => ({ ...item }));
+      session.sourceIndex = destinations.findIndex((item) => item.id === session.destinationId);
+      session.targetIndex = session.sourceIndex;
       setReorderingId(session.destinationId);
       setReorderOverId(session.destinationId);
+      setDragTargetIndex(session.sourceIndex);
       setDragOverlay({
         destinationId: session.destinationId,
         top: rect.top,
@@ -288,24 +297,27 @@ export function RoutePlacesPage() {
     event.preventDefault();
     setDragOverlay((current) => current ? { ...current, top: event.clientY - session.grabOffsetY } : current);
 
-    const hovered = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>('[data-destination-id]');
-    const hoveredId = hovered?.dataset.destinationId;
-    if (!hoveredId) return;
+    // Keep the actual DOM order fixed for the whole gesture. On iOS Safari, moving the
+    // captured handle's DOM node while a pointer is down can cause pointer capture to be
+    // cancelled. Instead, calculate only the intended insertion index while dragging and
+    // apply the real list reorder after pointerup.
+    const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-destination-id]'));
+    const otherCards = cards.filter((card) => card.dataset.destinationId !== session.destinationId);
+    let insertionIndex = otherCards.length;
 
-    setReorderOverId(hoveredId);
-    if (hoveredId === session.destinationId) return;
+    for (let index = 0; index < otherCards.length; index += 1) {
+      const rect = otherCards[index].getBoundingClientRect();
+      if (event.clientY < rect.top + rect.height / 2) {
+        insertionIndex = index;
+        break;
+      }
+    }
 
-    setDestinations((current) => {
-      const fromIndex = current.findIndex((item) => item.id === session.destinationId);
-      const toIndex = current.findIndex((item) => item.id === hoveredId);
-      if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return current;
+    session.targetIndex = insertionIndex;
+    setDragTargetIndex(insertionIndex);
 
-      const next = [...current];
-      const [moved] = next.splice(fromIndex, 1);
-      next.splice(toIndex, 0, moved);
-      dragCurrentOrderRef.current = next;
-      return next;
-    });
+    const targetCard = otherCards[Math.min(insertionIndex, Math.max(0, otherCards.length - 1))];
+    setReorderOverId(targetCard?.dataset.destinationId ?? session.destinationId);
   }
 
   async function finishDestinationDrag(event: React.PointerEvent<HTMLButtonElement>) {
@@ -318,14 +330,26 @@ export function RoutePlacesPage() {
     }
 
     const original = dragStartOrderRef.current;
-    const currentOrder = dragCurrentOrderRef.current ?? destinations;
+    let currentOrder = original ? original.map((item) => ({ ...item })) : destinations.map((item) => ({ ...item }));
+
+    if (original) {
+      const sourceIndex = currentOrder.findIndex((item) => item.id === session.destinationId);
+      const targetIndex = Math.max(0, Math.min(session.targetIndex, currentOrder.length - 1));
+      if (sourceIndex >= 0 && sourceIndex !== targetIndex) {
+        const [moved] = currentOrder.splice(sourceIndex, 1);
+        currentOrder.splice(targetIndex, 0, moved);
+      }
+    }
+
     const changed = Boolean(original && currentOrder.some((item, index) => item.id !== original[index]?.id));
 
-    // End all pointer/visual drag state before network I/O. A failed request can no longer
-    // leave the handle stuck in a dragging state.
+    // End all pointer/visual drag state before network I/O. The captured DOM node was never
+    // moved during the gesture, so iOS Safari keeps the pointer session stable in both directions.
     resetDestinationDrag();
 
     if (!changed || !original) return;
+
+    setDestinations(currentOrder);
 
     setError(null);
     setReorderSaving(true);
@@ -419,6 +443,7 @@ export function RoutePlacesPage() {
                 className={`place-card${reorderingId === destination.id ? ' is-drag-placeholder' : ''}${reorderingId && reorderOverId === destination.id && reorderingId !== destination.id ? ' is-reorder-over' : ''}`}
                 key={destination.id}
                 data-destination-id={destination.id}
+                data-drag-target={reorderingId && dragTargetIndex === index ? 'true' : undefined}
               >
                 <div className="place-order" aria-label={`${index + 1}番目`}>{index + 1}</div>
                 <div className="place-icon" aria-hidden="true">📍</div>

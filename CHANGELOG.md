@@ -98,3 +98,10 @@ Known issues: Supabase ProjectとRedirect URLは配布先で設定が必要。Ro
 - pointerup / pointercancel / lostpointercaptureの全終了経路でドラッグ状態を必ず初期化。
 - DB保存はドラッグ終了後に1回だけ実行し、ドラッグ状態と通信状態を分離。
 - DB schema変更なし。
+
+
+## v2.1.0-p20.5
+
+- Fixed top-to-bottom Destination drag being cancelled on iPhone by keeping the captured DOM node stationary until pointer release.
+- Reorder target is now calculated from pointer Y position instead of moving the live list during the gesture.
+- Increased floating-card depth with stronger shadow, scale, lift and surface contrast.
