@@ -48,10 +48,13 @@ export function RoutePlacesPage() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [reorderingId, setReorderingId] = useState<string | null>(null);
+  const [reorderOverId, setReorderOverId] = useState<string | null>(null);
   const [reorderSaving, setReorderSaving] = useState(false);
   const dragStartOrderRef = useRef<DestinationSummary[] | null>(null);
   const dragCurrentOrderRef = useRef<DestinationSummary[] | null>(null);
   const dragPointerIdRef = useRef<number | null>(null);
+  const dragLongPressTimerRef = useRef<number | null>(null);
+  const dragPendingRef = useRef<{ pointerId: number; destinationId: string; x: number; y: number; target: HTMLButtonElement } | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const editNameInputRef = useRef<HTMLInputElement>(null);
 
@@ -175,25 +178,64 @@ export function RoutePlacesPage() {
     if (!deleting) setDeleteTarget(null);
   }
 
+  function clearPendingDestinationDrag() {
+    if (dragLongPressTimerRef.current !== null) {
+      window.clearTimeout(dragLongPressTimerRef.current);
+      dragLongPressTimerRef.current = null;
+    }
+    dragPendingRef.current = null;
+  }
+
   function beginDestinationDrag(event: React.PointerEvent<HTMLButtonElement>, destinationId: string) {
     if (reorderingId || reorderSaving) return;
     if (event.pointerType === 'mouse' && event.button !== 0) return;
 
-    event.preventDefault();
-    dragStartOrderRef.current = destinations.map((item) => ({ ...item }));
-    dragCurrentOrderRef.current = destinations.map((item) => ({ ...item }));
-    dragPointerIdRef.current = event.pointerId;
-    setReorderingId(destinationId);
-    event.currentTarget.setPointerCapture(event.pointerId);
+    clearPendingDestinationDrag();
+    dragPendingRef.current = {
+      pointerId: event.pointerId,
+      destinationId,
+      x: event.clientX,
+      y: event.clientY,
+      target: event.currentTarget,
+    };
+
+    dragLongPressTimerRef.current = window.setTimeout(() => {
+      const pending = dragPendingRef.current;
+      if (!pending || pending.pointerId !== event.pointerId) return;
+
+      dragStartOrderRef.current = destinations.map((item) => ({ ...item }));
+      dragCurrentOrderRef.current = destinations.map((item) => ({ ...item }));
+      dragPointerIdRef.current = pending.pointerId;
+      setReorderingId(pending.destinationId);
+      setReorderOverId(pending.destinationId);
+
+      try {
+        pending.target.setPointerCapture(pending.pointerId);
+      } catch {
+        // Some browsers can release the pointer before capture is established.
+      }
+
+      clearPendingDestinationDrag();
+    }, 180);
   }
 
   function moveDraggedDestination(event: React.PointerEvent<HTMLButtonElement>) {
+    const pending = dragPendingRef.current;
+    if (pending && pending.pointerId === event.pointerId && !reorderingId) {
+      const moved = Math.hypot(event.clientX - pending.x, event.clientY - pending.y);
+      if (moved > 10) clearPendingDestinationDrag();
+      return;
+    }
+
     if (!reorderingId || dragPointerIdRef.current !== event.pointerId) return;
 
     event.preventDefault();
     const hovered = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>('[data-destination-id]');
     const hoveredId = hovered?.dataset.destinationId;
-    if (!hoveredId || hoveredId === reorderingId) return;
+    if (!hoveredId) return;
+
+    setReorderOverId(hoveredId);
+    if (hoveredId === reorderingId) return;
 
     setDestinations((current) => {
       const fromIndex = current.findIndex((item) => item.id === reorderingId);
@@ -209,6 +251,11 @@ export function RoutePlacesPage() {
   }
 
   async function finishDestinationDrag(event: React.PointerEvent<HTMLButtonElement>) {
+    if (dragPendingRef.current?.pointerId === event.pointerId && !reorderingId) {
+      clearPendingDestinationDrag();
+      return;
+    }
+
     if (!reorderingId || dragPointerIdRef.current !== event.pointerId) return;
 
     const original = dragStartOrderRef.current;
@@ -216,6 +263,7 @@ export function RoutePlacesPage() {
     dragStartOrderRef.current = null;
     dragCurrentOrderRef.current = null;
     dragPointerIdRef.current = null;
+    setReorderOverId(null);
 
     try {
       if (event.currentTarget.hasPointerCapture(event.pointerId)) {
@@ -248,11 +296,16 @@ export function RoutePlacesPage() {
   }
 
   function cancelDestinationDrag(event: React.PointerEvent<HTMLButtonElement>) {
+    if (dragPendingRef.current?.pointerId === event.pointerId) {
+      clearPendingDestinationDrag();
+    }
+
     if (!reorderingId || dragPointerIdRef.current !== event.pointerId) return;
     if (dragStartOrderRef.current) setDestinations(dragStartOrderRef.current);
     dragStartOrderRef.current = null;
     dragCurrentOrderRef.current = null;
     dragPointerIdRef.current = null;
+    setReorderOverId(null);
     setReorderingId(null);
   }
 
@@ -318,7 +371,7 @@ export function RoutePlacesPage() {
           <div className="places-list">
             {destinations.map((destination, index) => (
               <article
-                className={`place-card${reorderingId === destination.id ? ' is-reordering' : ''}${reorderingId && reorderingId !== destination.id ? ' is-reorder-target' : ''}`}
+                className={`place-card${reorderingId === destination.id ? ' is-reordering' : ''}${reorderingId && reorderOverId === destination.id && reorderingId !== destination.id ? ' is-reorder-over' : ''}`}
                 key={destination.id}
                 data-destination-id={destination.id}
               >
@@ -347,14 +400,16 @@ export function RoutePlacesPage() {
                     className="place-drag-handle"
                     type="button"
                     aria-label={`${destination.name}を長押しして並び替え`}
-                    title="押したまま上下に移動"
+                    title="長押しして並び替え"
                     disabled={reorderSaving || (Boolean(reorderingId) && reorderingId !== destination.id)}
                     onPointerDown={(event) => beginDestinationDrag(event, destination.id)}
                     onPointerMove={moveDraggedDestination}
                     onPointerUp={(event) => void finishDestinationDrag(event)}
                     onPointerCancel={cancelDestinationDrag}
                   >
-                    ⠿
+                    <span className="drag-dot-grid" aria-hidden="true">
+                      <i /><i /><i /><i /><i /><i />
+                    </span>
                   </button>
                 </div>
               </article>
