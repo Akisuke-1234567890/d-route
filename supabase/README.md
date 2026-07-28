@@ -38,3 +38,11 @@ Migration: `migrations/202607280002_default_phase_model.sql`
 - `destinations.phase_id` をNOT NULL化
 - 新規Route INSERT後にDefault Phaseを自動生成
 - Phaseは開始時間のみUIで利用し、終了時間はPlanning UIでは利用しない
+
+
+## v2.1.0-p23 Destination time model
+
+Migration: `migrations/202607290001_destination_time_model.sql`
+- time_type: none / fixed / approx
+- start_time: 時間ありで必須
+- end_time: 任意

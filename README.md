@@ -1,4 +1,4 @@
-# D Route v2.1.0-p22.5.1
+# D Route v2.1.0-p23
 
 Current baseline: v2.1.0-p22.1
 
@@ -119,3 +119,16 @@ Phase追加UIの実機不具合修正。
 
 - p22.5で必須マークTSXに混入した不要なエスケープ文字を修正
 - UI仕様・DB仕様の変更なし
+
+
+## v2.1.0-p23
+
+- Destinationの重要度と時間指定を独立
+- 時間指定なしはPhase手動選択＋自由並び替え
+- 時間ありは確定/目安＋開始時刻、終了時刻は任意
+- 時間ありはPhase開始時間から所属Phaseを自動判定
+- Phase内では時刻ありを時刻順、その下に時刻なしをorder_value順
+- 時刻ありはドラッグ不可
+- migration: `supabase/migrations/202607290001_destination_time_model.sql`
+
+- 時刻からPhaseを決められない/不一致の項目は表示上の『例外管理』へ退避（DB上の所属は保持）

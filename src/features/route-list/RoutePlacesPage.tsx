@@ -14,6 +14,7 @@ import {
   updateRouteDestination,
   type DestinationImportance,
   type DestinationSummary,
+  type DestinationTimeType,
 } from './destinations';
 import { createRoutePhase, getRoutePhases, updateRoutePhase, type PhaseSummary } from './phases';
 
@@ -45,6 +46,25 @@ function getImportanceLabel(importance: DestinationSummary['importance']) {
   return importance === 'optional' ? '任意' : '必須';
 }
 
+function timeToMinutes(value: string | null | undefined): number | null {
+  if (!value) return null;
+  const [h, m] = value.slice(0, 5).split(':').map(Number);
+  return Number.isFinite(h) && Number.isFinite(m) ? h * 60 + m : null;
+}
+
+function resolvePhaseForTime(phases: PhaseSummary[], startTime: string): PhaseSummary | null {
+  const target = timeToMinutes(startTime); if (target === null) return null;
+  return phases.filter(p => timeToMinutes(p.startTime) !== null)
+    .sort((a,b)=>(timeToMinutes(b.startTime)??-1)-(timeToMinutes(a.startTime)??-1))
+    .find(p => (timeToMinutes(p.startTime)??Infinity) <= target) ?? null;
+}
+
+function formatDestinationTime(destination: DestinationSummary): string | null {
+  if (destination.timeType === 'none' || !destination.startTime) return null;
+  const start=destination.startTime.slice(0,5); const end=destination.endTime?.slice(0,5); const range=end?`${start}〜${end}`:start;
+  return destination.timeType === 'approx' ? `目安 ${range}` : range;
+}
+
 export function RoutePlacesPage() {
   const { routeId = '' } = useParams<{ routeId: string }>();
   const [destinations, setDestinations] = useState<DestinationSummary[]>([]);
@@ -65,6 +85,9 @@ export function RoutePlacesPage() {
   const [locationName, setLocationName] = useState('');
   const [description, setDescription] = useState('');
   const [importance, setImportance] = useState<DestinationImportance>('must');
+  const [timeType, setTimeType] = useState<DestinationTimeType>('none');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -73,6 +96,9 @@ export function RoutePlacesPage() {
   const [editLocationName, setEditLocationName] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editImportance, setEditImportance] = useState<DestinationImportance>('must');
+  const [editTimeType, setEditTimeType] = useState<DestinationTimeType>('none');
+  const [editStartTime, setEditStartTime] = useState('');
+  const [editEndTime, setEditEndTime] = useState('');
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DestinationSummary | null>(null);
@@ -119,17 +145,39 @@ export function RoutePlacesPage() {
 
   useEffect(() => { void loadPlanning(); }, [routeId]);
 
+  const exceptionDestinationIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const destination of destinations) {
+      if (destination.timeType === 'none' || !destination.startTime) continue;
+      const expected = resolvePhaseForTime(phases, destination.startTime);
+      if (!expected || expected.id !== destination.phaseId) ids.add(destination.id);
+    }
+    return ids;
+  }, [phases, destinations]);
+
   const destinationsByPhase = useMemo(() => {
     const map = new Map<string, DestinationSummary[]>();
     for (const phase of phases) map.set(phase.id, []);
     for (const destination of destinations) {
-      const list = map.get(destination.phaseId ?? '') ?? [];
+      if (exceptionDestinationIds.has(destination.id)) continue;
+      const list = map.get(destination.phaseId) ?? [];
       list.push(destination);
-      map.set(destination.phaseId ?? '', list);
+      map.set(destination.phaseId, list);
     }
-    for (const list of map.values()) list.sort((a, b) => a.orderValue - b.orderValue);
+    for (const list of map.values()) list.sort((a,b)=>{
+      const at=a.timeType!=='none'&&Boolean(a.startTime), bt=b.timeType!=='none'&&Boolean(b.startTime);
+      if(at!==bt) return at?-1:1;
+      if(at&&bt){ const d=(timeToMinutes(a.startTime)??0)-(timeToMinutes(b.startTime)??0); if(d!==0)return d; }
+      return a.orderValue-b.orderValue;
+    });
     return map;
-  }, [phases, destinations]);
+  }, [phases, destinations, exceptionDestinationIds]);
+
+  const exceptionDestinations = useMemo(() => destinations
+    .filter((destination) => exceptionDestinationIds.has(destination.id))
+    .sort((a,b)=>(timeToMinutes(a.startTime)??0)-(timeToMinutes(b.startTime)??0)),
+    [destinations, exceptionDestinationIds]
+  );
 
   useEffect(() => {
     if (!createOpen) return;
@@ -155,6 +203,7 @@ export function RoutePlacesPage() {
     setLocationName('');
     setDescription('');
     setImportance('must');
+    setTimeType('none'); setStartTime(''); setEndTime('');
     setFormError(null);
     setCreateOpen(true);
   }
@@ -170,12 +219,11 @@ export function RoutePlacesPage() {
     setSaving(true);
     setFormError(null);
     try {
+      const autoPhase = timeType === 'none' ? null : resolvePhaseForTime(phases, startTime);
+      const fallbackPhaseId = selectedPhaseId || phases[0]?.id || '';
       const created = await createRouteDestination(routeId, {
-        phaseId: selectedPhaseId,
-        name,
-        locationName,
-        description,
-        importance,
+        phaseId: timeType === 'none' ? fallbackPhaseId : (autoPhase?.id ?? fallbackPhaseId), name, locationName, description, importance,
+        timeType, startTime: timeType === 'none' ? null : startTime, endTime: timeType === 'none' ? null : (endTime || null),
       });
       setDestinations((current) => [...current, created].sort((a, b) => a.orderValue - b.orderValue));
       setCreateOpen(false);
@@ -194,6 +242,7 @@ export function RoutePlacesPage() {
     setEditLocationName(destination.locationName ?? '');
     setEditDescription(destination.description ?? '');
     setEditImportance(destination.importance === 'optional' ? 'optional' : 'must');
+    setEditTimeType(destination.timeType); setEditStartTime(destination.startTime?.slice(0,5) ?? ''); setEditEndTime(destination.endTime?.slice(0,5) ?? '');
     setEditError(null);
   }
 
@@ -208,12 +257,11 @@ export function RoutePlacesPage() {
     setEditSaving(true);
     setEditError(null);
     try {
+      const autoPhase = editTimeType === 'none' ? null : resolvePhaseForTime(phases, editStartTime);
+      const fallbackPhaseId = editPhaseId || editing.phaseId || phases[0]?.id || '';
       const updated = await updateRouteDestination(routeId, editing.id, {
-        phaseId: editPhaseId,
-        name: editName,
-        locationName: editLocationName,
-        description: editDescription,
-        importance: editImportance,
+        phaseId: editTimeType === 'none' ? fallbackPhaseId : (autoPhase?.id ?? fallbackPhaseId), name: editName, locationName: editLocationName, description: editDescription, importance: editImportance,
+        timeType: editTimeType, startTime: editTimeType === 'none' ? null : editStartTime, endTime: editTimeType === 'none' ? null : (editEndTime || null),
       });
       setDestinations((current) =>
         current.map((item) => item.id === updated.id ? updated : item)
@@ -357,7 +405,7 @@ export function RoutePlacesPage() {
       const rect = card.getBoundingClientRect();
       session.active = true;
       session.grabOffsetY = Math.max(0, Math.min(rect.height, session.startY - rect.top));
-      const phaseOrder = destinations.filter((item) => item.phaseId === session.phaseId).map((item) => ({ ...item }));
+      const phaseOrder = destinations.filter((item) => item.phaseId === session.phaseId && item.timeType === 'none').map((item) => ({ ...item }));
       dragStartOrderRef.current = phaseOrder;
       dragCurrentOrderRef.current = phaseOrder;
       session.sourceIndex = phaseOrder.findIndex((item) => item.id === session.destinationId);
@@ -393,7 +441,7 @@ export function RoutePlacesPage() {
     // captured handle's DOM node while a pointer is down can cause pointer capture to be
     // cancelled. Instead, calculate only the intended insertion index while dragging and
     // apply the real list reorder after pointerup.
-    const cards = Array.from(document.querySelectorAll<HTMLElement>(`[data-destination-id][data-phase-id="${session.phaseId}"]`));
+    const cards = Array.from(document.querySelectorAll<HTMLElement>(`[data-destination-id][data-phase-id="${session.phaseId}"][data-draggable="true"]`));
     const otherCards = cards.filter((card) => card.dataset.destinationId !== session.destinationId);
     let insertionIndex = otherCards.length;
 
@@ -422,7 +470,7 @@ export function RoutePlacesPage() {
     }
 
     const original = dragStartOrderRef.current;
-    let currentOrder = original ? original.map((item) => ({ ...item })) : destinations.filter((item) => item.phaseId === session.phaseId).map((item) => ({ ...item }));
+    let currentOrder = original ? original.map((item) => ({ ...item })) : destinations.filter((item) => item.phaseId === session.phaseId && item.timeType === 'none').map((item) => ({ ...item }));
 
     if (original) {
       const sourceIndex = currentOrder.findIndex((item) => item.id === session.destinationId);
@@ -550,10 +598,10 @@ export function RoutePlacesPage() {
                   ) : (
                     <div className="places-list">
                       {phaseDestinations.map((destination, index) => { const dragShift = getDestinationDragShift(index); return (
-                        <article className={`place-card${reorderingId === destination.id ? ' is-drag-placeholder' : ''}${dragShift !== 0 ? ' is-reorder-shifting' : ''}${reorderingId && reorderOverId === destination.id && reorderingId !== destination.id ? ' is-reorder-over' : ''}`} key={destination.id} data-destination-id={destination.id} data-phase-id={phase.id} style={dragShift !== 0 ? { transform: `translateY(${dragShift}px)` } : undefined}>
+                        <article className={`place-card${reorderingId === destination.id ? ' is-drag-placeholder' : ''}${dragShift !== 0 ? ' is-reorder-shifting' : ''}${reorderingId && reorderOverId === destination.id && reorderingId !== destination.id ? ' is-reorder-over' : ''}`} key={destination.id} data-destination-id={destination.id} data-phase-id={phase.id} data-draggable={destination.timeType === 'none' ? 'true' : 'false'} style={dragShift !== 0 ? { transform: `translateY(${dragShift}px)` } : undefined}>
                           <div className="place-order" aria-label={`${index + 1}番目`}>{index + 1}</div><div className="place-icon" aria-hidden="true">📍</div>
-                          <div className="place-copy"><div className="place-meta">{destination.importance === 'must' ? <span className="place-required-mark" aria-label="必須" title="必須">★</span> : null}{destination.locationName ? <span>{destination.locationName}</span> : null}</div><h2>{destination.name}</h2><p>{destination.description ?? '説明はまだありません。'}</p></div>
-                          <div className="place-card-actions"><button className="place-edit-button" type="button" onClick={() => openEditModal(destination)} disabled={Boolean(reorderingId) || reorderSaving}>編集</button><button className="place-drag-handle" type="button" aria-label={`${destination.name}を長押しして並び替え`} disabled={reorderSaving || (Boolean(reorderingId) && reorderingId !== destination.id)} onPointerDown={(event) => beginDestinationDrag(event, destination.id, phase.id)} onPointerMove={moveDraggedDestination} onPointerUp={(event) => void finishDestinationDrag(event)} onPointerCancel={cancelDestinationDrag} onLostPointerCapture={handleLostDestinationPointerCapture}><span className="drag-dot-grid" aria-hidden="true"><i /><i /><i /><i /><i /><i /></span></button></div>
+                          <div className="place-copy"><div className="place-meta">{destination.importance === 'must' ? <span className="place-required-mark" aria-label="必須" title="必須">★</span> : null}{formatDestinationTime(destination) ? <span className={`place-time-badge ${destination.timeType === 'approx' ? 'is-approx' : 'is-fixed'}`}>{formatDestinationTime(destination)}</span> : null}{destination.locationName ? <span>{destination.locationName}</span> : null}</div><h2>{destination.name}</h2><p>{destination.description ?? '説明はまだありません。'}</p></div>
+                          <div className="place-card-actions"><button className="place-edit-button" type="button" onClick={() => openEditModal(destination)} disabled={Boolean(reorderingId) || reorderSaving}>編集</button>{destination.timeType === 'none' ? <button className="place-drag-handle" type="button" aria-label={`${destination.name}を長押しして並び替え`} disabled={reorderSaving || (Boolean(reorderingId) && reorderingId !== destination.id)} onPointerDown={(event) => beginDestinationDrag(event, destination.id, phase.id)} onPointerMove={moveDraggedDestination} onPointerUp={(event) => void finishDestinationDrag(event)} onPointerCancel={cancelDestinationDrag} onLostPointerCapture={handleLostDestinationPointerCapture}><span className="drag-dot-grid" aria-hidden="true"><i /><i /><i /><i /><i /><i /></span></button> : <span className="place-time-lock">時間</span>}</div>
                         </article>
                       ); })}
                     </div>
@@ -561,6 +609,25 @@ export function RoutePlacesPage() {
                 </section>
               );
             })}
+            {exceptionDestinations.length > 0 ? (
+              <section className="places-phase-section exception-management">
+                <header className="places-phase-header">
+                  <div className="places-phase-copy">
+                    <div className="places-phase-titleline"><h2>例外管理</h2><span className="exception-count">{exceptionDestinations.length}件</span></div>
+                    <p>設定時刻とPhaseの時間帯が一致しない予定です。編集すると再判定されます。</p>
+                  </div>
+                </header>
+                <div className="places-list">
+                  {exceptionDestinations.map((destination, index) => (
+                    <article className="place-card is-exception" key={destination.id}>
+                      <div className="place-order">{index + 1}</div>
+                      <div className="place-copy"><div className="place-meta">{destination.importance === 'must' ? <span className="place-required-mark" aria-label="必須" title="必須">★</span> : null}{formatDestinationTime(destination) ? <span className="place-time-badge is-exception-time">{formatDestinationTime(destination)}</span> : null}</div><h2>{destination.name}</h2><p>所属：{phases.find((phase) => phase.id === destination.phaseId)?.name || '名前未設定のPhase'}</p></div>
+                      <div className="place-card-actions"><button className="place-edit-button" type="button" onClick={() => openEditModal(destination)}>編集</button></div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            ) : null}
           </div>
         )}
       </section>
@@ -616,22 +683,6 @@ export function RoutePlacesPage() {
             </div>
 
             <form className="route-create-form place-form" onSubmit={handleCreate}>
-              <div className="field-group"><label htmlFor="destination-phase">Phase</label><select id="destination-phase" value={selectedPhaseId} onChange={(event) => setSelectedPhaseId(event.target.value)} disabled={saving}>{phases.map((phase) => <option value={phase.id} key={phase.id}>{phase.name || '名前未設定のPhase'}{phase.startTime ? ` (${phase.startTime.slice(0,5)}〜)` : ''}</option>)}</select></div>
-              <div className="field-group">
-                <label htmlFor="destination-name">目的地名</label>
-                <input ref={nameInputRef} id="destination-name" value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  placeholder="例：大観山展望台" maxLength={40} autoComplete="off" disabled={saving} required />
-                <p className="field-hint">必須・40文字まで</p>
-              </div>
-
-              <div className="field-group">
-                <label htmlFor="destination-location">場所名 <span className="field-optional">任意</span></label>
-                <input id="destination-location" value={locationName}
-                  onChange={(event) => setLocationName(event.target.value)}
-                  placeholder="例：淵野辺駅" maxLength={80} autoComplete="off" disabled={saving} />
-              </div>
-
               <div className="field-group">
                 <span className="field-label">重要度</span>
                 <div className="importance-segment" role="group" aria-label="重要度">
@@ -656,6 +707,27 @@ export function RoutePlacesPage() {
                 </div>
               </div>
 
+              <div className="field-group"><span className="field-label">時間</span><div className="importance-segment"><button className={`importance-option ${timeType === 'none' ? 'is-active' : ''}`} type="button" onClick={() => { setTimeType('none'); setStartTime(''); setEndTime(''); }} disabled={saving}>指定なし</button><button className={`importance-option ${timeType !== 'none' ? 'is-active' : ''}`} type="button" onClick={() => setTimeType(timeType === 'none' ? 'fixed' : timeType)} disabled={saving}>時間あり</button></div></div>
+              {timeType !== 'none' ? <>
+                <div className="field-group"><span className="field-label">時間の種類</span><div className="importance-segment"><button className={`importance-option ${timeType === 'fixed' ? 'is-active' : ''}`} type="button" onClick={() => setTimeType('fixed')} disabled={saving}>確定</button><button className={`importance-option ${timeType === 'approx' ? 'is-active' : ''}`} type="button" onClick={() => setTimeType('approx')} disabled={saving}>目安</button></div></div>
+                <div className="destination-time-grid"><div className="field-group"><label htmlFor="destination-start-time">開始</label><input id="destination-start-time" type="time" value={startTime} onChange={(e)=>setStartTime(e.target.value)} disabled={saving} required /></div><div className="field-group"><label htmlFor="destination-end-time">終了 <span className="field-optional">任意</span></label><input id="destination-end-time" type="time" value={endTime} onChange={(e)=>setEndTime(e.target.value)} disabled={saving} /></div></div>
+                <div className="auto-phase-preview">{startTime ? (()=>{const p=resolvePhaseForTime(phases,startTime); return p ? <>Phase：<strong>{p.name || '名前未設定のPhase'}</strong>へ自動配置</> : <>該当Phaseなし：<strong>例外管理</strong>に表示されます</>;})() : <>開始時刻を入れるとPhaseを自動判定します</>}</div>
+              </> : <div className="field-group"><label htmlFor="destination-phase">Phase</label><select id="destination-phase" value={selectedPhaseId} onChange={(event) => setSelectedPhaseId(event.target.value)} disabled={saving}>{phases.map((phase) => <option value={phase.id} key={phase.id}>{phase.name || '名前未設定のPhase'}{phase.startTime ? ` (${phase.startTime.slice(0,5)}〜)` : ''}</option>)}</select></div>}
+              <div className="field-group">
+                <label htmlFor="destination-name">目的地名</label>
+                <input ref={nameInputRef} id="destination-name" value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  placeholder="例：大観山展望台" maxLength={40} autoComplete="off" disabled={saving} required />
+                <p className="field-hint">必須・40文字まで</p>
+              </div>
+
+              <div className="field-group">
+                <label htmlFor="destination-location">場所名 <span className="field-optional">任意</span></label>
+                <input id="destination-location" value={locationName}
+                  onChange={(event) => setLocationName(event.target.value)}
+                  placeholder="例：淵野辺駅" maxLength={80} autoComplete="off" disabled={saving} />
+              </div>
+
               <div className="field-group">
                 <label htmlFor="destination-description">メモ <span className="field-optional">任意</span></label>
                 <textarea id="destination-description" value={description}
@@ -668,7 +740,7 @@ export function RoutePlacesPage() {
 
               <div className="modal-actions">
                 <button className="secondary-button" type="button" onClick={closeCreateModal} disabled={saving}>キャンセル</button>
-                <button className="primary-button" type="submit" disabled={!name.trim() || saving}>
+                <button className="primary-button" type="submit" disabled={!name.trim() || saving || (timeType !== 'none' && !startTime)}>
                   {saving ? '追加中…' : '追加'}
                 </button>
               </div>
@@ -691,22 +763,6 @@ export function RoutePlacesPage() {
             </div>
 
             <form className="route-create-form place-form" onSubmit={handleEdit}>
-              <div className="field-group"><label htmlFor="edit-destination-phase">Phase</label><select id="edit-destination-phase" value={editPhaseId} onChange={(event) => setEditPhaseId(event.target.value)} disabled={editSaving}>{phases.map((phase) => <option value={phase.id} key={phase.id}>{phase.name || '名前未設定のPhase'}{phase.startTime ? ` (${phase.startTime.slice(0,5)}〜)` : ''}</option>)}</select></div>
-              <div className="field-group">
-                <label htmlFor="edit-destination-name">目的地名</label>
-                <input ref={editNameInputRef} id="edit-destination-name" value={editName}
-                  onChange={(event) => setEditName(event.target.value)}
-                  maxLength={40} autoComplete="off" disabled={editSaving} required />
-                <p className="field-hint">必須・40文字まで</p>
-              </div>
-
-              <div className="field-group">
-                <label htmlFor="edit-destination-location">場所名 <span className="field-optional">任意</span></label>
-                <input id="edit-destination-location" value={editLocationName}
-                  onChange={(event) => setEditLocationName(event.target.value)}
-                  maxLength={80} autoComplete="off" disabled={editSaving} />
-              </div>
-
               <div className="field-group">
                 <span className="field-label">重要度</span>
                 <div className="importance-segment" role="group" aria-label="重要度">
@@ -731,6 +787,27 @@ export function RoutePlacesPage() {
                 </div>
               </div>
 
+              <div className="field-group"><span className="field-label">時間</span><div className="importance-segment"><button className={`importance-option ${editTimeType === 'none' ? 'is-active' : ''}`} type="button" onClick={() => { setEditTimeType('none'); setEditStartTime(''); setEditEndTime(''); }} disabled={editSaving}>指定なし</button><button className={`importance-option ${editTimeType !== 'none' ? 'is-active' : ''}`} type="button" onClick={() => setEditTimeType(editTimeType === 'none' ? 'fixed' : editTimeType)} disabled={editSaving}>時間あり</button></div></div>
+              {editTimeType !== 'none' ? <>
+                <div className="field-group"><span className="field-label">時間の種類</span><div className="importance-segment"><button className={`importance-option ${editTimeType === 'fixed' ? 'is-active' : ''}`} type="button" onClick={() => setEditTimeType('fixed')} disabled={editSaving}>確定</button><button className={`importance-option ${editTimeType === 'approx' ? 'is-active' : ''}`} type="button" onClick={() => setEditTimeType('approx')} disabled={editSaving}>目安</button></div></div>
+                <div className="destination-time-grid"><div className="field-group"><label htmlFor="edit-destination-start-time">開始</label><input id="edit-destination-start-time" type="time" value={editStartTime} onChange={(e)=>setEditStartTime(e.target.value)} disabled={editSaving} required /></div><div className="field-group"><label htmlFor="edit-destination-end-time">終了 <span className="field-optional">任意</span></label><input id="edit-destination-end-time" type="time" value={editEndTime} onChange={(e)=>setEditEndTime(e.target.value)} disabled={editSaving} /></div></div>
+                <div className="auto-phase-preview">{editStartTime ? (()=>{const p=resolvePhaseForTime(phases,editStartTime); return p ? <>Phase：<strong>{p.name || '名前未設定のPhase'}</strong>へ自動配置</> : <>該当Phaseなし：<strong>例外管理</strong>に表示されます</>;})() : <>開始時刻を入れるとPhaseを自動判定します</>}</div>
+              </> : <div className="field-group"><label htmlFor="edit-destination-phase">Phase</label><select id="edit-destination-phase" value={editPhaseId} onChange={(event) => setEditPhaseId(event.target.value)} disabled={editSaving}>{phases.map((phase) => <option value={phase.id} key={phase.id}>{phase.name || '名前未設定のPhase'}{phase.startTime ? ` (${phase.startTime.slice(0,5)}〜)` : ''}</option>)}</select></div>}
+              <div className="field-group">
+                <label htmlFor="edit-destination-name">目的地名</label>
+                <input ref={editNameInputRef} id="edit-destination-name" value={editName}
+                  onChange={(event) => setEditName(event.target.value)}
+                  maxLength={40} autoComplete="off" disabled={editSaving} required />
+                <p className="field-hint">必須・40文字まで</p>
+              </div>
+
+              <div className="field-group">
+                <label htmlFor="edit-destination-location">場所名 <span className="field-optional">任意</span></label>
+                <input id="edit-destination-location" value={editLocationName}
+                  onChange={(event) => setEditLocationName(event.target.value)}
+                  maxLength={80} autoComplete="off" disabled={editSaving} />
+              </div>
+
               <div className="field-group">
                 <label htmlFor="edit-destination-description">メモ <span className="field-optional">任意</span></label>
                 <textarea id="edit-destination-description" value={editDescription}
@@ -742,7 +819,7 @@ export function RoutePlacesPage() {
               {editError && <p className="form-error" role="alert">{editError}</p>}
 
               <div className="modal-actions edit-place-actions">
-                <button className="primary-button" type="submit" disabled={!editName.trim() || editSaving}>
+                <button className="primary-button" type="submit" disabled={!editName.trim() || editSaving || (editTimeType !== 'none' && !editStartTime)}>
                   {editSaving ? '保存中…' : '保存'}
                 </button>
                 <button className="secondary-button" type="button" onClick={closeEditModal} disabled={editSaving}>
