@@ -95,10 +95,7 @@ function PhaseDashboard({ routeId }: { routeId: string }) {
             <p className="eyebrow">CURRENT PHASE</p>
             <h2 id="v2-phase-title">{prototypePhase.name}</h2>
           </div>
-          <div className="v2-phase-heading-actions">
-            <span className="v2-phase-time">{prototypePhase.startTime}〜</span>
-            <Link className="v2-text-link" to={`/routes/${routeId}/phases`}>Phaseを管理 ›</Link>
-          </div>
+          <span className="v2-phase-time">{prototypePhase.startTime}〜</span>
         </div>
 
         <div className="v2-destination-stage">

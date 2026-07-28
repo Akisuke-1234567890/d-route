@@ -18,6 +18,7 @@ export type DestinationSummary = {
 };
 
 export type CreateDestinationInput = {
+  phaseId: string;
   name: string;
   locationName?: string;
   description?: string;
@@ -101,6 +102,7 @@ export async function createRouteDestination(
     .from('destinations')
     .select('order_value')
     .eq('route_id', routeId)
+    .eq('phase_id', input.phaseId)
     .eq('record_status', 'active')
     .is('deleted_at', null)
     .order('order_value', { ascending: false })
@@ -115,6 +117,7 @@ export async function createRouteDestination(
     .from('destinations')
     .insert({
       route_id: routeId,
+      phase_id: input.phaseId,
       name,
       location_name: input.locationName?.trim() || null,
       description: input.description?.trim() || null,
@@ -150,6 +153,7 @@ export async function updateRouteDestination(
   const { data, error } = await supabase
     .from('destinations')
     .update({
+      phase_id: input.phaseId,
       name,
       location_name: input.locationName?.trim() || null,
       description: input.description?.trim() || null,

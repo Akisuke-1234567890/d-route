@@ -580,3 +580,24 @@
     transition: none;
   }
 }
+
+/* v2.1.0-p22.1 Phase-first Places planning */
+.phase-planning-list { display: grid; gap: 18px; }
+.places-phase-section { overflow: hidden; border: 1px solid rgba(196,203,255,.14); border-radius: 24px; background: rgba(9,16,46,.42); }
+.places-phase-header { display:flex; gap:14px; align-items:center; justify-content:space-between; padding:16px 16px 14px; border-bottom:1px solid rgba(196,203,255,.09); background:rgba(117,102,255,.055); }
+.places-phase-copy { min-width:0; }
+.places-phase-titleline { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.places-phase-titleline h2 { margin:0; color:var(--text); font-size:1.02rem; }
+.phase-unnamed-badge,.phase-start-badge { padding:4px 8px; border-radius:999px; font-size:.69rem; font-weight:850; }
+.phase-unnamed-badge { background:rgba(255,255,255,.055); color:var(--muted); }
+.phase-start-badge { background:rgba(91,203,255,.10); color:#a7e2ff; }
+.places-phase-copy p { margin:6px 0 0; color:var(--muted); font-size:.76rem; }
+.places-phase-actions { display:flex; gap:8px; flex:0 0 auto; }
+.phase-edit-button,.phase-add-place-button { min-height:38px; padding:0 12px; border-radius:12px; font:inherit; font-size:.76rem; font-weight:850; }
+.phase-edit-button { border:1px solid rgba(196,203,255,.16); background:rgba(255,255,255,.04); color:var(--text); }
+.phase-add-place-button { border:1px solid rgba(157,146,255,.24); background:rgba(117,102,255,.13); color:#e4e0ff; }
+.places-phase-section > .places-list { padding:12px; }
+.phase-empty-add { width:calc(100% - 24px); min-height:62px; margin:12px; border:1px dashed rgba(196,203,255,.16); border-radius:16px; background:rgba(255,255,255,.025); color:var(--muted); font:inherit; font-size:.8rem; font-weight:800; }
+.place-form select { width:100%; min-height:48px; padding:0 13px; border:1px solid rgba(196,203,255,.16); border-radius:15px; outline:none; background:rgba(4,9,29,.72); color:var(--text); font:inherit; }
+.phase-edit-modal { width:min(calc(100% - 24px),520px); }
+@media (max-width:520px) { .places-phase-header { align-items:flex-start; padding:14px; } .places-phase-actions { display:grid; gap:6px; } .phase-edit-button,.phase-add-place-button { min-height:36px; padding-inline:10px; } }

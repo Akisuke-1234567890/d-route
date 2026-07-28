@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
 import { RefreshButton } from '../../shared/ui/RefreshButton';
@@ -15,6 +15,7 @@ import {
   type DestinationImportance,
   type DestinationSummary,
 } from './destinations';
+import { createRoutePhase, getRoutePhases, updateRoutePhase, type PhaseSummary } from './phases';
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback;
@@ -27,6 +28,16 @@ function getImportanceLabel(importance: DestinationSummary['importance']) {
 export function RoutePlacesPage() {
   const { routeId = '' } = useParams<{ routeId: string }>();
   const [destinations, setDestinations] = useState<DestinationSummary[]>([]);
+  const [phases, setPhases] = useState<PhaseSummary[]>([]);
+  const [selectedPhaseId, setSelectedPhaseId] = useState('');
+  const [editPhaseId, setEditPhaseId] = useState('');
+  const [phaseCreateOpen, setPhaseCreateOpen] = useState(false);
+  const [phaseEditing, setPhaseEditing] = useState<PhaseSummary | null>(null);
+  const [phaseName, setPhaseName] = useState('');
+  const [phaseDescription, setPhaseDescription] = useState('');
+  const [phaseStartTime, setPhaseStartTime] = useState('');
+  const [phaseSaving, setPhaseSaving] = useState(false);
+  const [phaseError, setPhaseError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -58,6 +69,7 @@ export function RoutePlacesPage() {
   const dragSessionRef = useRef<{
     pointerId: number;
     destinationId: string;
+    phaseId: string;
     startX: number;
     startY: number;
     grabOffsetY: number;
@@ -69,21 +81,35 @@ export function RoutePlacesPage() {
   const nameInputRef = useRef<HTMLInputElement>(null);
   const editNameInputRef = useRef<HTMLInputElement>(null);
 
-  useBodyScrollLock(createOpen || Boolean(editing) || Boolean(deleteTarget));
+  useBodyScrollLock(createOpen || Boolean(editing) || Boolean(deleteTarget) || phaseCreateOpen || Boolean(phaseEditing));
 
-  async function loadDestinations() {
+  async function loadPlanning() {
     setLoading(true);
     setError(null);
     try {
-      setDestinations(await getRouteDestinations(routeId));
+      const [nextPhases, nextDestinations] = await Promise.all([getRoutePhases(routeId), getRouteDestinations(routeId)]);
+      setPhases(nextPhases);
+      setDestinations(nextDestinations);
     } catch (err) {
-      setError(getErrorMessage(err, '目的地を読み込めませんでした。'));
+      setError(getErrorMessage(err, 'Placesを読み込めませんでした。'));
     } finally {
       setLoading(false);
     }
   }
 
-  useEffect(() => { void loadDestinations(); }, [routeId]);
+  useEffect(() => { void loadPlanning(); }, [routeId]);
+
+  const destinationsByPhase = useMemo(() => {
+    const map = new Map<string, DestinationSummary[]>();
+    for (const phase of phases) map.set(phase.id, []);
+    for (const destination of destinations) {
+      const list = map.get(destination.phaseId ?? '') ?? [];
+      list.push(destination);
+      map.set(destination.phaseId ?? '', list);
+    }
+    for (const list of map.values()) list.sort((a, b) => a.orderValue - b.orderValue);
+    return map;
+  }, [phases, destinations]);
 
   useEffect(() => {
     if (!createOpen) return;
@@ -103,7 +129,8 @@ export function RoutePlacesPage() {
     return () => window.clearTimeout(timer);
   }, [toast]);
 
-  function openCreateModal() {
+  function openCreateModal(phaseId: string) {
+    setSelectedPhaseId(phaseId);
     setName('');
     setLocationName('');
     setDescription('');
@@ -124,6 +151,7 @@ export function RoutePlacesPage() {
     setFormError(null);
     try {
       const created = await createRouteDestination(routeId, {
+        phaseId: selectedPhaseId,
         name,
         locationName,
         description,
@@ -142,6 +170,7 @@ export function RoutePlacesPage() {
 
   function openEditModal(destination: DestinationSummary) {
     setEditing(destination);
+    setEditPhaseId(destination.phaseId ?? '');
     setEditName(destination.name);
     setEditLocationName(destination.locationName ?? '');
     setEditDescription(destination.description ?? '');
@@ -161,6 +190,7 @@ export function RoutePlacesPage() {
     setEditError(null);
     try {
       const updated = await updateRouteDestination(routeId, editing.id, {
+        phaseId: editPhaseId,
         name: editName,
         locationName: editLocationName,
         description: editDescription,
@@ -178,6 +208,50 @@ export function RoutePlacesPage() {
     }
   }
 
+
+  function openPhaseCreate() {
+    setPhaseName('');
+    setPhaseDescription('');
+    setPhaseStartTime('');
+    setPhaseError(null);
+    setPhaseCreateOpen(true);
+  }
+
+  function openPhaseEdit(phase: PhaseSummary) {
+    setPhaseEditing(phase);
+    setPhaseName(phase.name);
+    setPhaseDescription(phase.description ?? '');
+    setPhaseStartTime(phase.startTime?.slice(0, 5) ?? '');
+    setPhaseError(null);
+  }
+
+  async function handlePhaseCreate(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (phaseSaving) return;
+    setPhaseSaving(true);
+    setPhaseError(null);
+    try {
+      const created = await createRoutePhase(routeId, { name: phaseName, description: phaseDescription, startTime: phaseStartTime || null });
+      setPhases((current) => [...current, created].sort((a, b) => a.orderValue - b.orderValue));
+      setPhaseCreateOpen(false);
+    } catch (err) {
+      setPhaseError(getErrorMessage(err, 'Phaseを追加できませんでした。'));
+    } finally { setPhaseSaving(false); }
+  }
+
+  async function handlePhaseEdit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!phaseEditing || phaseSaving) return;
+    setPhaseSaving(true);
+    setPhaseError(null);
+    try {
+      const updated = await updateRoutePhase(routeId, phaseEditing.id, { name: phaseName, description: phaseDescription, startTime: phaseStartTime || null });
+      setPhases((current) => current.map((phase) => phase.id === updated.id ? updated : phase));
+      setPhaseEditing(null);
+    } catch (err) {
+      setPhaseError(getErrorMessage(err, 'Phaseを更新できませんでした。'));
+    } finally { setPhaseSaving(false); }
+  }
 
   function askDeleteDestination() {
     if (!editing || editSaving) return;
@@ -211,9 +285,7 @@ export function RoutePlacesPage() {
     clearDestinationDragTimer();
     const session = dragSessionRef.current;
 
-    if (options?.restoreOrder && dragStartOrderRef.current) {
-      setDestinations(dragStartOrderRef.current);
-    }
+    if (options?.restoreOrder && dragStartOrderRef.current) { const restored = dragStartOrderRef.current; setDestinations((all) => { const byId = new Map(restored.map((item) => [item.id, item])); return all.map((item) => byId.get(item.id) ?? item); }); }
 
     // Clear the session before releasing capture so lostpointercapture cannot
     // re-enter cleanup with stale drag state.
@@ -227,7 +299,7 @@ export function RoutePlacesPage() {
     setReorderingId(null);
   }
 
-  function beginDestinationDrag(event: React.PointerEvent<HTMLButtonElement>, destinationId: string) {
+  function beginDestinationDrag(event: React.PointerEvent<HTMLButtonElement>, destinationId: string, phaseId: string) {
     if (dragSessionRef.current || reorderSaving) return;
     if (event.pointerType === 'mouse' && event.button !== 0) return;
 
@@ -243,13 +315,14 @@ export function RoutePlacesPage() {
     dragSessionRef.current = {
       pointerId: event.pointerId,
       destinationId,
+      phaseId,
       startX: event.clientX,
       startY: event.clientY,
       grabOffsetY: 0,
       target,
       active: false,
-      sourceIndex: destinations.findIndex((item) => item.id === destinationId),
-      targetIndex: destinations.findIndex((item) => item.id === destinationId),
+      sourceIndex: destinations.filter((item) => item.phaseId === phaseId).findIndex((item) => item.id === destinationId),
+      targetIndex: destinations.filter((item) => item.phaseId === phaseId).findIndex((item) => item.id === destinationId),
     };
 
     clearDestinationDragTimer();
@@ -266,9 +339,10 @@ export function RoutePlacesPage() {
       const rect = card.getBoundingClientRect();
       session.active = true;
       session.grabOffsetY = Math.max(0, Math.min(rect.height, session.startY - rect.top));
-      dragStartOrderRef.current = destinations.map((item) => ({ ...item }));
-      dragCurrentOrderRef.current = destinations.map((item) => ({ ...item }));
-      session.sourceIndex = destinations.findIndex((item) => item.id === session.destinationId);
+      const phaseOrder = destinations.filter((item) => item.phaseId === session.phaseId).map((item) => ({ ...item }));
+      dragStartOrderRef.current = phaseOrder;
+      dragCurrentOrderRef.current = phaseOrder;
+      session.sourceIndex = phaseOrder.findIndex((item) => item.id === session.destinationId);
       session.targetIndex = session.sourceIndex;
       setReorderingId(session.destinationId);
       setReorderOverId(session.destinationId);
@@ -301,7 +375,7 @@ export function RoutePlacesPage() {
     // captured handle's DOM node while a pointer is down can cause pointer capture to be
     // cancelled. Instead, calculate only the intended insertion index while dragging and
     // apply the real list reorder after pointerup.
-    const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-destination-id]'));
+    const cards = Array.from(document.querySelectorAll<HTMLElement>(`[data-destination-id][data-phase-id="${session.phaseId}"]`));
     const otherCards = cards.filter((card) => card.dataset.destinationId !== session.destinationId);
     let insertionIndex = otherCards.length;
 
@@ -330,7 +404,7 @@ export function RoutePlacesPage() {
     }
 
     const original = dragStartOrderRef.current;
-    let currentOrder = original ? original.map((item) => ({ ...item })) : destinations.map((item) => ({ ...item }));
+    let currentOrder = original ? original.map((item) => ({ ...item })) : destinations.filter((item) => item.phaseId === session.phaseId).map((item) => ({ ...item }));
 
     if (original) {
       const sourceIndex = currentOrder.findIndex((item) => item.id === session.destinationId);
@@ -349,15 +423,15 @@ export function RoutePlacesPage() {
 
     if (!changed || !original) return;
 
-    setDestinations(currentOrder);
+    setDestinations((all) => { const byId = new Map(currentOrder.map((item) => [item.id, item])); return all.map((item) => byId.get(item.id) ?? item); });
 
     setError(null);
     setReorderSaving(true);
     try {
       const saved = await saveRouteDestinationOrder(routeId, currentOrder, original);
-      setDestinations(saved);
+      setDestinations((all) => { const byId = new Map(saved.map((item) => [item.id, item])); return all.map((item) => byId.get(item.id) ?? item); });
     } catch (err) {
-      setDestinations(original);
+      setDestinations((all) => { const byId = new Map(original.map((item) => [item.id, item])); return all.map((item) => byId.get(item.id) ?? item); });
       setToast(null);
       setError(getErrorMessage(err, '並び順を保存できませんでした。'));
     } finally {
@@ -431,80 +505,42 @@ export function RoutePlacesPage() {
             <h1 id="places-title">目的地</h1>
             <p>このRouteで共有する目的地を、使う順番に並べて確認します。</p>
           </div>
-          <button className="primary-button route-tab-action" type="button" onClick={openCreateModal}>
-            ＋ 目的地を追加
+          <button className="secondary-button route-tab-action" type="button" onClick={openPhaseCreate}>
+            ＋ Phaseを追加
           </button>
         </div>
 
         {loading ? (
-          <section className="route-loading" aria-live="polite">
-            <span className="route-loading-spinner" aria-hidden="true" />
-            <p>目的地を読み込んでいます</p>
-          </section>
+          <section className="route-loading" aria-live="polite"><span className="route-loading-spinner" aria-hidden="true" /><p>Placesを読み込んでいます</p></section>
         ) : error ? (
-          <section className="empty-state" role="alert">
-            <div className="empty-orbit" aria-hidden="true"><BrandMark size={58} /></div>
-            <h2>目的地を読み込めませんでした</h2>
-            <p>{error}</p>
-            <button className="secondary-button" type="button" onClick={() => void loadDestinations()}>再読み込み</button>
-          </section>
-        ) : destinations.length === 0 ? (
-          <section className="empty-state">
-            <div className="empty-orbit" aria-hidden="true"><BrandMark size={58} /></div>
-            <h2>目的地はまだありません</h2>
-            <p>「＋ 目的地を追加」から、このRouteの最初の目的地を登録できます。</p>
-          </section>
+          <section className="empty-state" role="alert"><div className="empty-orbit" aria-hidden="true"><BrandMark size={58} /></div><h2>Placesを読み込めませんでした</h2><p>{error}</p><button className="secondary-button" type="button" onClick={() => void loadPlanning()}>再読み込み</button></section>
         ) : (
-          <div className="places-list">
-            {destinations.map((destination, index) => {
-              const dragShift = getDestinationDragShift(index);
+          <div className="phase-planning-list">
+            {phases.map((phase) => {
+              const phaseDestinations = destinationsByPhase.get(phase.id) ?? [];
               return (
-              <article
-                className={`place-card${reorderingId === destination.id ? ' is-drag-placeholder' : ''}${dragShift !== 0 ? ' is-reorder-shifting' : ''}${reorderingId && reorderOverId === destination.id && reorderingId !== destination.id ? ' is-reorder-over' : ''}`}
-                key={destination.id}
-                data-destination-id={destination.id}
-                data-drag-target={reorderingId && dragTargetIndex === index ? 'true' : undefined}
-                style={dragShift !== 0 ? { transform: `translateY(${dragShift}px)` } : undefined}
-              >
-                <div className="place-order" aria-label={`${index + 1}番目`}>{index + 1}</div>
-                <div className="place-icon" aria-hidden="true">📍</div>
-                <div className="place-copy">
-                  <div className="place-meta">
-                    <span>{getImportanceLabel(destination.importance)}</span>
-                    {destination.locationName ? <span>{destination.locationName}</span> : null}
-                    <span className="place-status place-status-planned">予定</span>
-                  </div>
-                  <h2>{destination.name}</h2>
-                  <p>{destination.description ?? '説明はまだありません。'}</p>
-                </div>
-                <div className="place-card-actions">
-                  <button
-                    className="place-edit-button"
-                    type="button"
-                    onClick={() => openEditModal(destination)}
-                    aria-label={`${destination.name}を編集`}
-                    disabled={Boolean(reorderingId) || reorderSaving}
-                  >
-                    編集
-                  </button>
-                  <button
-                    className="place-drag-handle"
-                    type="button"
-                    aria-label={`${destination.name}を長押しして並び替え`}
-                    title="長押しして並び替え"
-                    disabled={reorderSaving || (Boolean(reorderingId) && reorderingId !== destination.id)}
-                    onPointerDown={(event) => beginDestinationDrag(event, destination.id)}
-                    onPointerMove={moveDraggedDestination}
-                    onPointerUp={(event) => void finishDestinationDrag(event)}
-                    onPointerCancel={cancelDestinationDrag}
-                    onLostPointerCapture={handleLostDestinationPointerCapture}
-                  >
-                    <span className="drag-dot-grid" aria-hidden="true">
-                      <i /><i /><i /><i /><i /><i />
-                    </span>
-                  </button>
-                </div>
-              </article>
+                <section className="places-phase-section" key={phase.id}>
+                  <header className="places-phase-header">
+                    <div className="places-phase-copy">
+                      <div className="places-phase-titleline"><h2>{phase.name || 'Phase'}</h2>{!phase.name && <span className="phase-unnamed-badge">名前未設定</span>}{phase.startTime && <span className="phase-start-badge">{phase.startTime.slice(0, 5)}〜</span>}</div>
+                      {phase.description && <p>{phase.description}</p>}
+                    </div>
+                    <div className="places-phase-actions"><button className="phase-edit-button" type="button" onClick={() => openPhaseEdit(phase)}>編集</button><button className="phase-add-place-button" type="button" onClick={() => openCreateModal(phase.id)}>＋ 目的地</button></div>
+                  </header>
+                  {phaseDestinations.length === 0 ? (
+                    <button className="phase-empty-add" type="button" onClick={() => openCreateModal(phase.id)}>このPhaseに最初の目的地を追加</button>
+                  ) : (
+                    <div className="places-list">
+                      {phaseDestinations.map((destination, index) => { const dragShift = getDestinationDragShift(index); return (
+                        <article className={`place-card${reorderingId === destination.id ? ' is-drag-placeholder' : ''}${dragShift !== 0 ? ' is-reorder-shifting' : ''}${reorderingId && reorderOverId === destination.id && reorderingId !== destination.id ? ' is-reorder-over' : ''}`} key={destination.id} data-destination-id={destination.id} data-phase-id={phase.id} style={dragShift !== 0 ? { transform: `translateY(${dragShift}px)` } : undefined}>
+                          <div className="place-order" aria-label={`${index + 1}番目`}>{index + 1}</div><div className="place-icon" aria-hidden="true">📍</div>
+                          <div className="place-copy"><div className="place-meta"><span>{getImportanceLabel(destination.importance)}</span>{destination.locationName ? <span>{destination.locationName}</span> : null}<span className="place-status place-status-planned">予定</span></div><h2>{destination.name}</h2><p>{destination.description ?? '説明はまだありません。'}</p></div>
+                          <div className="place-card-actions"><button className="place-edit-button" type="button" onClick={() => openEditModal(destination)} disabled={Boolean(reorderingId) || reorderSaving}>編集</button><button className="place-drag-handle" type="button" aria-label={`${destination.name}を長押しして並び替え`} disabled={reorderSaving || (Boolean(reorderingId) && reorderingId !== destination.id)} onPointerDown={(event) => beginDestinationDrag(event, destination.id, phase.id)} onPointerMove={moveDraggedDestination} onPointerUp={(event) => void finishDestinationDrag(event)} onPointerCancel={cancelDestinationDrag} onLostPointerCapture={handleLostDestinationPointerCapture}><span className="drag-dot-grid" aria-hidden="true"><i /><i /><i /><i /><i /><i /></span></button></div>
+                        </article>
+                      ); })}
+                    </div>
+                  )}
+                </section>
               );
             })}
           </div>
@@ -563,6 +599,7 @@ export function RoutePlacesPage() {
             </div>
 
             <form className="route-create-form place-form" onSubmit={handleCreate}>
+              <div className="field-group"><label htmlFor="destination-phase">Phase</label><select id="destination-phase" value={selectedPhaseId} onChange={(event) => setSelectedPhaseId(event.target.value)} disabled={saving}>{phases.map((phase) => <option value={phase.id} key={phase.id}>{phase.name || '名前未設定のPhase'}{phase.startTime ? ` (${phase.startTime.slice(0,5)}〜)` : ''}</option>)}</select></div>
               <div className="field-group">
                 <label htmlFor="destination-name">目的地名</label>
                 <input ref={nameInputRef} id="destination-name" value={name}
@@ -637,6 +674,7 @@ export function RoutePlacesPage() {
             </div>
 
             <form className="route-create-form place-form" onSubmit={handleEdit}>
+              <div className="field-group"><label htmlFor="edit-destination-phase">Phase</label><select id="edit-destination-phase" value={editPhaseId} onChange={(event) => setEditPhaseId(event.target.value)} disabled={editSaving}>{phases.map((phase) => <option value={phase.id} key={phase.id}>{phase.name || '名前未設定のPhase'}{phase.startTime ? ` (${phase.startTime.slice(0,5)}〜)` : ''}</option>)}</select></div>
               <div className="field-group">
                 <label htmlFor="edit-destination-name">目的地名</label>
                 <input ref={editNameInputRef} id="edit-destination-name" value={editName}
@@ -763,6 +801,21 @@ export function RoutePlacesPage() {
                 {deleting ? '削除中…' : '目的地を削除'}
               </button>
             </div>
+          </section>
+        </div>
+      )}
+
+      {(phaseCreateOpen || phaseEditing) && (
+        <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !phaseSaving) { setPhaseCreateOpen(false); setPhaseEditing(null); } }}>
+          <section className="route-modal phase-edit-modal" role="dialog" aria-modal="true">
+            <div className="modal-header"><div><p className="eyebrow">{phaseEditing ? 'EDIT PHASE' : 'NEW PHASE'}</p><h2>{phaseEditing ? 'Phaseを編集' : 'Phaseを追加'}</h2></div><button className="modal-close-button" type="button" disabled={phaseSaving} onClick={() => { setPhaseCreateOpen(false); setPhaseEditing(null); }}>×</button></div>
+            <form className="route-create-form place-form" onSubmit={phaseEditing ? handlePhaseEdit : handlePhaseCreate}>
+              <div className="field-group"><label htmlFor="phase-name">Phase名 {phaseEditing?.isDefault && <span className="field-optional">空欄可</span>}</label><input id="phase-name" value={phaseName} onChange={(event) => setPhaseName(event.target.value)} placeholder="例：午前" maxLength={40} disabled={phaseSaving} /></div>
+              <div className="field-group"><label htmlFor="phase-start-time">開始時間 <span className="field-optional">任意</span></label><input id="phase-start-time" type="time" value={phaseStartTime} onChange={(event) => setPhaseStartTime(event.target.value)} disabled={phaseSaving} /><p className="field-hint">終了時間は設定しません。Route画面の優先表示に使う開始時刻です。</p></div>
+              <div className="field-group"><label htmlFor="phase-description">メモ <span className="field-optional">任意</span></label><textarea id="phase-description" value={phaseDescription} onChange={(event) => setPhaseDescription(event.target.value)} maxLength={200} rows={3} disabled={phaseSaving} /></div>
+              {phaseError && <p className="form-error" role="alert">{phaseError}</p>}
+              <div className="modal-actions"><button className="secondary-button" type="button" disabled={phaseSaving} onClick={() => { setPhaseCreateOpen(false); setPhaseEditing(null); }}>キャンセル</button><button className="primary-button" type="submit" disabled={phaseSaving || (!phaseEditing?.isDefault && !phaseName.trim())}>{phaseSaving ? '保存中…' : phaseEditing ? '保存' : '追加'}</button></div>
+            </form>
           </section>
         </div>
       )}

@@ -26,3 +26,15 @@ Recommended workflow:
 - `public.phases` / `public.destinations`、index、RLS、Destination→Phase Route整合性Trigger、Planning `updated_at` / `version` Triggerを定義。
 - 後続スナップショットから欠落していたため、v2.1.0-p21で元のp14更新Artifactから復元。
 - 現在のSupabase Projectではp21のために再実行しない。ライブDBにはすでに適用済み。新規環境ではmigration順に適用する。
+
+
+## v2.1.0-p22.1 Default Phase model
+
+Migration: `migrations/202607280002_default_phase_model.sql`
+
+- `phases.is_default` を追加
+- RouteごとにDefault Phaseを1件保証
+- 既存の未所属DestinationをDefault Phaseへ移行
+- `destinations.phase_id` をNOT NULL化
+- 新規Route INSERT後にDefault Phaseを自動生成
+- Phaseは開始時間のみUIで利用し、終了時間はPlanning UIでは利用しない

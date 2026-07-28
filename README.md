@@ -1,8 +1,8 @@
-# D Route v2.1.0-p22
+# D Route v2.1.0-p22.1
 
-Current baseline: v2.1.0-p22
+Current baseline: v2.1.0-p22.1
 
-## v2.1.0-p22 Planning Core DB Baseline recovery
+## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
 - p14でD Route SQL RunnerからSupabaseへ適用済みだったPlanning Core migrationをGitHubへ復元。
 - `public.phases` / `public.destinations` の定義、index、RLS、DestinationとPhaseのRoute整合性Trigger、`updated_at` / `version` 自動更新Triggerを履歴として再収録。
@@ -50,7 +50,7 @@ Destination並び替えを実装。Placesカード右端の6点ハンドルを�
 ### v2.1.0-p20.3 Destination reorder UX
 Placesの目的地カード右端に6点ドラッグハンドルを表示します。ハンドルを短く長押ししてから上下に移動すると並び替えでき、指を離した時にorder_valueを保存します。ドラッグ中はカードを浮かせ、移動先を視覚的に強調します。
 
-## v2.1.0-p22
+## v2.1.0-p22.1
 
 Phase Planningの最初のUI実装。
 
@@ -63,3 +63,24 @@ Phase Planningの最初のUI実装。
 - Phaseは任意で、DestinationをRoute直下に置く設計を維持
 - Phase編集 / 削除 / 並び替え / Phase間Destination移動は後続Patch
 - DB変更なし。p14 Planning Core migrationをそのまま利用
+
+
+## v2.1.0-p22.1
+
+Phase-first Planningへ設計変更。
+
+- Route作成時に名前なしDefault Phaseを自動生成
+- 既存Routeは最初のPhaseをDefault化し、PhaseがないRouteには自動追加
+- 既存のPhase未設定DestinationをDefault Phaseへ移行
+- Destinationは必ずPhaseへ所属
+- PlacesをPhase単位のPlanning画面へ変更
+- Phase追加 / Phase編集をPlacesへ統合
+- Phaseは名前と開始時間（任意）を持つ
+- Phase終了時間はUIでは扱わない
+- Destination追加は対象Phaseから行う
+- Destination編集でPhase変更可能
+- RouteタブからPhase管理導線を削除
+- Phase開始時間によるRoute優先表示は後続Patchで実装
+
+Migration:
+- `supabase/migrations/202607280002_default_phase_model.sql`

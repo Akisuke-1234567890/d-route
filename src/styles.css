@@ -1654,19 +1654,3 @@ a { color: inherit; }
   z-index: 220;
 }
 
-/* v2.1.0-p22 Phase management entry */
-.v2-phase-heading-actions {
-  display: grid;
-  justify-items: end;
-  gap: 6px;
-}
-
-@media (max-width: 520px) {
-  .v2-phase-heading-actions {
-    gap: 4px;
-  }
-
-  .v2-phase-heading-actions .v2-text-link {
-    font-size: .72rem;
-  }
-}

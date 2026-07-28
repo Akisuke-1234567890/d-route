@@ -1,3 +1,17 @@
+## v2.1.0-p22.1
+
+- Phase-first Planningへ設計変更
+- Route作成時のDefault Phase自動生成を追加
+- 既存DestinationをDefault Phaseへバックフィル
+- `destinations.phase_id` を必須化
+- PlacesをPhase単位表示へ変更
+- Places内でPhase追加 / 編集を実装
+- Destination追加 / 編集で所属Phaseを扱うよう変更
+- Route画面のPhase管理導線を削除
+
+Migration:
+- `supabase/migrations/202607280002_default_phase_model.sql`
+
 ## v2.1.0-p22
 
 - Phase一覧画面を追加
