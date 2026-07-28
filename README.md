@@ -1,4 +1,4 @@
-# D Route v2.1.0-p22.4
+# D Route v2.1.0-p22.5
 
 Current baseline: v2.1.0-p22.1
 
@@ -104,13 +104,12 @@ Phase追加UIの実機不具合修正。
 - UI側のPhase保存ロジックはp22.2を維持
 
 
-## v2.1.0-p22.4
+## v2.1.0-p22.5
 
-Places UI整理。
-
-- Destinationカードの余白・列構成を圧縮
-- 必須Destinationのみ★マーク表示、任意は表示なし
-- Destination追加・編集成功時の保存Toastを削除
+- Destinationカードをコンパクト化
+- 必須Destinationのみ★表示、任意はマークなし
+- Destinationカードの「予定」表示を削除
+- Destination保存成功Toastを削除
 - Phaseの「編集」「＋目的地」を横並び化
-- iPhoneのPhase開始時間入力をフィールド幅内に固定し左寄せ
+- iPhoneのPhase開始時間を横・縦とも正常位置へ調整
 - DB変更なし

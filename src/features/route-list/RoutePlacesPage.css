@@ -671,7 +671,7 @@
 }
 
 
-/* v2.1.0-p22.4 Places density / Phase actions */
+/* v2.1.0-p22.5 Places cleanup */
 @media (max-width: 520px) {
   .places-phase-actions {
     display: flex;
@@ -710,6 +710,7 @@
 
 .place-copy {
   grid-column: 2;
+  min-width: 0;
 }
 
 .place-card-actions {
@@ -720,10 +721,6 @@
 .place-meta {
   gap: 6px;
   margin-bottom: 4px;
-}
-
-.place-meta > span:first-child {
-  display: none;
 }
 
 .place-copy h2 {
@@ -748,23 +745,8 @@
   min-width: 36px;
 }
 
-.phase-time-control input[type="time"] {
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  text-align: left;
-  padding-inline: 14px;
-}
-
-.phase-time-control input[type="time"]::-webkit-date-and-time-value {
-  width: 100%;
-  text-align: left;
-  margin: 0;
-}
-
-
 .place-required-mark {
-  display: inline-grid !important;
+  display: inline-grid;
   place-items: center;
   width: 22px;
   height: 22px;
@@ -773,4 +755,33 @@
   color: #ffd08a;
   font-size: .72rem;
   line-height: 1;
+}
+
+/* iPhone Safari: Phase time value width + vertical centering */
+.phase-time-control input[type="time"] {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  height: 50px;
+  min-height: 50px;
+  padding: 0 14px;
+  text-align: left;
+  line-height: normal;
+}
+
+.phase-time-control input[type="time"]::-webkit-date-and-time-value {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.phase-time-control input[type="time"]::-webkit-datetime-edit {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0;
 }

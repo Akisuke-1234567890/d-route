@@ -179,7 +179,6 @@ export function RoutePlacesPage() {
       });
       setDestinations((current) => [...current, created].sort((a, b) => a.orderValue - b.orderValue));
       setCreateOpen(false);
-      setToast('目的地を追加しました');
     } catch (err) {
       setFormError(getErrorMessage(err, '目的地を追加できませんでした。'));
     } finally {
@@ -220,7 +219,6 @@ export function RoutePlacesPage() {
         current.map((item) => item.id === updated.id ? updated : item)
       );
       setEditing(null);
-      setToast('目的地を更新しました');
     } catch (err) {
       setEditError(getErrorMessage(err, '目的地を更新できませんでした。'));
     } finally {
@@ -554,7 +552,7 @@ export function RoutePlacesPage() {
                       {phaseDestinations.map((destination, index) => { const dragShift = getDestinationDragShift(index); return (
                         <article className={`place-card${reorderingId === destination.id ? ' is-drag-placeholder' : ''}${dragShift !== 0 ? ' is-reorder-shifting' : ''}${reorderingId && reorderOverId === destination.id && reorderingId !== destination.id ? ' is-reorder-over' : ''}`} key={destination.id} data-destination-id={destination.id} data-phase-id={phase.id} style={dragShift !== 0 ? { transform: `translateY(${dragShift}px)` } : undefined}>
                           <div className="place-order" aria-label={`${index + 1}番目`}>{index + 1}</div><div className="place-icon" aria-hidden="true">📍</div>
-                          <div className="place-copy"><div className="place-meta"><span>{getImportanceLabel(destination.importance)}</span>{destination.locationName ? <span>{destination.locationName}</span> : null}<span className="place-status place-status-planned">予定</span></div><h2>{destination.name}</h2><p>{destination.description ?? '説明はまだありません。'}</p></div>
+                          <div className="place-copy"><div className="place-meta">{destination.importance === 'must' ? <span className=\"place-required-mark\" aria-label=\"必須\" title=\"必須\">★</span> : null}{destination.locationName ? <span>{destination.locationName}</span> : null}</div><h2>{destination.name}</h2><p>{destination.description ?? '説明はまだありません。'}</p></div>
                           <div className="place-card-actions"><button className="place-edit-button" type="button" onClick={() => openEditModal(destination)} disabled={Boolean(reorderingId) || reorderSaving}>編集</button><button className="place-drag-handle" type="button" aria-label={`${destination.name}を長押しして並び替え`} disabled={reorderSaving || (Boolean(reorderingId) && reorderingId !== destination.id)} onPointerDown={(event) => beginDestinationDrag(event, destination.id, phase.id)} onPointerMove={moveDraggedDestination} onPointerUp={(event) => void finishDestinationDrag(event)} onPointerCancel={cancelDestinationDrag} onLostPointerCapture={handleLostDestinationPointerCapture}><span className="drag-dot-grid" aria-hidden="true"><i /><i /><i /><i /><i /><i /></span></button></div>
                         </article>
                       ); })}
@@ -587,7 +585,6 @@ export function RoutePlacesPage() {
               <div className="place-meta">
                 <span>{getImportanceLabel(dragged.importance)}</span>
                 {dragged.locationName ? <span>{dragged.locationName}</span> : null}
-                <span className="place-status place-status-planned">予定</span>
               </div>
               <h2>{dragged.name}</h2>
               <p>{dragged.description ?? '説明はまだありません。'}</p>
@@ -861,8 +858,6 @@ export function RoutePlacesPage() {
           </section>
         </div>
       )}
-
-      {toast && <div className="toast" role="alert">{toast}</div>}
     </main>
   );
 }
