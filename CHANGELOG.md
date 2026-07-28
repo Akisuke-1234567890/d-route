@@ -1,3 +1,12 @@
+# Changelog
+
+## v2.1.0-p20
+- PlacesでDestinationを上下1件ずつ並び替え可能にした
+- 並び替え時に隣接Destinationのorder_valueを交換してSupabaseへ保存
+- 再読込後も保存した順序を維持
+- 並び替え保存中は重複操作を防止
+- APP_VERSION / README baselineをv2.1.0-p20へ更新
+
 ## v2.1.0-p02
 
 - Home一覧下部の「＋ 新しいRouteを作る」を削除

@@ -170,6 +170,53 @@ export async function updateRouteDestination(
 }
 
 
+
+export async function swapRouteDestinationOrder(
+  routeId: string,
+  first: Pick<DestinationSummary, 'id' | 'orderValue'>,
+  second: Pick<DestinationSummary, 'id' | 'orderValue'>
+): Promise<void> {
+  if (!routeId) throw new Error('Route IDがありません。');
+  if (!first.id || !second.id) throw new Error('Destination IDがありません。');
+  if (first.id === second.id) return;
+  if (!Number.isFinite(first.orderValue) || !Number.isFinite(second.orderValue)) {
+    throw new Error('目的地の並び順が不正です。');
+  }
+
+  const supabase = requireSupabase();
+
+  const { error: firstError } = await supabase
+    .from('destinations')
+    .update({ order_value: second.orderValue })
+    .eq('id', first.id)
+    .eq('route_id', routeId)
+    .eq('record_status', 'active')
+    .is('deleted_at', null);
+
+  if (firstError) throw firstError;
+
+  const { error: secondError } = await supabase
+    .from('destinations')
+    .update({ order_value: first.orderValue })
+    .eq('id', second.id)
+    .eq('route_id', routeId)
+    .eq('record_status', 'active')
+    .is('deleted_at', null);
+
+  if (!secondError) return;
+
+  // Best-effort rollback. Keep the original error because it explains the failed reorder.
+  await supabase
+    .from('destinations')
+    .update({ order_value: first.orderValue })
+    .eq('id', first.id)
+    .eq('route_id', routeId)
+    .eq('record_status', 'active')
+    .is('deleted_at', null);
+
+  throw secondError;
+}
+
 export async function softDeleteRouteDestination(
   routeId: string,
   destinationId: string

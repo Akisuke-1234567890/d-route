@@ -421,3 +421,53 @@
     );
   }
 }
+
+
+/* v2.1.0-p20 Destination reorder controls */
+.place-card-actions {
+  gap: 8px;
+}
+
+.place-order-actions {
+  display: grid;
+  grid-template-columns: 36px 36px;
+  gap: 6px;
+}
+
+.place-order-button {
+  width: 36px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid rgba(196, 203, 255, .18);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .045);
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.place-order-button:active:not(:disabled) {
+  background: rgba(157, 146, 255, .14);
+}
+
+.place-order-button:disabled,
+.place-edit-button:disabled {
+  opacity: .35;
+}
+
+@media (max-width: 520px) {
+  .place-card-actions {
+    gap: 6px;
+  }
+
+  .place-order-actions {
+    grid-template-columns: 34px 34px;
+    gap: 5px;
+  }
+
+  .place-order-button {
+    width: 34px;
+    height: 40px;
+  }
+}

@@ -10,6 +10,7 @@ import {
   createRouteDestination,
   getRouteDestinations,
   softDeleteRouteDestination,
+  swapRouteDestinationOrder,
   updateRouteDestination,
   type DestinationImportance,
   type DestinationSummary,
@@ -46,6 +47,7 @@ export function RoutePlacesPage() {
   const [deleteTarget, setDeleteTarget] = useState<DestinationSummary | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [reorderingId, setReorderingId] = useState<string | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const editNameInputRef = useRef<HTMLInputElement>(null);
 
@@ -169,6 +171,41 @@ export function RoutePlacesPage() {
     if (!deleting) setDeleteTarget(null);
   }
 
+  async function moveDestination(index: number, direction: -1 | 1) {
+    if (reorderingId) return;
+
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= destinations.length) return;
+
+    const currentDestination = destinations[index];
+    const targetDestination = destinations[targetIndex];
+
+    setReorderingId(currentDestination.id);
+    setError(null);
+    try {
+      await swapRouteDestinationOrder(routeId, currentDestination, targetDestination);
+
+      setDestinations((current) => {
+        const next = [...current];
+        const currentIndex = next.findIndex((item) => item.id === currentDestination.id);
+        const nextTargetIndex = next.findIndex((item) => item.id === targetDestination.id);
+        if (currentIndex < 0 || nextTargetIndex < 0) return current;
+
+        const first = next[currentIndex];
+        const second = next[nextTargetIndex];
+        next[currentIndex] = { ...second, orderValue: first.orderValue };
+        next[nextTargetIndex] = { ...first, orderValue: second.orderValue };
+        return next;
+      });
+      setToast('並び順を保存しました');
+    } catch (err) {
+      setToast(null);
+      setError(getErrorMessage(err, '並び順を保存できませんでした。'));
+    } finally {
+      setReorderingId(null);
+    }
+  }
+
   async function handleDeleteDestination() {
     if (!deleteTarget || deleting) return;
 
@@ -202,7 +239,7 @@ export function RoutePlacesPage() {
           <div>
             <p className="eyebrow">PLACES</p>
             <h1 id="places-title">目的地</h1>
-            <p>このRouteで共有する目的地を、登録した順番で確認します。</p>
+            <p>このRouteで共有する目的地を、使う順番に並べて確認します。</p>
           </div>
           <button className="primary-button route-tab-action" type="button" onClick={openCreateModal}>
             ＋ 目的地を追加
@@ -243,11 +280,32 @@ export function RoutePlacesPage() {
                   <p>{destination.description ?? '説明はまだありません。'}</p>
                 </div>
                 <div className="place-card-actions">
+                  <div className="place-order-actions" role="group" aria-label={`${destination.name}の並び順`}>
+                    <button
+                      className="place-order-button"
+                      type="button"
+                      onClick={() => void moveDestination(index, -1)}
+                      disabled={index === 0 || Boolean(reorderingId)}
+                      aria-label={`${destination.name}を1つ上へ移動`}
+                    >
+                      ↑
+                    </button>
+                    <button
+                      className="place-order-button"
+                      type="button"
+                      onClick={() => void moveDestination(index, 1)}
+                      disabled={index === destinations.length - 1 || Boolean(reorderingId)}
+                      aria-label={`${destination.name}を1つ下へ移動`}
+                    >
+                      ↓
+                    </button>
+                  </div>
                   <button
                     className="place-edit-button"
                     type="button"
                     onClick={() => openEditModal(destination)}
                     aria-label={`${destination.name}を編集`}
+                    disabled={Boolean(reorderingId)}
                   >
                     編集
                   </button>
