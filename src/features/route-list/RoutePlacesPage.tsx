@@ -50,11 +50,19 @@ export function RoutePlacesPage() {
   const [reorderingId, setReorderingId] = useState<string | null>(null);
   const [reorderOverId, setReorderOverId] = useState<string | null>(null);
   const [reorderSaving, setReorderSaving] = useState(false);
+  const [dragOverlay, setDragOverlay] = useState<{ destinationId: string; top: number; left: number; width: number; height: number } | null>(null);
   const dragStartOrderRef = useRef<DestinationSummary[] | null>(null);
   const dragCurrentOrderRef = useRef<DestinationSummary[] | null>(null);
-  const dragPointerIdRef = useRef<number | null>(null);
   const dragLongPressTimerRef = useRef<number | null>(null);
-  const dragPendingRef = useRef<{ pointerId: number; destinationId: string; x: number; y: number; target: HTMLButtonElement } | null>(null);
+  const dragSessionRef = useRef<{
+    pointerId: number;
+    destinationId: string;
+    startX: number;
+    startY: number;
+    grabOffsetY: number;
+    target: HTMLButtonElement;
+    active: boolean;
+  } | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const editNameInputRef = useRef<HTMLInputElement>(null);
 
@@ -178,67 +186,117 @@ export function RoutePlacesPage() {
     if (!deleting) setDeleteTarget(null);
   }
 
-  function clearPendingDestinationDrag() {
+  function clearDestinationDragTimer() {
     if (dragLongPressTimerRef.current !== null) {
       window.clearTimeout(dragLongPressTimerRef.current);
       dragLongPressTimerRef.current = null;
     }
-    dragPendingRef.current = null;
+  }
+
+  function releaseDestinationPointer(session: { pointerId: number; target: HTMLButtonElement } | null) {
+    if (!session) return;
+    try {
+      if (session.target.hasPointerCapture(session.pointerId)) {
+        session.target.releasePointerCapture(session.pointerId);
+      }
+    } catch {
+      // The browser may already have released capture.
+    }
+  }
+
+  function resetDestinationDrag(options?: { restoreOrder?: boolean; releasePointer?: boolean }) {
+    clearDestinationDragTimer();
+    const session = dragSessionRef.current;
+
+    if (options?.restoreOrder && dragStartOrderRef.current) {
+      setDestinations(dragStartOrderRef.current);
+    }
+
+    // Clear the session before releasing capture so lostpointercapture cannot
+    // re-enter cleanup with stale drag state.
+    dragSessionRef.current = null;
+    dragStartOrderRef.current = null;
+    dragCurrentOrderRef.current = null;
+    if (options?.releasePointer !== false) releaseDestinationPointer(session);
+    setDragOverlay(null);
+    setReorderOverId(null);
+    setReorderingId(null);
   }
 
   function beginDestinationDrag(event: React.PointerEvent<HTMLButtonElement>, destinationId: string) {
-    if (reorderingId || reorderSaving) return;
+    if (dragSessionRef.current || reorderSaving) return;
     if (event.pointerType === 'mouse' && event.button !== 0) return;
 
-    clearPendingDestinationDrag();
-    dragPendingRef.current = {
+    const target = event.currentTarget;
+    try {
+      // Capture immediately, before the long-press timer. This keeps the same pointer
+      // alive even when the card list re-renders while reordering.
+      target.setPointerCapture(event.pointerId);
+    } catch {
+      // Continue even when capture is unavailable; pointercancel/lostcapture will clean up.
+    }
+
+    dragSessionRef.current = {
       pointerId: event.pointerId,
       destinationId,
-      x: event.clientX,
-      y: event.clientY,
-      target: event.currentTarget,
+      startX: event.clientX,
+      startY: event.clientY,
+      grabOffsetY: 0,
+      target,
+      active: false,
     };
 
+    clearDestinationDragTimer();
     dragLongPressTimerRef.current = window.setTimeout(() => {
-      const pending = dragPendingRef.current;
-      if (!pending || pending.pointerId !== event.pointerId) return;
+      const session = dragSessionRef.current;
+      if (!session || session.pointerId !== event.pointerId || session.active) return;
 
-      dragStartOrderRef.current = destinations.map((item) => ({ ...item }));
-      dragCurrentOrderRef.current = destinations.map((item) => ({ ...item }));
-      dragPointerIdRef.current = pending.pointerId;
-      setReorderingId(pending.destinationId);
-      setReorderOverId(pending.destinationId);
-
-      try {
-        pending.target.setPointerCapture(pending.pointerId);
-      } catch {
-        // Some browsers can release the pointer before capture is established.
+      const card = session.target.closest<HTMLElement>('[data-destination-id]');
+      if (!card) {
+        resetDestinationDrag();
+        return;
       }
 
-      clearPendingDestinationDrag();
+      const rect = card.getBoundingClientRect();
+      session.active = true;
+      session.grabOffsetY = Math.max(0, Math.min(rect.height, session.startY - rect.top));
+      dragStartOrderRef.current = destinations.map((item) => ({ ...item }));
+      dragCurrentOrderRef.current = destinations.map((item) => ({ ...item }));
+      setReorderingId(session.destinationId);
+      setReorderOverId(session.destinationId);
+      setDragOverlay({
+        destinationId: session.destinationId,
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height,
+      });
+      dragLongPressTimerRef.current = null;
     }, 180);
   }
 
   function moveDraggedDestination(event: React.PointerEvent<HTMLButtonElement>) {
-    const pending = dragPendingRef.current;
-    if (pending && pending.pointerId === event.pointerId && !reorderingId) {
-      const moved = Math.hypot(event.clientX - pending.x, event.clientY - pending.y);
-      if (moved > 10) clearPendingDestinationDrag();
+    const session = dragSessionRef.current;
+    if (!session || session.pointerId !== event.pointerId) return;
+
+    if (!session.active) {
+      const moved = Math.hypot(event.clientX - session.startX, event.clientY - session.startY);
+      if (moved > 10) resetDestinationDrag();
       return;
     }
 
-    if (!reorderingId || dragPointerIdRef.current !== event.pointerId) return;
-
     event.preventDefault();
+    setDragOverlay((current) => current ? { ...current, top: event.clientY - session.grabOffsetY } : current);
+
     const hovered = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>('[data-destination-id]');
     const hoveredId = hovered?.dataset.destinationId;
     if (!hoveredId) return;
 
     setReorderOverId(hoveredId);
-    if (hoveredId === reorderingId) return;
+    if (hoveredId === session.destinationId) return;
 
     setDestinations((current) => {
-      const fromIndex = current.findIndex((item) => item.id === reorderingId);
+      const fromIndex = current.findIndex((item) => item.id === session.destinationId);
       const toIndex = current.findIndex((item) => item.id === hoveredId);
       if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return current;
 
@@ -251,33 +309,23 @@ export function RoutePlacesPage() {
   }
 
   async function finishDestinationDrag(event: React.PointerEvent<HTMLButtonElement>) {
-    if (dragPendingRef.current?.pointerId === event.pointerId && !reorderingId) {
-      clearPendingDestinationDrag();
+    const session = dragSessionRef.current;
+    if (!session || session.pointerId !== event.pointerId) return;
+
+    if (!session.active) {
+      resetDestinationDrag();
       return;
     }
-
-    if (!reorderingId || dragPointerIdRef.current !== event.pointerId) return;
 
     const original = dragStartOrderRef.current;
     const currentOrder = dragCurrentOrderRef.current ?? destinations;
-    dragStartOrderRef.current = null;
-    dragCurrentOrderRef.current = null;
-    dragPointerIdRef.current = null;
-    setReorderOverId(null);
+    const changed = Boolean(original && currentOrder.some((item, index) => item.id !== original[index]?.id));
 
-    try {
-      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-        event.currentTarget.releasePointerCapture(event.pointerId);
-      }
-    } catch {
-      // Pointer capture may already have been released by the browser.
-    }
+    // End all pointer/visual drag state before network I/O. A failed request can no longer
+    // leave the handle stuck in a dragging state.
+    resetDestinationDrag();
 
-    const changed = original && currentOrder.some((item, index) => item.id !== original[index]?.id);
-    if (!changed || !original) {
-      setReorderingId(null);
-      return;
-    }
+    if (!changed || !original) return;
 
     setError(null);
     setReorderSaving(true);
@@ -291,22 +339,19 @@ export function RoutePlacesPage() {
       setError(getErrorMessage(err, '並び順を保存できませんでした。'));
     } finally {
       setReorderSaving(false);
-      setReorderingId(null);
     }
   }
 
   function cancelDestinationDrag(event: React.PointerEvent<HTMLButtonElement>) {
-    if (dragPendingRef.current?.pointerId === event.pointerId) {
-      clearPendingDestinationDrag();
-    }
+    const session = dragSessionRef.current;
+    if (!session || session.pointerId !== event.pointerId) return;
+    resetDestinationDrag({ restoreOrder: session.active });
+  }
 
-    if (!reorderingId || dragPointerIdRef.current !== event.pointerId) return;
-    if (dragStartOrderRef.current) setDestinations(dragStartOrderRef.current);
-    dragStartOrderRef.current = null;
-    dragCurrentOrderRef.current = null;
-    dragPointerIdRef.current = null;
-    setReorderOverId(null);
-    setReorderingId(null);
+  function handleLostDestinationPointerCapture(event: React.PointerEvent<HTMLButtonElement>) {
+    const session = dragSessionRef.current;
+    if (!session || session.pointerId !== event.pointerId) return;
+    resetDestinationDrag({ restoreOrder: session.active, releasePointer: false });
   }
 
   async function handleDeleteDestination() {
@@ -371,7 +416,7 @@ export function RoutePlacesPage() {
           <div className="places-list">
             {destinations.map((destination, index) => (
               <article
-                className={`place-card${reorderingId === destination.id ? ' is-reordering' : ''}${reorderingId && reorderOverId === destination.id && reorderingId !== destination.id ? ' is-reorder-over' : ''}`}
+                className={`place-card${reorderingId === destination.id ? ' is-drag-placeholder' : ''}${reorderingId && reorderOverId === destination.id && reorderingId !== destination.id ? ' is-reorder-over' : ''}`}
                 key={destination.id}
                 data-destination-id={destination.id}
               >
@@ -406,6 +451,7 @@ export function RoutePlacesPage() {
                     onPointerMove={moveDraggedDestination}
                     onPointerUp={(event) => void finishDestinationDrag(event)}
                     onPointerCancel={cancelDestinationDrag}
+                    onLostPointerCapture={handleLostDestinationPointerCapture}
                   >
                     <span className="drag-dot-grid" aria-hidden="true">
                       <i /><i /><i /><i /><i /><i />
@@ -417,6 +463,41 @@ export function RoutePlacesPage() {
           </div>
         )}
       </section>
+
+      {dragOverlay && (() => {
+        const dragged = destinations.find((item) => item.id === dragOverlay.destinationId);
+        if (!dragged) return null;
+        return (
+          <article
+            className="place-card place-drag-overlay"
+            aria-hidden="true"
+            style={{
+              top: dragOverlay.top,
+              left: dragOverlay.left,
+              width: dragOverlay.width,
+              height: dragOverlay.height,
+            }}
+          >
+            <div className="place-order">{destinations.findIndex((item) => item.id === dragged.id) + 1}</div>
+            <div className="place-icon">📍</div>
+            <div className="place-copy">
+              <div className="place-meta">
+                <span>{getImportanceLabel(dragged.importance)}</span>
+                {dragged.locationName ? <span>{dragged.locationName}</span> : null}
+                <span className="place-status place-status-planned">予定</span>
+              </div>
+              <h2>{dragged.name}</h2>
+              <p>{dragged.description ?? '説明はまだありません。'}</p>
+            </div>
+            <div className="place-card-actions">
+              <span className="place-edit-button place-edit-button-ghost">編集</span>
+              <span className="place-drag-handle is-active">
+                <span className="drag-dot-grid"><i /><i /><i /><i /><i /><i /></span>
+              </span>
+            </div>
+          </article>
+        );
+      })()}
 
       <footer className="app-footer"><VersionBadge /><span>Planning Core</span></footer>
       <RouteBottomNav routeId={routeId} />
