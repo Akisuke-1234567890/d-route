@@ -1,6 +1,6 @@
-# D Route v2.1.0-p20.5
+# D Route v2.1.0-p20.6
 
-Current baseline: v2.1.0-p20.5
+Current baseline: v2.1.0-p20.6
 
 ## p19.5 Edit Place Balanced Modal Position
 
@@ -22,7 +22,7 @@ Current baseline: v2.1.0-p20.5
 Destination並び替えを実装。Placesカード右端の6点ハンドルを短く長押しするとカードが浮き、指の上下移動へ追従する。リスト側は移動位置に合わせて入れ替わり、指を離した後にorder_valueをSupabaseへ1回保存する。
 
 
-### v2.1.0-p20.5 Stable bidirectional drag
+### v2.1.0-p20.6 Stable bidirectional drag
 
 - Dragged Place card follows the finger as a floating overlay.
 - Keeps the captured card DOM in its original position during the gesture to avoid iOS Safari pointer-capture cancellation when moving top to bottom.

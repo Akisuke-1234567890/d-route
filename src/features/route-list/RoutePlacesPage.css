@@ -557,3 +557,26 @@
   border-color: rgba(114, 218, 255, .72);
   box-shadow: 0 10px 26px rgba(3, 7, 24, .28), inset 0 0 0 1px rgba(114, 218, 255, .16);
 }
+
+/* v2.1.0-p20.6 Live gap-closing animation while dragging */
+.place-card.is-reorder-shifting {
+  transition:
+    transform 220ms cubic-bezier(.22, .78, .24, 1),
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background 150ms ease,
+    opacity 120ms ease;
+  will-change: transform;
+}
+
+.place-card.is-reorder-shifting.is-reorder-over {
+  box-shadow:
+    0 12px 28px rgba(3, 7, 24, .30),
+    inset 0 0 0 1px rgba(114, 218, 255, .14);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .place-card.is-reorder-shifting {
+    transition: none;
+  }
+}

@@ -378,6 +378,25 @@ export function RoutePlacesPage() {
     resetDestinationDrag({ restoreOrder: session.active, releasePointer: false });
   }
 
+  function getDestinationDragShift(index: number) {
+    const session = dragSessionRef.current;
+    if (!session?.active || dragTargetIndex === null || !dragOverlay) return 0;
+
+    const sourceIndex = session.sourceIndex;
+    const targetIndex = dragTargetIndex;
+    const step = dragOverlay.height + 12;
+
+    if (sourceIndex < targetIndex && index > sourceIndex && index <= targetIndex) {
+      return -step;
+    }
+
+    if (sourceIndex > targetIndex && index >= targetIndex && index < sourceIndex) {
+      return step;
+    }
+
+    return 0;
+  }
+
   async function handleDeleteDestination() {
     if (!deleteTarget || deleting) return;
 
@@ -438,12 +457,15 @@ export function RoutePlacesPage() {
           </section>
         ) : (
           <div className="places-list">
-            {destinations.map((destination, index) => (
+            {destinations.map((destination, index) => {
+              const dragShift = getDestinationDragShift(index);
+              return (
               <article
-                className={`place-card${reorderingId === destination.id ? ' is-drag-placeholder' : ''}${reorderingId && reorderOverId === destination.id && reorderingId !== destination.id ? ' is-reorder-over' : ''}`}
+                className={`place-card${reorderingId === destination.id ? ' is-drag-placeholder' : ''}${dragShift !== 0 ? ' is-reorder-shifting' : ''}${reorderingId && reorderOverId === destination.id && reorderingId !== destination.id ? ' is-reorder-over' : ''}`}
                 key={destination.id}
                 data-destination-id={destination.id}
                 data-drag-target={reorderingId && dragTargetIndex === index ? 'true' : undefined}
+                style={dragShift !== 0 ? { transform: `translateY(${dragShift}px)` } : undefined}
               >
                 <div className="place-order" aria-label={`${index + 1}番目`}>{index + 1}</div>
                 <div className="place-icon" aria-hidden="true">📍</div>
@@ -484,7 +506,8 @@ export function RoutePlacesPage() {
                   </button>
                 </div>
               </article>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
