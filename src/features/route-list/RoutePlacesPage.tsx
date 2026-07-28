@@ -48,6 +48,7 @@ export function RoutePlacesPage() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [reorderingId, setReorderingId] = useState<string | null>(null);
+  const [reorderSaving, setReorderSaving] = useState(false);
   const dragStartOrderRef = useRef<DestinationSummary[] | null>(null);
   const dragCurrentOrderRef = useRef<DestinationSummary[] | null>(null);
   const dragPointerIdRef = useRef<number | null>(null);
@@ -175,7 +176,7 @@ export function RoutePlacesPage() {
   }
 
   function beginDestinationDrag(event: React.PointerEvent<HTMLButtonElement>, destinationId: string) {
-    if (reorderingId) return;
+    if (reorderingId || reorderSaving) return;
     if (event.pointerType === 'mouse' && event.button !== 0) return;
 
     event.preventDefault();
@@ -231,6 +232,7 @@ export function RoutePlacesPage() {
     }
 
     setError(null);
+    setReorderSaving(true);
     try {
       const saved = await saveRouteDestinationOrder(routeId, currentOrder, original);
       setDestinations(saved);
@@ -240,6 +242,7 @@ export function RoutePlacesPage() {
       setToast(null);
       setError(getErrorMessage(err, '並び順を保存できませんでした。'));
     } finally {
+      setReorderSaving(false);
       setReorderingId(null);
     }
   }
@@ -315,7 +318,7 @@ export function RoutePlacesPage() {
           <div className="places-list">
             {destinations.map((destination, index) => (
               <article
-                className={`place-card${reorderingId === destination.id ? ' is-reordering' : ''}`}
+                className={`place-card${reorderingId === destination.id ? ' is-reordering' : ''}${reorderingId && reorderingId !== destination.id ? ' is-reorder-target' : ''}`}
                 key={destination.id}
                 data-destination-id={destination.id}
               >
@@ -336,7 +339,7 @@ export function RoutePlacesPage() {
                     type="button"
                     onClick={() => openEditModal(destination)}
                     aria-label={`${destination.name}を編集`}
-                    disabled={Boolean(reorderingId)}
+                    disabled={Boolean(reorderingId) || reorderSaving}
                   >
                     編集
                   </button>
@@ -344,14 +347,14 @@ export function RoutePlacesPage() {
                     className="place-drag-handle"
                     type="button"
                     aria-label={`${destination.name}を長押しして並び替え`}
-                    title="長押しして並び替え"
-                    disabled={Boolean(reorderingId) && reorderingId !== destination.id}
+                    title="押したまま上下に移動"
+                    disabled={reorderSaving || (Boolean(reorderingId) && reorderingId !== destination.id)}
                     onPointerDown={(event) => beginDestinationDrag(event, destination.id)}
                     onPointerMove={moveDraggedDestination}
                     onPointerUp={(event) => void finishDestinationDrag(event)}
                     onPointerCancel={cancelDestinationDrag}
                   >
-                    ≡
+                    ⠿
                   </button>
                 </div>
               </article>
