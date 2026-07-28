@@ -1,10 +1,10 @@
 # Changelog
 
 ## v2.1.0-p20
-- PlacesでDestinationを上下1件ずつ並び替え可能にした
-- 並び替え時に隣接Destinationのorder_valueを交換してSupabaseへ保存
+- Placesカード右端の「≡」ハンドルを押したまま上下へドラッグしてDestinationを並び替え可能にした
+- ドラッグ中は画面上だけ順序を更新し、指を離した時にorder_valueをSupabaseへ保存
 - 再読込後も保存した順序を維持
-- 並び替え保存中は重複操作を防止
+- 並び替え中・保存中は重複操作を防止し、保存失敗時は元の順序へ戻す
 - APP_VERSION / README baselineをv2.1.0-p20へ更新
 
 ## v2.1.0-p02

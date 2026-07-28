@@ -19,4 +19,4 @@ Current baseline: v2.1.0-p20
 
 ## Next
 
-Destination並び替えを実装する。
+Destination並び替えを実装。Placesカード右端の「≡」ハンドルを押したまま上下へドラッグし、確定時にorder_valueをSupabaseへ保存する。

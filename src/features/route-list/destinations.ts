@@ -171,50 +171,57 @@ export async function updateRouteDestination(
 
 
 
-export async function swapRouteDestinationOrder(
+export async function saveRouteDestinationOrder(
   routeId: string,
-  first: Pick<DestinationSummary, 'id' | 'orderValue'>,
-  second: Pick<DestinationSummary, 'id' | 'orderValue'>
-): Promise<void> {
+  ordered: DestinationSummary[],
+  original: DestinationSummary[]
+): Promise<DestinationSummary[]> {
   if (!routeId) throw new Error('Route IDがありません。');
-  if (!first.id || !second.id) throw new Error('Destination IDがありません。');
-  if (first.id === second.id) return;
-  if (!Number.isFinite(first.orderValue) || !Number.isFinite(second.orderValue)) {
+  if (ordered.length !== original.length) throw new Error('目的地の並び順が不正です。');
+
+  const originalById = new Map(original.map((item) => [item.id, item]));
+  const orderValues = original.map((item) => item.orderValue).sort((a, b) => a - b);
+  if (orderValues.some((value) => !Number.isFinite(value))) {
     throw new Error('目的地の並び順が不正です。');
   }
 
+  const next = ordered.map((item, index) => ({ ...item, orderValue: orderValues[index] }));
+  const changed = next.filter((item) => originalById.get(item.id)?.orderValue !== item.orderValue);
+  if (!changed.length) return next;
+
   const supabase = requireSupabase();
+  const completed: DestinationSummary[] = [];
 
-  const { error: firstError } = await supabase
-    .from('destinations')
-    .update({ order_value: second.orderValue })
-    .eq('id', first.id)
-    .eq('route_id', routeId)
-    .eq('record_status', 'active')
-    .is('deleted_at', null);
+  try {
+    for (const item of changed) {
+      const { error } = await supabase
+        .from('destinations')
+        .update({ order_value: item.orderValue })
+        .eq('id', item.id)
+        .eq('route_id', routeId)
+        .eq('record_status', 'active')
+        .is('deleted_at', null);
 
-  if (firstError) throw firstError;
+      if (error) throw error;
+      completed.push(item);
+    }
+  } catch (error) {
+    // Best-effort rollback so a partial save does not leave the route order inconsistent.
+    for (const item of completed) {
+      const previous = originalById.get(item.id);
+      if (!previous) continue;
+      await supabase
+        .from('destinations')
+        .update({ order_value: previous.orderValue })
+        .eq('id', item.id)
+        .eq('route_id', routeId)
+        .eq('record_status', 'active')
+        .is('deleted_at', null);
+    }
+    throw error;
+  }
 
-  const { error: secondError } = await supabase
-    .from('destinations')
-    .update({ order_value: first.orderValue })
-    .eq('id', second.id)
-    .eq('route_id', routeId)
-    .eq('record_status', 'active')
-    .is('deleted_at', null);
-
-  if (!secondError) return;
-
-  // Best-effort rollback. Keep the original error because it explains the failed reorder.
-  await supabase
-    .from('destinations')
-    .update({ order_value: first.orderValue })
-    .eq('id', first.id)
-    .eq('route_id', routeId)
-    .eq('record_status', 'active')
-    .is('deleted_at', null);
-
-  throw secondError;
+  return next;
 }
 
 export async function softDeleteRouteDestination(

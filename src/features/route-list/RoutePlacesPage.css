@@ -423,37 +423,47 @@
 }
 
 
-/* v2.1.0-p20 Destination reorder controls */
+/* v2.1.0-p20 Destination drag reorder */
 .place-card-actions {
   gap: 8px;
 }
 
-.place-order-actions {
-  display: grid;
-  grid-template-columns: 36px 36px;
-  gap: 6px;
-}
-
-.place-order-button {
-  width: 36px;
-  height: 40px;
+.place-drag-handle {
+  width: 42px;
+  min-width: 42px;
+  height: 44px;
   padding: 0;
   border: 1px solid rgba(196, 203, 255, .18);
-  border-radius: 12px;
+  border-radius: 13px;
   background: rgba(255, 255, 255, .045);
-  color: var(--text);
+  color: rgba(231, 234, 255, .88);
   font: inherit;
-  font-size: 1rem;
+  font-size: 1.35rem;
   font-weight: 900;
+  line-height: 1;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
-.place-order-button:active:not(:disabled) {
-  background: rgba(157, 146, 255, .14);
+.place-drag-handle:active {
+  cursor: grabbing;
+  background: rgba(157, 146, 255, .16);
 }
 
-.place-order-button:disabled,
+.place-drag-handle:disabled,
 .place-edit-button:disabled {
   opacity: .35;
+}
+
+.place-card.is-reordering {
+  position: relative;
+  z-index: 3;
+  border-color: rgba(157, 146, 255, .48);
+  background: rgba(157, 146, 255, .09);
+  box-shadow: 0 12px 28px rgba(3, 7, 24, .28);
 }
 
 @media (max-width: 520px) {
@@ -461,13 +471,9 @@
     gap: 6px;
   }
 
-  .place-order-actions {
-    grid-template-columns: 34px 34px;
-    gap: 5px;
-  }
-
-  .place-order-button {
-    width: 34px;
-    height: 40px;
+  .place-drag-handle {
+    width: 40px;
+    min-width: 40px;
+    height: 42px;
   }
 }

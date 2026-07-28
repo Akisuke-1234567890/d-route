@@ -10,7 +10,7 @@ import {
   createRouteDestination,
   getRouteDestinations,
   softDeleteRouteDestination,
-  swapRouteDestinationOrder,
+  saveRouteDestinationOrder,
   updateRouteDestination,
   type DestinationImportance,
   type DestinationSummary,
@@ -48,6 +48,9 @@ export function RoutePlacesPage() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [reorderingId, setReorderingId] = useState<string | null>(null);
+  const dragStartOrderRef = useRef<DestinationSummary[] | null>(null);
+  const dragCurrentOrderRef = useRef<DestinationSummary[] | null>(null);
+  const dragPointerIdRef = useRef<number | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const editNameInputRef = useRef<HTMLInputElement>(null);
 
@@ -171,39 +174,83 @@ export function RoutePlacesPage() {
     if (!deleting) setDeleteTarget(null);
   }
 
-  async function moveDestination(index: number, direction: -1 | 1) {
+  function beginDestinationDrag(event: React.PointerEvent<HTMLButtonElement>, destinationId: string) {
     if (reorderingId) return;
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
 
-    const targetIndex = index + direction;
-    if (targetIndex < 0 || targetIndex >= destinations.length) return;
+    event.preventDefault();
+    dragStartOrderRef.current = destinations.map((item) => ({ ...item }));
+    dragCurrentOrderRef.current = destinations.map((item) => ({ ...item }));
+    dragPointerIdRef.current = event.pointerId;
+    setReorderingId(destinationId);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
 
-    const currentDestination = destinations[index];
-    const targetDestination = destinations[targetIndex];
+  function moveDraggedDestination(event: React.PointerEvent<HTMLButtonElement>) {
+    if (!reorderingId || dragPointerIdRef.current !== event.pointerId) return;
 
-    setReorderingId(currentDestination.id);
+    event.preventDefault();
+    const hovered = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>('[data-destination-id]');
+    const hoveredId = hovered?.dataset.destinationId;
+    if (!hoveredId || hoveredId === reorderingId) return;
+
+    setDestinations((current) => {
+      const fromIndex = current.findIndex((item) => item.id === reorderingId);
+      const toIndex = current.findIndex((item) => item.id === hoveredId);
+      if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return current;
+
+      const next = [...current];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      dragCurrentOrderRef.current = next;
+      return next;
+    });
+  }
+
+  async function finishDestinationDrag(event: React.PointerEvent<HTMLButtonElement>) {
+    if (!reorderingId || dragPointerIdRef.current !== event.pointerId) return;
+
+    const original = dragStartOrderRef.current;
+    const currentOrder = dragCurrentOrderRef.current ?? destinations;
+    dragStartOrderRef.current = null;
+    dragCurrentOrderRef.current = null;
+    dragPointerIdRef.current = null;
+
+    try {
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+    } catch {
+      // Pointer capture may already have been released by the browser.
+    }
+
+    const changed = original && currentOrder.some((item, index) => item.id !== original[index]?.id);
+    if (!changed || !original) {
+      setReorderingId(null);
+      return;
+    }
+
     setError(null);
     try {
-      await swapRouteDestinationOrder(routeId, currentDestination, targetDestination);
-
-      setDestinations((current) => {
-        const next = [...current];
-        const currentIndex = next.findIndex((item) => item.id === currentDestination.id);
-        const nextTargetIndex = next.findIndex((item) => item.id === targetDestination.id);
-        if (currentIndex < 0 || nextTargetIndex < 0) return current;
-
-        const first = next[currentIndex];
-        const second = next[nextTargetIndex];
-        next[currentIndex] = { ...second, orderValue: first.orderValue };
-        next[nextTargetIndex] = { ...first, orderValue: second.orderValue };
-        return next;
-      });
+      const saved = await saveRouteDestinationOrder(routeId, currentOrder, original);
+      setDestinations(saved);
       setToast('並び順を保存しました');
     } catch (err) {
+      setDestinations(original);
       setToast(null);
       setError(getErrorMessage(err, '並び順を保存できませんでした。'));
     } finally {
       setReorderingId(null);
     }
+  }
+
+  function cancelDestinationDrag(event: React.PointerEvent<HTMLButtonElement>) {
+    if (!reorderingId || dragPointerIdRef.current !== event.pointerId) return;
+    if (dragStartOrderRef.current) setDestinations(dragStartOrderRef.current);
+    dragStartOrderRef.current = null;
+    dragCurrentOrderRef.current = null;
+    dragPointerIdRef.current = null;
+    setReorderingId(null);
   }
 
   async function handleDeleteDestination() {
@@ -266,8 +313,12 @@ export function RoutePlacesPage() {
           </section>
         ) : (
           <div className="places-list">
-            {destinations.map((destination, index) => (
-              <article className="place-card" key={destination.id}>
+            {destinations.map((destination) => (
+              <article
+                className={`place-card${reorderingId === destination.id ? ' is-reordering' : ''}`}
+                key={destination.id}
+                data-destination-id={destination.id}
+              >
                 <div className="place-order" aria-label={`${index + 1}番目`}>{index + 1}</div>
                 <div className="place-icon" aria-hidden="true">📍</div>
                 <div className="place-copy">
@@ -280,26 +331,6 @@ export function RoutePlacesPage() {
                   <p>{destination.description ?? '説明はまだありません。'}</p>
                 </div>
                 <div className="place-card-actions">
-                  <div className="place-order-actions" role="group" aria-label={`${destination.name}の並び順`}>
-                    <button
-                      className="place-order-button"
-                      type="button"
-                      onClick={() => void moveDestination(index, -1)}
-                      disabled={index === 0 || Boolean(reorderingId)}
-                      aria-label={`${destination.name}を1つ上へ移動`}
-                    >
-                      ↑
-                    </button>
-                    <button
-                      className="place-order-button"
-                      type="button"
-                      onClick={() => void moveDestination(index, 1)}
-                      disabled={index === destinations.length - 1 || Boolean(reorderingId)}
-                      aria-label={`${destination.name}を1つ下へ移動`}
-                    >
-                      ↓
-                    </button>
-                  </div>
                   <button
                     className="place-edit-button"
                     type="button"
@@ -308,6 +339,19 @@ export function RoutePlacesPage() {
                     disabled={Boolean(reorderingId)}
                   >
                     編集
+                  </button>
+                  <button
+                    className="place-drag-handle"
+                    type="button"
+                    aria-label={`${destination.name}を長押しして並び替え`}
+                    title="長押しして並び替え"
+                    disabled={Boolean(reorderingId) && reorderingId !== destination.id}
+                    onPointerDown={(event) => beginDestinationDrag(event, destination.id)}
+                    onPointerMove={moveDraggedDestination}
+                    onPointerUp={(event) => void finishDestinationDrag(event)}
+                    onPointerCancel={cancelDestinationDrag}
+                  >
+                    ≡
                   </button>
                 </div>
               </article>
