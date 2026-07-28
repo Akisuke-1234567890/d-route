@@ -1,4 +1,4 @@
-# D Route v2.1.0-p22.2
+# D Route v2.1.0-p22.3
 
 Current baseline: v2.1.0-p22.1
 
@@ -95,3 +95,10 @@ Phase追加UIの実機不具合修正。
 - iPhoneのtime入力がモーダル幅を超える問題を修正
 - Phase保存処理・DB構造はp22.1から変更なし
 - DB変更なし
+
+
+## v2.1.0-p22.3
+
+- Phase開始時間のiPhone表示を左寄せへ修正
+- p22.1 Default Phase migrationの再確認・Schema Cache reload用SQLを用意
+- UI側のPhase保存ロジックはp22.2を維持

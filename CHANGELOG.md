@@ -1,3 +1,8 @@
+## v2.1.0-p22.3
+
+- iPhoneのPhase開始時間表示を左寄せに修正
+- Default Phase migrationの再適用・PostgREST Schema Cache再読込手順を追加
+
 ## v2.1.0-p22.2
 
 - Phase追加失敗時にSupabase/PostgRESTの実エラー内容を表示
