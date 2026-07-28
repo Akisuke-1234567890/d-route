@@ -313,7 +313,7 @@ export function RoutePlacesPage() {
           </section>
         ) : (
           <div className="places-list">
-            {destinations.map((destination) => (
+            {destinations.map((destination, index) => (
               <article
                 className={`place-card${reorderingId === destination.id ? ' is-reordering' : ''}`}
                 key={destination.id}

@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.1.0-p20.1
+- p20のPlaces一覧で表示順番号に使用する`index`がmapコールバックで未定義だったビルドエラーを修正
+- ドラッグ並び替え仕様・DB仕様はp20から変更なし
+- APP_VERSION / README baselineをv2.1.0-p20.1へ更新
+
 ## v2.1.0-p20
 - Placesカード右端の「≡」ハンドルを押したまま上下へドラッグしてDestinationを並び替え可能にした
 - ドラッグ中は画面上だけ順序を更新し、指を離した時にorder_valueをSupabaseへ保存
