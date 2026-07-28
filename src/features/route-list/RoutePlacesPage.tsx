@@ -356,7 +356,6 @@ export function RoutePlacesPage() {
     try {
       const saved = await saveRouteDestinationOrder(routeId, currentOrder, original);
       setDestinations(saved);
-      setToast('並び順を保存しました');
     } catch (err) {
       setDestinations(original);
       setToast(null);
