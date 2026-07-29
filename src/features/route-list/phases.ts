@@ -144,7 +144,7 @@ export async function deleteRoutePhase(routeId: string, phaseId: string): Promis
 
   if (target.isDefault && !fallback.isDefault) {
     const { error } = await supabase.from('phases').update({ is_default: true })
-      .eq('id', fallback.id).eq('route_id', routeId).eq('record_status','active').is('deleted_at',null);
+      .eq('id', fallback.id).eq('route_id', routeId).is('deleted_at',null);
     if (error) throw error;
   }
 
@@ -153,7 +153,7 @@ export async function deleteRoutePhase(routeId: string, phaseId: string): Promis
   if (moveError) throw moveError;
 
   const { error: deleteError } = await supabase.from('phases')
-    .update({ deleted_at: new Date().toISOString(), record_status: 'deleted', is_default: false })
-    .eq('id',phaseId).eq('route_id',routeId).eq('record_status','active').is('deleted_at',null);
+    .update({ deleted_at: new Date().toISOString(), is_default: false })
+    .eq('id',phaseId).eq('route_id',routeId).is('deleted_at',null);
   if (deleteError) throw deleteError;
 }

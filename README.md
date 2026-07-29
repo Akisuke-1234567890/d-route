@@ -1,4 +1,4 @@
-# D Route v2.1.0-p25.1
+# D Route v2.1.0-p25.1.1
 
 ## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
@@ -234,3 +234,11 @@ Route Progress baseline。
 - 最後の1Phaseは削除不可
 - soft delete
 - DB schema変更なし
+
+
+## v2.1.0-p25.1.1
+
+- Phase削除で存在しない`phases.record_status`を参照していた不具合を修正
+- Phase側のsoft deleteは`deleted_at`と`is_default`のみ更新
+- Destination移動側の`record_status`条件は維持
+- DB変更なし

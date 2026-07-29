@@ -1,3 +1,8 @@
+## v2.1.0-p25.1.1
+
+- Phase削除時のPGRST204（phases.record_status不存在）を修正
+- DB変更なし
+
 ## v2.1.0-p25.1
 
 - Phase削除を追加
