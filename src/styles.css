@@ -1817,3 +1817,8 @@ a { color: inherit; }
 .v2-time-status.is-now{border-color:rgba(111,224,190,.24);background:rgba(111,224,190,.08);color:#b5f3dc}
 .v2-time-status.is-overdue{border-color:rgba(255,158,103,.24);background:rgba(255,158,103,.075);color:#ffc5a5}
 .v2-today-item.is-overdue{border-color:rgba(255,158,103,.22);background:rgba(255,158,103,.055)}
+
+/* v2.1.0-p30 Today direct focus */
+.v2-today-jump{margin-top:10px;min-height:34px;padding:0 10px;border:1px solid rgba(196,203,255,.14);border-radius:11px;background:rgba(196,203,255,.045);color:#e7e9ff;font:inherit;font-size:.69rem;font-weight:850}
+.v2-today-jump.is-overdue{border-color:rgba(255,158,103,.2);background:rgba(255,158,103,.06);color:#ffc5a5}
+.v2-today-jump.is-attention{border-color:rgba(255,191,94,.19);background:rgba(255,191,94,.065);color:#ffd898}

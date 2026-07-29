@@ -170,6 +170,21 @@ const completedCount = useMemo(
     return { incomplete, nextTimed, exceptionTasks, overdueTasks };
   }, [currentDestinations, currentMinutes, destinations, phases]);
 
+const focusDestinationFromToday = (destination: DestinationSummary | null) => {
+  if (!destination) return;
+  const focusCard = () => window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    const card = scroller.querySelector<HTMLElement>(`[data-destination-id="${destination.id}"]`);
+    if (!card) return;
+    const index = Number(card.dataset.destinationIndex ?? '0');
+    if (Number.isFinite(index)) setActiveIndex(index);
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }));
+  if (destination.phaseId && destination.phaseId !== currentPhase?.id) setManualPhaseId(destination.phaseId);
+  focusCard();
+};
+
 const toggleDestinationCompleted = async (destination: DestinationSummary) => {
   if (progressSavingId) return;
 
@@ -316,6 +331,7 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
                     <article
                       className={`v2-destination-card${destination.importance === 'must' ? ' is-attention' : ''}${destination.completedAt ? ' is-completed' : ''}${priorityDestination?.id === destination.id ? ' is-priority-focus' : ''}`}
                       data-destination-index={index}
+                    data-destination-id={destination.id}
                       key={destination.id}
                       aria-label={`${index + 1}/${currentDestinations.length} ${destination.name}`}
                     >
@@ -405,17 +421,18 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
             <span className="v2-today-label">次の時刻あり</span>
             {todayModel.nextTimed ? <><strong>{formatDestinationTime(todayModel.nextTimed)}</strong><small>{todayModel.nextTimed.name}</small></> : <><strong>なし</strong><small>これからの時刻指定はありません</small></>}
           </section>
-          <section className={`v2-today-item${todayModel.overdueTasks.length ? ' is-overdue' : ''}`}>
+          <section className={`v2-today-item v2-today-action-item${todayModel.overdueTasks.length ? ' is-overdue' : ''}`}>
             <span className="v2-today-label">予定超過</span>
             <strong>{todayModel.overdueTasks.length}件</strong>
             <small>{todayModel.overdueTasks[0]?.name ?? '遅れている予定なし'}</small>
+            {todayModel.overdueTasks[0] ? <button className="v2-today-jump is-overdue" type="button" onClick={() => focusDestinationFromToday(todayModel.overdueTasks[0])}>対象を表示 ›</button> : null}
           </section>
 
           <section className={`v2-today-item v2-today-action-item${todayModel.exceptionTasks.length ? ' is-attention' : ''}`}>
             <span className="v2-today-label">例外・要確認</span>
             <strong>{todayModel.exceptionTasks.length}件</strong>
             <small>{todayModel.exceptionTasks[0]?.name ?? '時間とPhaseの矛盾なし'}</small>
-            {todayModel.exceptionTasks.length ? <Link className="v2-today-edit-link" to={`/routes/${routeId}/places`}>Placesで修正 ›</Link> : null}
+            {todayModel.exceptionTasks[0] ? <button className="v2-today-jump is-attention" type="button" onClick={() => focusDestinationFromToday(todayModel.exceptionTasks[0])}>対象を表示 ›</button> : null}
           </section>
         </div>
         {progressError ? <p className="v2-progress-error" role="alert">{progressError}</p> : null}

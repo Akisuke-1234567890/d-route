@@ -1,4 +1,4 @@
-# D Route v2.1.0-p29
+# D Route v2.1.0-p30
 
 ## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
@@ -311,4 +311,12 @@ NOW / NEXT baseline。
 - Todayに予定超過件数を追加
 - 例外・要確認とは別管理
 - p28.1優先フォーカス維持
+- DB変更なし
+
+
+## v2.1.0-p30
+
+- Todayの予定超過 / 例外・要確認から先頭対象Destinationへ直接移動
+- 別Phase対象はPhase切替後にカード表示
+- 通常の完了操作は追加しない
 - DB変更なし
