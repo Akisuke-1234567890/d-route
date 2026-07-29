@@ -41,6 +41,15 @@ function formatDestinationTime(destination: DestinationSummary): string | null {
   return destination.timeType === 'approx' ? `目安 ${range}` : range;
 }
 
+function getDestinationTimeStatus(destination: DestinationSummary, currentMinutes: number) {
+  if (destination.completedAt || destination.timeType === 'none' || !destination.startTime) return null;
+  const startMinutes = timeToMinutes(destination.startTime);
+  if (startMinutes === null) return null;
+  if (startMinutes > currentMinutes) return { key: 'upcoming', label: '予定前' } as const;
+  if (startMinutes === currentMinutes) return { key: 'now', label: '今の予定' } as const;
+  return { key: 'overdue', label: '予定超過' } as const;
+}
+
 function getDestinationNote(destination: DestinationSummary): string | null {
   if (destination.description) return destination.description;
   if (destination.locationName) return destination.locationName;
@@ -155,7 +164,10 @@ const completedCount = useMemo(
       const next=phases.filter((p)=>p.id!==phase?.id).map((p)=>timeToMinutes(p.startTime)).filter((v): v is number => v!==null && v>start).sort((a,b)=>a-b)[0];
       return task<start || (next!==undefined && task>=next);
     }).sort((a,b)=>(timeToMinutes(a.startTime)??9999)-(timeToMinutes(b.startTime)??9999));
-    return { incomplete, nextTimed, exceptionTasks };
+    const overdueTasks = destinations
+      .filter((destination) => getDestinationTimeStatus(destination, currentMinutes)?.key === 'overdue')
+      .sort((a,b)=>(timeToMinutes(a.startTime)??9999)-(timeToMinutes(b.startTime)??9999));
+    return { incomplete, nextTimed, exceptionTasks, overdueTasks };
   }, [currentDestinations, currentMinutes, destinations, phases]);
 
 const toggleDestinationCompleted = async (destination: DestinationSummary) => {
@@ -313,7 +325,16 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
                       </div>
 
                       <div className="v2-card-main">
-                        {timeLabel ? <time className="v2-card-time">{timeLabel}</time> : <span className="v2-card-time is-empty">PHASE TASK</span>}
+                        {timeLabel ? (
+                          <div className="v2-card-time-row">
+                            <time className="v2-card-time">{timeLabel}</time>
+                            {getDestinationTimeStatus(destination, currentMinutes) ? (
+                              <span className={`v2-time-status is-${getDestinationTimeStatus(destination, currentMinutes)?.key}`}>
+                                {getDestinationTimeStatus(destination, currentMinutes)?.label}
+                              </span>
+                            ) : null}
+                          </div>
+                        ) : <span className="v2-card-time is-empty">PHASE TASK</span>}
                         <h3>{destination.name}</h3>
                         {note ? <p className="v2-card-note">{note}</p> : <p className="v2-card-note is-empty">このPhase内で行う予定</p>}
                       </div>
@@ -384,6 +405,12 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
             <span className="v2-today-label">次の時刻あり</span>
             {todayModel.nextTimed ? <><strong>{formatDestinationTime(todayModel.nextTimed)}</strong><small>{todayModel.nextTimed.name}</small></> : <><strong>なし</strong><small>これからの時刻指定はありません</small></>}
           </section>
+          <section className={`v2-today-item${todayModel.overdueTasks.length ? ' is-overdue' : ''}`}>
+            <span className="v2-today-label">予定超過</span>
+            <strong>{todayModel.overdueTasks.length}件</strong>
+            <small>{todayModel.overdueTasks[0]?.name ?? '遅れている予定なし'}</small>
+          </section>
+
           <section className={`v2-today-item v2-today-action-item${todayModel.exceptionTasks.length ? ' is-attention' : ''}`}>
             <span className="v2-today-label">例外・要確認</span>
             <strong>{todayModel.exceptionTasks.length}件</strong>
