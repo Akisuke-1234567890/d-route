@@ -884,3 +884,102 @@
 }
 
 .destination-time-grid { grid-template-columns: 1fr; }
+
+
+/* v2.1.0-p23.2 strict 5-minute select controls */
+.time-select-row { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto; gap:8px; align-items:center; width:100%; min-width:0; }
+.time-select-row select { width:100%; min-width:0; min-height:48px; padding:0 12px; border:1px solid rgba(196,203,255,.16); border-radius:15px; background:rgba(4,9,29,.72); color:var(--text); font:inherit; box-sizing:border-box; }
+.time-colon { color:var(--muted); font-weight:900; }
+.time-clear-mini { min-height:38px; padding:0 10px; border:1px solid rgba(196,203,255,.14); border-radius:12px; background:rgba(255,255,255,.035); color:var(--muted); font:inherit; font-size:.76rem; font-weight:800; }
+@media (max-width:520px) { .time-select-row { gap:6px; } }
+
+
+/* v2.1.0-p23.3 compact one-line time range */
+.compact-time-range {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  gap: 7px;
+  align-items: end;
+  width: 100%;
+  min-width: 0;
+}
+
+.compact-time-label {
+  align-self: center;
+  color: var(--text);
+  font-size: .84rem;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.compact-time-point {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 3px;
+  align-items: center;
+  min-width: 0;
+}
+
+.compact-time-caption {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: .64rem;
+  font-weight: 750;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.compact-time-point select {
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  padding: 0 5px;
+  border: 1px solid rgba(196, 203, 255, .16);
+  border-radius: 12px;
+  background: rgba(4, 9, 29, .72);
+  color: var(--text);
+  font: inherit;
+  font-size: .86rem;
+  font-weight: 750;
+  box-sizing: border-box;
+}
+
+.compact-time-separator {
+  align-self: center;
+  padding-top: 13px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.compact-time-optional {
+  align-self: center;
+  padding-top: 13px;
+  color: #ef9aa9;
+  font-size: .66rem;
+  font-weight: 750;
+}
+
+.compact-time-range .time-clear-mini {
+  align-self: center;
+  min-width: 30px;
+  min-height: 30px;
+  margin-top: 13px;
+  padding: 0;
+  border-radius: 10px;
+}
+
+@media (max-width: 390px) {
+  .compact-time-range {
+    gap: 4px;
+  }
+
+  .compact-time-label {
+    font-size: .76rem;
+  }
+
+  .compact-time-point select {
+    height: 40px;
+    padding: 0 3px;
+    font-size: .78rem;
+  }
+}

@@ -78,6 +78,25 @@ function normalizeFiveMinuteTime(value: string): string {
   return `${String(nextHour).padStart(2, '0')}:${String(nextMinute).padStart(2, '0')}`;
 }
 
+const TIME_HOURS = Array.from({ length: 24 }, (_, index) => String(index).padStart(2, '0'));
+const TIME_MINUTES = Array.from({ length: 12 }, (_, index) => String(index * 5).padStart(2, '0'));
+
+function timePart(value: string, part: 'hour' | 'minute'): string {
+  if (!value) return '';
+  const [hour = '', minute = ''] = value.split(':');
+  return part === 'hour' ? hour : minute;
+}
+
+function updateTimePart(current: string, part: 'hour' | 'minute', nextPart: string): string {
+  const currentHour = timePart(current, 'hour');
+  const currentMinute = timePart(current, 'minute');
+  const hour = part === 'hour' ? nextPart : currentHour;
+  const minute = part === 'minute' ? nextPart : currentMinute;
+  if (!hour && !minute) return '';
+  return `${hour || '00'}:${minute || '00'}`;
+}
+
+
 export function RoutePlacesPage() {
   const { routeId = '' } = useParams<{ routeId: string }>();
   const [destinations, setDestinations] = useState<DestinationSummary[]>([]);
@@ -699,7 +718,7 @@ export function RoutePlacesPage() {
               <div className="field-group compact-time-type">
                 <span className="field-label">時間</span>
                 <div className="time-type-segment" role="group" aria-label="時間">
-                  <button className={`time-type-option ${timeType === 'none' ? 'is-active' : ''}`} type="button" onClick={() => { setTimeType('none'); setStartTime(''); setEndTime(''); }} disabled={saving} aria-pressed={timeType === 'none'}>なし</button>
+                  <button className={`time-type-option ${timeType === 'none' ? 'is-active' : ''}`} type="button" onClick={() => { setTimeType('none'); setStartTime(''); setEndTime(''); setFormError(null); }} disabled={saving} aria-pressed={timeType === 'none'}>なし</button>
                   <button className={`time-type-option ${timeType === 'fixed' ? 'is-active' : ''}`} type="button" onClick={() => setTimeType('fixed')} disabled={saving} aria-pressed={timeType === 'fixed'}>確定</button>
                   <button className={`time-type-option ${timeType === 'approx' ? 'is-active' : ''}`} type="button" onClick={() => setTimeType('approx')} disabled={saving} aria-pressed={timeType === 'approx'}>目安</button>
                 </div>
@@ -707,9 +726,34 @@ export function RoutePlacesPage() {
 
               {timeType !== 'none' ? (
                 <>
-                  <div className="destination-time-stack">
-                    <div className="field-group"><label htmlFor="destination-start-time">開始時刻</label><input id="destination-start-time" type="time" step="300" value={startTime} onChange={(event) => setStartTime(normalizeFiveMinuteTime(event.target.value))} disabled={saving} required /></div>
-                    <div className="field-group"><label htmlFor="destination-end-time">終了時刻 <span className="field-optional">任意</span></label><input id="destination-end-time" type="time" step="300" value={endTime} onChange={(event) => setEndTime(normalizeFiveMinuteTime(event.target.value))} disabled={saving} /></div>
+                  <div className="compact-time-range">
+                    <span className="compact-time-label">時刻</span>
+                    <div className="compact-time-point">
+                      <span className="compact-time-caption">開始</span>
+                      <select aria-label="開始時" value={timePart(startTime, 'hour')} onChange={(event) => setStartTime(updateTimePart(startTime, 'hour', event.target.value))} disabled={saving}>
+                        <option value="">--</option>
+                        {TIME_HOURS.map((hour) => <option value={hour} key={hour}>{hour}</option>)}
+                      </select>
+                      <span className="time-colon">:</span>
+                      <select aria-label="開始分" value={timePart(startTime, 'minute')} onChange={(event) => setStartTime(updateTimePart(startTime, 'minute', event.target.value))} disabled={saving}>
+                        <option value="">--</option>
+                        {TIME_MINUTES.map((minute) => <option value={minute} key={minute}>{minute}</option>)}
+                      </select>
+                    </div>
+                    <span className="compact-time-separator">〜</span>
+                    <div className="compact-time-point">
+                      <span className="compact-time-caption">終了</span>
+                      <select aria-label="終了時" value={timePart(endTime, 'hour')} onChange={(event) => setEndTime(updateTimePart(endTime, 'hour', event.target.value))} disabled={saving}>
+                        <option value="">--</option>
+                        {TIME_HOURS.map((hour) => <option value={hour} key={hour}>{hour}</option>)}
+                      </select>
+                      <span className="time-colon">:</span>
+                      <select aria-label="終了分" value={timePart(endTime, 'minute')} onChange={(event) => setEndTime(updateTimePart(endTime, 'minute', event.target.value))} disabled={saving}>
+                        <option value="">--</option>
+                        {TIME_MINUTES.map((minute) => <option value={minute} key={minute}>{minute}</option>)}
+                      </select>
+                    </div>
+                    {endTime ? <button className="time-clear-mini" type="button" onClick={() => setEndTime('')} disabled={saving} aria-label="終了時刻を解除">×</button> : <span className="compact-time-optional">任意</span>}
                   </div>
                   <div className="auto-phase-preview">{startTime ? (()=>{const p=resolvePhaseForTime(phases,startTime); return p ? <>Phase：<strong>{p.name || '名前未設定のPhase'}</strong>へ自動配置</> : <>該当Phaseなし：<strong>例外管理</strong>に表示されます</>;})() : <>開始時刻を入れるとPhaseを自動判定します</>}</div>
                 </>
@@ -774,7 +818,7 @@ export function RoutePlacesPage() {
               <div className="field-group compact-time-type">
                 <span className="field-label">時間</span>
                 <div className="time-type-segment" role="group" aria-label="時間">
-                  <button className={`time-type-option ${editTimeType === 'none' ? 'is-active' : ''}`} type="button" onClick={() => { setEditTimeType('none'); setEditStartTime(''); setEditEndTime(''); }} disabled={editSaving} aria-pressed={editTimeType === 'none'}>なし</button>
+                  <button className={`time-type-option ${editTimeType === 'none' ? 'is-active' : ''}`} type="button" onClick={() => { setEditTimeType('none'); setEditStartTime(''); setEditEndTime(''); setEditError(null); }} disabled={editSaving} aria-pressed={editTimeType === 'none'}>なし</button>
                   <button className={`time-type-option ${editTimeType === 'fixed' ? 'is-active' : ''}`} type="button" onClick={() => setEditTimeType('fixed')} disabled={editSaving} aria-pressed={editTimeType === 'fixed'}>確定</button>
                   <button className={`time-type-option ${editTimeType === 'approx' ? 'is-active' : ''}`} type="button" onClick={() => setEditTimeType('approx')} disabled={editSaving} aria-pressed={editTimeType === 'approx'}>目安</button>
                 </div>
@@ -782,9 +826,34 @@ export function RoutePlacesPage() {
 
               {editTimeType !== 'none' ? (
                 <>
-                  <div className="destination-time-stack">
-                    <div className="field-group"><label htmlFor="edit-destination-start-time">開始時刻</label><input id="edit-destination-start-time" type="time" step="300" value={editStartTime} onChange={(event) => setEditStartTime(normalizeFiveMinuteTime(event.target.value))} disabled={editSaving} required /></div>
-                    <div className="field-group"><label htmlFor="edit-destination-end-time">終了時刻 <span className="field-optional">任意</span></label><input id="edit-destination-end-time" type="time" step="300" value={editEndTime} onChange={(event) => setEditEndTime(normalizeFiveMinuteTime(event.target.value))} disabled={editSaving} /></div>
+                  <div className="compact-time-range">
+                    <span className="compact-time-label">時刻</span>
+                    <div className="compact-time-point">
+                      <span className="compact-time-caption">開始</span>
+                      <select aria-label="開始時" value={timePart(editStartTime, 'hour')} onChange={(event) => setEditStartTime(updateTimePart(editStartTime, 'hour', event.target.value))} disabled={editSaving}>
+                        <option value="">--</option>
+                        {TIME_HOURS.map((hour) => <option value={hour} key={hour}>{hour}</option>)}
+                      </select>
+                      <span className="time-colon">:</span>
+                      <select aria-label="開始分" value={timePart(editStartTime, 'minute')} onChange={(event) => setEditStartTime(updateTimePart(editStartTime, 'minute', event.target.value))} disabled={editSaving}>
+                        <option value="">--</option>
+                        {TIME_MINUTES.map((minute) => <option value={minute} key={minute}>{minute}</option>)}
+                      </select>
+                    </div>
+                    <span className="compact-time-separator">〜</span>
+                    <div className="compact-time-point">
+                      <span className="compact-time-caption">終了</span>
+                      <select aria-label="終了時" value={timePart(editEndTime, 'hour')} onChange={(event) => setEditEndTime(updateTimePart(editEndTime, 'hour', event.target.value))} disabled={editSaving}>
+                        <option value="">--</option>
+                        {TIME_HOURS.map((hour) => <option value={hour} key={hour}>{hour}</option>)}
+                      </select>
+                      <span className="time-colon">:</span>
+                      <select aria-label="終了分" value={timePart(editEndTime, 'minute')} onChange={(event) => setEditEndTime(updateTimePart(editEndTime, 'minute', event.target.value))} disabled={editSaving}>
+                        <option value="">--</option>
+                        {TIME_MINUTES.map((minute) => <option value={minute} key={minute}>{minute}</option>)}
+                      </select>
+                    </div>
+                    {editEndTime ? <button className="time-clear-mini" type="button" onClick={() => setEditEndTime('')} disabled={editSaving} aria-label="終了時刻を解除">×</button> : <span className="compact-time-optional">任意</span>}
                   </div>
                   <div className="auto-phase-preview">{editStartTime ? (()=>{const p=resolvePhaseForTime(phases,editStartTime); return p ? <>Phase：<strong>{p.name || '名前未設定のPhase'}</strong>へ自動配置</> : <>該当Phaseなし：<strong>例外管理</strong>に表示されます</>;})() : <>開始時刻を入れるとPhaseを自動判定します</>}</div>
                 </>
@@ -911,14 +980,11 @@ export function RoutePlacesPage() {
               <div className="field-group">
                 <label htmlFor="phase-start-time">開始時間 <span className="field-optional">任意</span></label>
                 <div className="phase-time-control">
-                  <input
-                    id="phase-start-time"
-                    type="time"
-                    step="300"
-                    value={phaseStartTime}
-                    onChange={(event) => setPhaseStartTime(normalizeFiveMinuteTime(event.target.value))}
-                    disabled={phaseSaving}
-                  />
+                  <div className="time-select-row">
+                  <select aria-label="Phase開始時" value={timePart(phaseStartTime, 'hour')} onChange={(event) => setPhaseStartTime(updateTimePart(phaseStartTime, 'hour', event.target.value))} disabled={phaseSaving}><option value="">時</option>{TIME_HOURS.map((hour) => <option value={hour} key={hour}>{hour}</option>)}</select>
+                  <span className="time-colon">:</span>
+                  <select aria-label="Phase開始分" value={timePart(phaseStartTime, 'minute')} onChange={(event) => setPhaseStartTime(updateTimePart(phaseStartTime, 'minute', event.target.value))} disabled={phaseSaving}><option value="">分</option>{TIME_MINUTES.map((minute) => <option value={minute} key={minute}>{minute}</option>)}</select>
+                </div>
                   {phaseStartTime ? (
                     <button
                       className="phase-time-clear"
