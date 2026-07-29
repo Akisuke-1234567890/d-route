@@ -1,4 +1,4 @@
-# D Route v2.1.0-p23.5
+# D Route v2.1.0-p23.6
 
 ## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
@@ -181,3 +181,12 @@ Phase追加UIの実機不具合修正。
 - Phase内表示順はorder_valueを正として保存
 - Add/Edit Placeモーダルへscroll classを正しく適用しiPhone内部スクロールを修正
 - DB schema変更なし
+
+
+## v2.1.0-p23.6
+
+- Places上部の「＋ 目的地を追加」「＋ Phaseを追加」の色を統一
+- Add/Edit Placeモーダルをヘッダー / スクロール本文 / フッターの3領域へ変更
+- 追加 / 保存 / キャンセルをsticky overlayから通常フッターへ変更
+- 操作ボタンが入力欄へ重なる不具合を修正
+- DB変更なし

@@ -1061,3 +1061,69 @@
     max-height: calc(100dvh - 16px);
   }
 }
+
+
+/* v2.1.0-p23.6 unified actions + true modal header/body/footer */
+.places-main-actions {
+  width: 100%;
+}
+
+.places-main-actions .primary-button {
+  width: 100%;
+  min-height: 52px;
+}
+
+/* Form itself no longer scrolls. Only .place-scroll-content scrolls. */
+.place-scroll-modal {
+  overflow: hidden !important;
+}
+
+.place-scroll-modal > .place-scroll-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden !important;
+  padding-bottom: 0;
+}
+
+.place-scroll-content {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 2px;
+  padding-bottom: 18px;
+}
+
+/* Footer is a real fixed region of the modal, not an overlay/sticky layer. */
+.place-scroll-form > .modal-actions {
+  position: static !important;
+  flex: 0 0 auto;
+  z-index: auto;
+  margin-top: 0;
+  padding: 14px 0 calc(6px + env(safe-area-inset-bottom));
+  background: rgba(10, 17, 49, .98);
+  border-top: 1px solid rgba(196, 203, 255, .10);
+}
+
+.place-scroll-form > .modal-actions::before {
+  display: none;
+}
+
+@media (max-width: 520px) {
+  .places-main-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .place-scroll-modal {
+    height: calc(100dvh - 16px);
+    max-height: calc(100dvh - 16px);
+  }
+
+  .place-scroll-content {
+    padding-bottom: 14px;
+  }
+}

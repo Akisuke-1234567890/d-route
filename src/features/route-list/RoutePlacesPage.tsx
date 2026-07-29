@@ -607,7 +607,7 @@ export function RoutePlacesPage() {
             <button className="primary-button route-tab-action" type="button" onClick={() => openCreateModal()}>
               ＋ 目的地を追加
             </button>
-            <button className="secondary-button route-tab-action" type="button" onClick={openPhaseCreate}>
+            <button className="primary-button route-tab-action" type="button" onClick={openPhaseCreate}>
               ＋ Phaseを追加
             </button>
           </div>
@@ -728,6 +728,7 @@ export function RoutePlacesPage() {
             </div>
 
             <form className="route-create-form place-form place-scroll-form" onSubmit={handleCreate}>
+              <div className="place-scroll-content">
               <div className="field-group compact-time-type">
                 <span className="field-label">時間</span>
                 <div className="time-type-segment" role="group" aria-label="時間">
@@ -803,6 +804,7 @@ export function RoutePlacesPage() {
 
               {formError && <p className="form-error" role="alert">{formError}</p>}
 
+              </div>
               <div className="modal-actions">
                 <button className="secondary-button" type="button" onClick={closeCreateModal} disabled={saving}>キャンセル</button>
                 <button className="primary-button" type="submit" disabled={!name.trim() || saving || (timeType !== 'none' && !startTime)}>
@@ -828,6 +830,7 @@ export function RoutePlacesPage() {
             </div>
 
             <form className="route-create-form place-form place-scroll-form" onSubmit={handleEdit}>
+              <div className="place-scroll-content">
               <div className="field-group compact-time-type">
                 <span className="field-label">時間</span>
                 <div className="time-type-segment" role="group" aria-label="時間">
@@ -903,6 +906,7 @@ export function RoutePlacesPage() {
 
               {editError && <p className="form-error" role="alert">{editError}</p>}
 
+              </div>
               <div className="modal-actions edit-place-actions">
                 <button className="primary-button" type="submit" disabled={!editName.trim() || editSaving || (editTimeType !== 'none' && !editStartTime)}>
                   {editSaving ? '保存中…' : '保存'}
