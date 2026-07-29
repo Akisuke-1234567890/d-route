@@ -1,3 +1,9 @@
+## v2.1.0-p25.1.2
+
+- Phase soft delete時のRLS 42501を修正
+- Owner SELECT policyをsoft delete互換へ調整
+- DB migration追加
+
 ## v2.1.0-p25.1.1
 
 - Phase削除時のPGRST204（phases.record_status不存在）を修正

@@ -56,3 +56,12 @@ Migration: `migrations/202607290002_destination_progress.sql`
 - NULL = 未完了
 - timestamp = 完了
 - Phase進捗はDestinationのcompleted_atから算出
+
+
+## v2.1.0-p25.1.2 Phase soft-delete RLS
+
+Migration: `migrations/202607290003_phase_soft_delete_rls.sql`
+
+`phases`のOwner SELECT policyから`deleted_at is null`制約を外す。
+アプリ側一覧取得は引き続き`deleted_at is null`で絞る。
+これによりOwnerによるsoft delete更新がPostgREST/RLSで拒否されないようにする。

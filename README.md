@@ -1,4 +1,4 @@
-# D Route v2.1.0-p25.1.1
+# D Route v2.1.0-p25.1.2
 
 ## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
@@ -242,3 +242,12 @@ Route Progress baseline。
 - Phase側のsoft deleteは`deleted_at`と`is_default`のみ更新
 - Destination移動側の`record_status`条件は維持
 - DB変更なし
+
+
+## v2.1.0-p25.1.2
+
+- Phase soft delete時のRLS 42501を修正
+- Route Ownerは自分のRouteに属するsoft-deleted PhaseもRLS上SELECT可能に変更
+- 通常アプリ表示は従来どおり`deleted_at is null`で除外するため、削除済みPhaseは画面に出ない
+- Phase削除処理自体はp25.1.1を維持
+- migration: `supabase/migrations/202607290003_phase_soft_delete_rls.sql`
