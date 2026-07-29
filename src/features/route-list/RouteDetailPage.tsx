@@ -122,13 +122,28 @@ const completedCount = useMemo(
   [currentDestinations]
 );
 
-  const routeFocus = useMemo(() => {
+  const priorityDestination = useMemo(() => {
     const incomplete = currentDestinations.filter((destination) => !destination.completedAt);
-    return {
-      now: incomplete[0] ?? null,
-      next: incomplete[1] ?? null,
-    };
-  }, [currentDestinations]);
+    if (!incomplete.length) return null;
+
+    const timed = incomplete
+      .filter((destination) => destination.timeType !== 'none' && destination.startTime)
+      .slice()
+      .sort((a, b) => {
+        const aMinutes = timeToMinutes(a.startTime) ?? Number.POSITIVE_INFINITY;
+        const bMinutes = timeToMinutes(b.startTime) ?? Number.POSITIVE_INFINITY;
+        return aMinutes - bMinutes || a.orderValue - b.orderValue;
+      });
+
+    if (timed.length) {
+      const due = timed.filter(
+        (destination) => (timeToMinutes(destination.startTime) ?? Number.POSITIVE_INFINITY) <= currentMinutes
+      );
+      return due[0] ?? timed[0];
+    }
+
+    return incomplete.slice().sort((a, b) => a.orderValue - b.orderValue)[0] ?? null;
+  }, [currentDestinations, currentMinutes]);
 
   const todayModel = useMemo(() => {
     const incomplete = currentDestinations.filter((d) => !d.completedAt);
@@ -175,10 +190,10 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
 
 
   useEffect(() => {
-    const nowIndex = routeFocus.now
-      ? currentDestinations.findIndex((destination) => destination.id === routeFocus.now?.id)
+    const priorityIndex = priorityDestination
+      ? currentDestinations.findIndex((destination) => destination.id === priorityDestination.id)
       : 0;
-    const nextIndex = Math.max(0, nowIndex);
+    const nextIndex = Math.max(0, priorityIndex);
 
     setActiveIndex(nextIndex);
 
@@ -186,13 +201,10 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
       const scroller = scrollerRef.current;
       if (!scroller) return;
       const card = scroller.querySelector<HTMLElement>(`[data-destination-index="${nextIndex}"]`);
-      if (card) {
-        card.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
-      } else {
-        scroller.scrollTo({ left: 0, behavior: 'auto' });
-      }
+      if (card) card.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
+      else scroller.scrollTo({ left: 0, behavior: 'auto' });
     });
-  }, [currentDestinations, currentPhase?.id, routeFocus.now?.id]);
+  }, [currentPhase?.id, priorityDestination?.id]);
 
   const scrollToIndex = (nextIndex: number) => {
     if (!currentDestinations.length) return;
@@ -261,42 +273,6 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
           ) : null}
         </div>
 
-        {currentPhase && currentDestinations.length > 0 ? (
-          <div className="v2-now-next" aria-label="今と次の予定">
-            <button
-              className={`v2-focus-slot v2-focus-now${routeFocus.now ? '' : ' is-empty'}`}
-              type="button"
-              disabled={!routeFocus.now}
-              onClick={() => {
-                if (!routeFocus.now) return;
-                const index = currentDestinations.findIndex((destination) => destination.id === routeFocus.now?.id);
-                if (index >= 0) scrollToIndex(index);
-              }}
-            >
-              <span className="v2-focus-label">NOW</span>
-              <strong>{routeFocus.now?.name ?? 'このPhaseは完了'}</strong>
-              <small>{routeFocus.now ? formatDestinationTime(routeFocus.now) || '時刻指定なし' : `${completedCount} / ${currentDestinations.length} 完了`}</small>
-            </button>
-
-            <span className="v2-focus-arrow" aria-hidden="true">›</span>
-
-            <button
-              className={`v2-focus-slot v2-focus-next${routeFocus.next ? '' : ' is-empty'}`}
-              type="button"
-              disabled={!routeFocus.next}
-              onClick={() => {
-                if (!routeFocus.next) return;
-                const index = currentDestinations.findIndex((destination) => destination.id === routeFocus.next?.id);
-                if (index >= 0) scrollToIndex(index);
-              }}
-            >
-              <span className="v2-focus-label">NEXT</span>
-              <strong>{routeFocus.next?.name ?? (routeFocus.now ? '次の予定なし' : '—')}</strong>
-              <small>{routeFocus.next ? formatDestinationTime(routeFocus.next) || '時刻指定なし' : 'Planning順で自動判定'}</small>
-            </button>
-          </div>
-        ) : null}
-
         {!currentPhase ? (
           <div className="v2-phase-empty">
             <p>Phaseがまだありません。</p>
@@ -326,7 +302,7 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
                   const note = getDestinationNote(destination);
                   return (
                     <article
-                      className={`v2-destination-card${destination.importance === 'must' ? ' is-attention' : ''}${destination.completedAt ? ' is-completed' : ''}`}
+                      className={`v2-destination-card${destination.importance === 'must' ? ' is-attention' : ''}${destination.completedAt ? ' is-completed' : ''}${priorityDestination?.id === destination.id ? ' is-priority-focus' : ''}`}
                       data-destination-index={index}
                       key={destination.id}
                       aria-label={`${index + 1}/${currentDestinations.length} ${destination.name}`}
