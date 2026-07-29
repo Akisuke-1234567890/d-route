@@ -1,3 +1,9 @@
+## v2.1.0-p25.1
+
+- Phase削除を追加
+- Destination移動と最後のPhase保護を実装
+- DB schema変更なし
+
 ## v2.1.0-p25
 
 - Destination完了状態`completed_at`を追加

@@ -1183,3 +1183,19 @@
     max-height: calc(100dvh - 24px);
   }
 }
+
+
+/* v2.1.0-p25.1 Phase deletion */
+.phase-delete-button {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 12px;
+  border: 1px solid rgba(255,115,135,.28);
+  border-radius: 12px;
+  background: rgba(255,91,116,.07);
+  color: #ffb0bd;
+  font: inherit;
+  font-size: .78rem;
+  font-weight: 850;
+}
+.phase-delete-button:disabled { opacity: .45; }

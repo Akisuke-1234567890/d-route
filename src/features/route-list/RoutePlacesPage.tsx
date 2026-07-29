@@ -16,7 +16,7 @@ import {
   type DestinationSummary,
   type DestinationTimeType,
 } from './destinations';
-import { createRoutePhase, getRoutePhases, updateRoutePhase, type PhaseSummary } from './phases';
+import { createRoutePhase, deleteRoutePhase, getRoutePhases, updateRoutePhase, type PhaseSummary } from './phases';
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error && error.message) return error.message;
@@ -109,6 +109,7 @@ export function RoutePlacesPage() {
   const [phaseDescription, setPhaseDescription] = useState('');
   const [phaseStartTime, setPhaseStartTime] = useState('');
   const [phaseSaving, setPhaseSaving] = useState(false);
+  const [phaseDeleting, setPhaseDeleting] = useState(false);
   const [phaseError, setPhaseError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -334,6 +335,42 @@ export function RoutePlacesPage() {
       setPhaseError(getErrorMessage(err, 'Phaseを追加できませんでした。'));
     } finally { setPhaseSaving(false); }
   }
+
+
+async function handlePhaseDelete() {
+  if (!phaseEditing || phaseSaving || phaseDeleting) return;
+  if (phases.length <= 1) {
+    setPhaseError('最後のPhaseは削除できません。');
+    return;
+  }
+  const count = destinations.filter((destination) => destination.phaseId === phaseEditing.id).length;
+  const remaining = phases.filter((phase) => phase.id !== phaseEditing.id).slice().sort((a,b)=>a.orderValue-b.orderValue);
+  const fallback = remaining.find((phase)=>phase.isDefault) ?? remaining[0];
+  const phaseLabel = phaseEditing.name.trim() || '名前未設定のPhase';
+  const fallbackLabel = fallback?.name.trim() || '名前未設定のPhase';
+  const message = count > 0
+    ? `「${phaseLabel}」を削除しますか？\n\nこのPhaseの目的地 ${count}件は「${fallbackLabel}」へ移動します。`
+    : `「${phaseLabel}」を削除しますか？`;
+  if (!window.confirm(message)) return;
+
+  setPhaseDeleting(true);
+  setPhaseError(null);
+  try {
+    await deleteRoutePhase(routeId, phaseEditing.id);
+    const [nextPhases, nextDestinations] = await Promise.all([
+      getRoutePhases(routeId),
+      getRouteDestinations(routeId),
+    ]);
+    setPhases(nextPhases);
+    setDestinations(nextDestinations);
+    setPhaseEditing(null);
+    setPhaseCreateOpen(false);
+  } catch (err) {
+    setPhaseError(getErrorMessage(err, 'Phaseを削除できませんでした。'));
+  } finally {
+    setPhaseDeleting(false);
+  }
+}
 
   async function handlePhaseEdit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -989,9 +1026,9 @@ export function RoutePlacesPage() {
       )}
 
       {(phaseCreateOpen || phaseEditing) && (
-        <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !phaseSaving) { setPhaseCreateOpen(false); setPhaseEditing(null); } }}>
+        <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !phaseSaving && !phaseDeleting) { setPhaseCreateOpen(false); setPhaseEditing(null); } }}>
           <section className="route-modal phase-edit-modal phase-centered-modal" role="dialog" aria-modal="true">
-            <div className="modal-header"><div><p className="eyebrow">{phaseEditing ? 'EDIT PHASE' : 'NEW PHASE'}</p><h2>{phaseEditing ? 'Phaseを編集' : 'Phaseを追加'}</h2></div><button className="modal-close-button" type="button" disabled={phaseSaving} onClick={() => { setPhaseCreateOpen(false); setPhaseEditing(null); }}>×</button></div>
+            <div className="modal-header"><div><p className="eyebrow">{phaseEditing ? 'EDIT PHASE' : 'NEW PHASE'}</p><h2>{phaseEditing ? 'Phaseを編集' : 'Phaseを追加'}</h2></div><button className="modal-close-button" type="button" disabled={phaseSaving || phaseDeleting} onClick={() => { setPhaseCreateOpen(false); setPhaseEditing(null); }}>×</button></div>
             <form className="route-create-form place-form" onSubmit={phaseEditing ? handlePhaseEdit : handlePhaseCreate}>
               <div className="field-group"><label htmlFor="phase-name">Phase名 {phaseEditing?.isDefault && <span className="field-optional">空欄可</span>}</label><input id="phase-name" value={phaseName} onChange={(event) => setPhaseName(event.target.value)} placeholder="例：午前" maxLength={40} disabled={phaseSaving} /></div>
               <div className="field-group">
@@ -1017,7 +1054,12 @@ export function RoutePlacesPage() {
               </div>
               <div className="field-group"><label htmlFor="phase-description">メモ <span className="field-optional">任意</span></label><textarea id="phase-description" value={phaseDescription} onChange={(event) => setPhaseDescription(event.target.value)} maxLength={200} rows={3} disabled={phaseSaving} /></div>
               {phaseError && <p className="form-error" role="alert">{phaseError}</p>}
-              <div className="modal-actions"><button className="secondary-button" type="button" disabled={phaseSaving} onClick={() => { setPhaseCreateOpen(false); setPhaseEditing(null); }}>キャンセル</button><button className="primary-button" type="submit" disabled={phaseSaving || (!phaseEditing?.isDefault && !phaseName.trim())}>{phaseSaving ? '保存中…' : phaseEditing ? '保存' : '追加'}</button></div>
+              <div className="modal-actions"><button className="secondary-button" type="button" disabled={phaseSaving || phaseDeleting} onClick={() => { setPhaseCreateOpen(false); setPhaseEditing(null); }}>キャンセル</button><button className="primary-button" type="submit" disabled={phaseSaving || phaseDeleting || (!phaseEditing?.isDefault && !phaseName.trim())}>{phaseSaving ? '保存中…' : phaseEditing ? '保存' : '追加'}</button></div>
+              {phaseEditing ? (
+                <button className="phase-delete-button" type="button" onClick={() => void handlePhaseDelete()} disabled={phaseSaving || phaseDeleting || phases.length <= 1}>
+                  {phaseDeleting ? '削除中…' : phases.length <= 1 ? '最後のPhaseは削除できません' : 'このPhaseを削除'}
+                </button>
+              ) : null}
             </form>
           </section>
         </div>

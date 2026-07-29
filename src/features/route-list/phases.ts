@@ -128,3 +128,32 @@ export async function updateRoutePhase(routeId: string, phaseId: string, input: 
   if (error) throw error;
   return toPhaseSummary(data as PhaseRow);
 }
+
+
+export async function deleteRoutePhase(routeId: string, phaseId: string): Promise<void> {
+  if (!routeId || !phaseId) throw new Error('Phaseを特定できません。');
+  const supabase = requireSupabase();
+  const phases = await getRoutePhases(routeId);
+  const target = phases.find((phase) => phase.id === phaseId);
+  if (!target) throw new Error('Phaseが見つかりません。');
+  if (phases.length <= 1) throw new Error('最後のPhaseは削除できません。');
+
+  const remaining = phases.filter((phase) => phase.id !== phaseId).sort((a,b)=>a.orderValue-b.orderValue);
+  const fallback = remaining.find((phase) => phase.isDefault) ?? remaining[0];
+  if (!fallback) throw new Error('目的地の移動先がありません。');
+
+  if (target.isDefault && !fallback.isDefault) {
+    const { error } = await supabase.from('phases').update({ is_default: true })
+      .eq('id', fallback.id).eq('route_id', routeId).eq('record_status','active').is('deleted_at',null);
+    if (error) throw error;
+  }
+
+  const { error: moveError } = await supabase.from('destinations').update({ phase_id: fallback.id })
+    .eq('route_id',routeId).eq('phase_id',phaseId).eq('record_status','active').is('deleted_at',null);
+  if (moveError) throw moveError;
+
+  const { error: deleteError } = await supabase.from('phases')
+    .update({ deleted_at: new Date().toISOString(), record_status: 'deleted', is_default: false })
+    .eq('id',phaseId).eq('route_id',routeId).eq('record_status','active').is('deleted_at',null);
+  if (deleteError) throw deleteError;
+}
