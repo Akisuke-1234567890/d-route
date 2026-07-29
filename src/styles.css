@@ -1654,3 +1654,65 @@ a { color: inherit; }
   z-index: 220;
 }
 
+
+
+/* v2.1.0-p24 Current Phase / Planning connection */
+.v2-phase-state {
+  padding: 18px;
+}
+
+.v2-phase-state h2 {
+  margin: 4px 0 8px;
+  font-size: 1.08rem;
+}
+
+.v2-phase-state > p:last-of-type {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: .82rem;
+}
+
+.v2-phase-empty {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 34px 18px 30px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.v2-phase-empty p {
+  margin: 0;
+  font-size: .84rem;
+}
+
+.v2-card-plan-state {
+  justify-self: end;
+  min-width: 42px;
+  padding: 5px 8px;
+  border: 1px solid rgba(196, 203, 255, .13);
+  border-radius: 999px;
+  color: rgba(218, 222, 248, .68);
+  background: rgba(255,255,255,.03);
+  font-size: .68rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.v2-phase-source-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 7px 15px 0;
+  padding-top: 9px;
+  border-top: 1px solid rgba(196, 203, 255, .08);
+  color: rgba(194,199,229,.52);
+  font-size: .7rem;
+}
+
+@media (max-width: 520px) {
+  .v2-phase-source-note {
+    align-items: flex-start;
+  }
+}

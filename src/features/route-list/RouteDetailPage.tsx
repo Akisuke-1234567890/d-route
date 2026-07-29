@@ -4,35 +4,48 @@ import { BrandMark } from '../../shared/ui/BrandMark';
 import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { getRoute, type RouteSummary } from './routes';
+import { getRoutePhases, type PhaseSummary } from './phases';
+import { getRouteDestinations, type DestinationSummary } from './destinations';
 import { RouteBottomNav } from './RouteBottomNav';
 
-type DestinationCard = {
-  id: string;
-  title: string;
-  time?: string;
-  note?: string;
-  attention?: boolean;
-  checked?: boolean;
-};
+function timeToMinutes(value: string | null | undefined): number | null {
+  if (!value) return null;
+  const [hours, minutes] = value.slice(0, 5).split(':').map(Number);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null;
+  return hours * 60 + minutes;
+}
 
-const prototypePhase = {
-  name: '午後',
-  startTime: '12:00',
-  destinations: [
-    { id: 'd1', title: 'センター・オブ・ジ・アース', time: '12:30', checked: true },
-    { id: 'd2', title: 'お土産を見る', time: '13:00', checked: true },
-    {
-      id: 'd3',
-      title: 'レストラン',
-      time: '13:30',
-      note: '予約済み・時間厳守',
-      attention: true,
-      checked: false,
-    },
-    { id: 'd4', title: 'タワー・オブ・テラー', checked: false },
-    { id: 'd5', title: '写真を撮る', checked: false },
-  ] satisfies DestinationCard[],
-} as const;
+function getCurrentPhase(phases: PhaseSummary[], currentMinutes: number): PhaseSummary | null {
+  if (!phases.length) return null;
+
+  const timedPhases = phases
+    .filter((phase) => timeToMinutes(phase.startTime) !== null)
+    .slice()
+    .sort((a, b) => {
+      const byTime = (timeToMinutes(a.startTime) ?? 0) - (timeToMinutes(b.startTime) ?? 0);
+      return byTime !== 0 ? byTime : a.orderValue - b.orderValue;
+    });
+
+  const orderedPhases = phases.slice().sort((a, b) => a.orderValue - b.orderValue);
+  if (!timedPhases.length) return orderedPhases[0] ?? null;
+
+  const started = timedPhases.filter((phase) => (timeToMinutes(phase.startTime) ?? 0) <= currentMinutes);
+  return started[started.length - 1] ?? orderedPhases[0] ?? timedPhases[0];
+}
+
+function formatDestinationTime(destination: DestinationSummary): string | null {
+  if (destination.timeType === 'none' || !destination.startTime) return null;
+  const start = destination.startTime.slice(0, 5);
+  const end = destination.endTime?.slice(0, 5);
+  const range = end ? `${start}〜${end}` : start;
+  return destination.timeType === 'approx' ? `目安 ${range}` : range;
+}
+
+function getDestinationNote(destination: DestinationSummary): string | null {
+  if (destination.description) return destination.description;
+  if (destination.locationName) return destination.locationName;
+  return null;
+}
 
 const prototypeChat = {
   author: '佐藤',
@@ -46,14 +59,70 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 function PhaseDashboard({ routeId }: { routeId: string }) {
-  const [checkedIds, setCheckedIds] = useState<Set<string>>(() => new Set(prototypePhase.destinations.filter((item) => item.checked).map((item) => item.id)));
+  const [phases, setPhases] = useState<PhaseSummary[]>([]);
+  const [destinations, setDestinations] = useState<DestinationSummary[]>([]);
+  const [planningLoading, setPlanningLoading] = useState(true);
+  const [planningError, setPlanningError] = useState<string | null>(null);
+  const [currentMinutes, setCurrentMinutes] = useState(() => {
+    const now = new Date();
+    return now.getHours() * 60 + now.getMinutes();
+  });
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
 
-  const destinations = useMemo<readonly DestinationCard[]>(() => prototypePhase.destinations, []);
+  useEffect(() => {
+    let active = true;
+    setPlanningLoading(true);
+    setPlanningError(null);
+
+    void Promise.all([getRoutePhases(routeId), getRouteDestinations(routeId)])
+      .then(([nextPhases, nextDestinations]) => {
+        if (!active) return;
+        setPhases(nextPhases);
+        setDestinations(nextDestinations);
+      })
+      .catch((error) => {
+        if (active) setPlanningError(getErrorMessage(error, 'Planningを読み込めませんでした。'));
+      })
+      .finally(() => {
+        if (active) setPlanningLoading(false);
+      });
+
+    return () => { active = false; };
+  }, [routeId]);
+
+  useEffect(() => {
+    const updateClock = () => {
+      const now = new Date();
+      setCurrentMinutes(now.getHours() * 60 + now.getMinutes());
+    };
+    const timer = window.setInterval(updateClock, 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const currentPhase = useMemo(
+    () => getCurrentPhase(phases, currentMinutes),
+    [phases, currentMinutes]
+  );
+
+  const currentDestinations = useMemo(
+    () => currentPhase
+      ? destinations
+          .filter((destination) => destination.phaseId === currentPhase.id)
+          .slice()
+          .sort((a, b) => a.orderValue - b.orderValue)
+      : [],
+    [currentPhase, destinations]
+  );
+
+  useEffect(() => {
+    setActiveIndex(0);
+    scrollerRef.current?.scrollTo({ left: 0, behavior: 'auto' });
+  }, [currentPhase?.id]);
 
   const scrollToIndex = (nextIndex: number) => {
-    const bounded = Math.max(0, Math.min(nextIndex, destinations.length - 1));
+    if (!currentDestinations.length) return;
+    const bounded = Math.max(0, Math.min(nextIndex, currentDestinations.length - 1));
     const scroller = scrollerRef.current;
     if (!scroller) return;
     const card = scroller.querySelector<HTMLElement>(`[data-destination-index="${bounded}"]`);
@@ -78,14 +147,25 @@ function PhaseDashboard({ routeId }: { routeId: string }) {
     setActiveIndex(nearest);
   };
 
-  const toggleCheck = (id: string) => {
-    setCheckedIds((current) => {
-      const next = new Set(current);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
+  if (planningLoading) {
+    return (
+      <article className="v2-phase-panel v2-phase-state" aria-live="polite">
+        <p className="eyebrow">CURRENT PHASE</p>
+        <h2>Planningを読み込んでいます</h2>
+      </article>
+    );
+  }
+
+  if (planningError) {
+    return (
+      <article className="v2-phase-panel v2-phase-state" role="alert">
+        <p className="eyebrow">CURRENT PHASE</p>
+        <h2>Phaseを表示できませんでした</h2>
+        <p>{planningError}</p>
+        <Link className="v2-text-link" to={`/routes/${routeId}/places`}>Placesを確認 ›</Link>
+      </article>
+    );
+  }
 
   return (
     <>
@@ -93,84 +173,91 @@ function PhaseDashboard({ routeId }: { routeId: string }) {
         <div className="v2-phase-heading">
           <div>
             <p className="eyebrow">CURRENT PHASE</p>
-            <h2 id="v2-phase-title">{prototypePhase.name}</h2>
+            <h2 id="v2-phase-title">{currentPhase?.name || 'Phase'}</h2>
           </div>
-          <span className="v2-phase-time">{prototypePhase.startTime}〜</span>
+          {currentPhase?.startTime ? <span className="v2-phase-time">{currentPhase.startTime.slice(0, 5)}〜</span> : null}
         </div>
 
-        <div className="v2-destination-stage">
-          <button
-            className="v2-carousel-button v2-carousel-prev"
-            type="button"
-            aria-label="前の予定を見る"
-            disabled={activeIndex === 0}
-            onClick={() => scrollToIndex(activeIndex - 1)}
-          >
-            ‹
-          </button>
+        {!currentPhase ? (
+          <div className="v2-phase-empty">
+            <p>Phaseがまだありません。</p>
+            <Link className="v2-text-link" to={`/routes/${routeId}/places`}>PlacesでPlanningする ›</Link>
+          </div>
+        ) : currentDestinations.length === 0 ? (
+          <div className="v2-phase-empty">
+            <p>このPhaseには目的地がまだありません。</p>
+            <Link className="v2-text-link" to={`/routes/${routeId}/places`}>Placesで追加する ›</Link>
+          </div>
+        ) : (
+          <>
+            <div className="v2-destination-stage">
+              <button
+                className="v2-carousel-button v2-carousel-prev"
+                type="button"
+                aria-label="前の予定を見る"
+                disabled={activeIndex === 0}
+                onClick={() => scrollToIndex(activeIndex - 1)}
+              >
+                ‹
+              </button>
 
-          <div className="v2-destination-scroller" ref={scrollerRef} onScroll={onScroll}>
-            {destinations.map((destination, index) => {
-              const checked = checkedIds.has(destination.id);
-              return (
-                <article
-                  className={`v2-destination-card${destination.attention ? ' is-attention' : ''}`}
-                  data-destination-index={index}
+              <div className="v2-destination-scroller" ref={scrollerRef} onScroll={onScroll}>
+                {currentDestinations.map((destination, index) => {
+                  const timeLabel = formatDestinationTime(destination);
+                  const note = getDestinationNote(destination);
+                  return (
+                    <article
+                      className={`v2-destination-card${destination.importance === 'must' ? ' is-attention' : ''}`}
+                      data-destination-index={index}
+                      key={destination.id}
+                      aria-label={`${index + 1}/${currentDestinations.length} ${destination.name}`}
+                    >
+                      <div className="v2-card-topline">
+                        <span className="v2-card-count">{index + 1} / {currentDestinations.length}</span>
+                        {destination.importance === 'must' ? <span className="v2-attention-badge">★ 必須</span> : <span />}
+                      </div>
+
+                      <div className="v2-card-main">
+                        {timeLabel ? <time className="v2-card-time">{timeLabel}</time> : <span className="v2-card-time is-empty">PHASE TASK</span>}
+                        <h3>{destination.name}</h3>
+                        {note ? <p className="v2-card-note">{note}</p> : <p className="v2-card-note is-empty">このPhase内で行う予定</p>}
+                      </div>
+
+                      <div className="v2-card-plan-state" aria-label="Planning表示">予定</div>
+                    </article>
+                  );
+                })}
+              </div>
+
+              <button
+                className="v2-carousel-button v2-carousel-next"
+                type="button"
+                aria-label="次の予定を見る"
+                disabled={activeIndex === currentDestinations.length - 1}
+                onClick={() => scrollToIndex(activeIndex + 1)}
+              >
+                ›
+              </button>
+            </div>
+
+            <div className="v2-carousel-dots" aria-label={`全${currentDestinations.length}件中${activeIndex + 1}件目`}>
+              {currentDestinations.map((destination, index) => (
+                <button
                   key={destination.id}
-                  aria-label={`${index + 1}/${destinations.length} ${destination.title}`}
-                >
-                  <div className="v2-card-topline">
-                    <span className="v2-card-count">{index + 1} / {destinations.length}</span>
-                    {destination.attention ? <span className="v2-attention-badge" title="注目する予定">✦ 注目</span> : <span />}
-                  </div>
+                  type="button"
+                  className={index === activeIndex ? 'is-active' : ''}
+                  aria-label={`${index + 1}件目を見る`}
+                  onClick={() => scrollToIndex(index)}
+                />
+              ))}
+            </div>
+          </>
+        )}
 
-                  <div className="v2-card-main">
-                    {destination.time ? <time className="v2-card-time">{destination.time}</time> : <span className="v2-card-time is-empty">PHASE TASK</span>}
-                    <h3>{destination.title}</h3>
-                    {destination.note ? <p className="v2-card-note">{destination.note}</p> : <p className="v2-card-note is-empty">このPhase内で確認する予定</p>}
-                  </div>
-
-                  <button
-                    className={`v2-check-button${checked ? ' is-checked' : ''}`}
-                    type="button"
-                    aria-pressed={checked}
-                    aria-label={`${destination.title}の確認チェック${checked ? 'を外す' : 'を付ける'}`}
-                    onClick={() => toggleCheck(destination.id)}
-                  >
-                    <span aria-hidden="true">{checked ? '✓' : ''}</span>
-                  </button>
-                </article>
-              );
-            })}
-          </div>
-
-          <button
-            className="v2-carousel-button v2-carousel-next"
-            type="button"
-            aria-label="次の予定を見る"
-            disabled={activeIndex === destinations.length - 1}
-            onClick={() => scrollToIndex(activeIndex + 1)}
-          >
-            ›
-          </button>
+        <div className="v2-phase-source-note">
+          <span>現在時刻からPhaseを自動表示</span>
+          <Link className="v2-text-link" to={`/routes/${routeId}/places`}>Placesを見る ›</Link>
         </div>
-
-        <div className="v2-carousel-dots" aria-label={`全${destinations.length}件中${activeIndex + 1}件目`}>
-          {destinations.map((destination, index) => (
-            <button
-              key={destination.id}
-              type="button"
-              className={index === activeIndex ? 'is-active' : ''}
-              aria-label={`${index + 1}件目を見る`}
-              onClick={() => scrollToIndex(index)}
-            />
-          ))}
-        </div>
-
-        <button className="v2-branch-summary" type="button">
-          <span><strong>※ 別行動複数あり</strong><small>班の概要を確認</small></span>
-          <span aria-hidden="true">›</span>
-        </button>
       </article>
 
       <article className="v2-chat-summary">
@@ -246,7 +333,7 @@ export function RouteDetailPage() {
               <div className="v2-route-hero-copy">
                 <p className="eyebrow">ROUTE DASHBOARD / ALPHA.3</p>
                 <h1 id="route-detail-title">{route.name}</h1>
-                <p><time>8月10日 9:00〜</time><span>・</span><span>今日のRoute</span></p>
+                <p><span>現在Phaseを時刻から自動表示</span><span>・</span><span>Planning接続</span></p>
               </div>
             </section>
 
@@ -261,7 +348,7 @@ export function RouteDetailPage() {
         )}
       </section>
 
-      <footer className="app-footer"><VersionBadge /><span>Dashboard Alpha.3</span></footer>
+      <footer className="app-footer"><VersionBadge /><span>Route / Current Phase</span></footer>
       {routeId ? <RouteBottomNav routeId={routeId} /> : null}
     </main>
   );

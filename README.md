@@ -1,4 +1,4 @@
-# D Route v2.1.0-p23.7.1
+# D Route v2.1.0-p24
 
 ## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
@@ -198,4 +198,15 @@ Phase追加UIの実機不具合修正。
 - Phase追加/編集モーダルを中央配置
 - Add/Edit Placeの保存・キャンセルをスクロール本文の末尾へ配置
 - Edit Placeの削除ボタンもスクロール末尾に維持
+- DB変更なし
+
+
+## v2.1.0-p24
+
+- Route画面のCURRENT PHASEをSupabase Planningデータへ接続
+- Phase開始時刻から現在表示するPhaseを自動判定
+- 次Phase開始までは直前Phaseを表示し、最初の時刻ありPhase開始前はRoute先頭Phaseを表示
+- Current Phase内DestinationをPlacesのorder_value順で表示
+- 確定/目安/時刻なし、必須表示をRouteカードへ反映
+- 進行操作・完了処理は未実装（表示接続のみ）
 - DB変更なし

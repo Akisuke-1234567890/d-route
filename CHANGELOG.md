@@ -1,3 +1,11 @@
+## v2.1.0-p24
+
+- Route CURRENT PHASEをPlanningデータへ接続
+- 現在時刻によるPhase優先表示を実装
+- Current PhaseのDestinationを実データ表示
+- 進行操作は未実装
+- DB変更なし
+
 ## v2.1.0-p23.7.1
 
 - p23.7のJSX構造エラーを修正
