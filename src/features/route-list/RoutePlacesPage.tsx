@@ -804,13 +804,13 @@ export function RoutePlacesPage() {
 
               {formError && <p className="form-error" role="alert">{formError}</p>}
 
-              </div>
               <div className="modal-actions">
                 <button className="secondary-button" type="button" onClick={closeCreateModal} disabled={saving}>キャンセル</button>
                 <button className="primary-button" type="submit" disabled={!name.trim() || saving || (timeType !== 'none' && !startTime)}>
                   {saving ? '追加中…' : '追加'}
                 </button>
-              </div>
+              </div></div>
+              
             </form>
           </section>
         </div>
@@ -906,7 +906,6 @@ export function RoutePlacesPage() {
 
               {editError && <p className="form-error" role="alert">{editError}</p>}
 
-              </div>
               <div className="modal-actions edit-place-actions">
                 <button className="primary-button" type="submit" disabled={!editName.trim() || editSaving || (editTimeType !== 'none' && !editStartTime)}>
                   {editSaving ? '保存中…' : '保存'}
@@ -990,7 +989,7 @@ export function RoutePlacesPage() {
 
       {(phaseCreateOpen || phaseEditing) && (
         <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !phaseSaving) { setPhaseCreateOpen(false); setPhaseEditing(null); } }}>
-          <section className="route-modal phase-edit-modal" role="dialog" aria-modal="true">
+          <section className="route-modal phase-edit-modal phase-centered-modal" role="dialog" aria-modal="true">
             <div className="modal-header"><div><p className="eyebrow">{phaseEditing ? 'EDIT PHASE' : 'NEW PHASE'}</p><h2>{phaseEditing ? 'Phaseを編集' : 'Phaseを追加'}</h2></div><button className="modal-close-button" type="button" disabled={phaseSaving} onClick={() => { setPhaseCreateOpen(false); setPhaseEditing(null); }}>×</button></div>
             <form className="route-create-form place-form" onSubmit={phaseEditing ? handlePhaseEdit : handlePhaseCreate}>
               <div className="field-group"><label htmlFor="phase-name">Phase名 {phaseEditing?.isDefault && <span className="field-optional">空欄可</span>}</label><input id="phase-name" value={phaseName} onChange={(event) => setPhaseName(event.target.value)} placeholder="例：午前" maxLength={40} disabled={phaseSaving} /></div>
@@ -1017,7 +1016,8 @@ export function RoutePlacesPage() {
               </div>
               <div className="field-group"><label htmlFor="phase-description">メモ <span className="field-optional">任意</span></label><textarea id="phase-description" value={phaseDescription} onChange={(event) => setPhaseDescription(event.target.value)} maxLength={200} rows={3} disabled={phaseSaving} /></div>
               {phaseError && <p className="form-error" role="alert">{phaseError}</p>}
-              <div className="modal-actions"><button className="secondary-button" type="button" disabled={phaseSaving} onClick={() => { setPhaseCreateOpen(false); setPhaseEditing(null); }}>キャンセル</button><button className="primary-button" type="submit" disabled={phaseSaving || (!phaseEditing?.isDefault && !phaseName.trim())}>{phaseSaving ? '保存中…' : phaseEditing ? '保存' : '追加'}</button></div>
+              <div className="modal-actions"><button className="secondary-button" type="button" disabled={phaseSaving} onClick={() => { setPhaseCreateOpen(false); setPhaseEditing(null); }}>キャンセル</button><button className="primary-button" type="submit" disabled={phaseSaving || (!phaseEditing?.isDefault && !phaseName.trim())}>{phaseSaving ? '保存中…' : phaseEditing ? '保存' : '追加'}</button></div></div>
+              
             </form>
           </section>
         </div>

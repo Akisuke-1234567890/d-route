@@ -1127,3 +1127,49 @@
     padding-bottom: 14px;
   }
 }
+
+
+/* v2.1.0-p23.7 modal positioning / natural Place actions */
+
+/* Short Phase form: keep it visually centered in the viewport. */
+.modal-backdrop:has(.phase-centered-modal) {
+  align-items: center;
+  padding-top: max(16px, env(safe-area-inset-top));
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+.phase-centered-modal {
+  margin-block: auto;
+  max-height: calc(100dvh - 32px);
+}
+
+/* Long Place form: actions belong to the end of the scrollable content. */
+.place-scroll-modal > .place-scroll-form {
+  overflow: hidden !important;
+}
+
+.place-scroll-content {
+  padding-bottom: calc(18px + env(safe-area-inset-bottom));
+}
+
+.place-scroll-content > .modal-actions,
+.place-scroll-content > .modal-actions.edit-place-actions {
+  position: static !important;
+  margin-top: 18px;
+  padding: 0 0 calc(6px + env(safe-area-inset-bottom));
+  background: transparent !important;
+  border-top: 0 !important;
+}
+
+.place-scroll-form > .modal-actions {
+  position: static !important;
+  background: transparent !important;
+  border-top: 0 !important;
+}
+
+@media (max-width: 520px) {
+  .phase-centered-modal {
+    margin-block: auto;
+    max-height: calc(100dvh - 24px);
+  }
+}
