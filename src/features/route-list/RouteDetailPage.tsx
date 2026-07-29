@@ -331,13 +331,38 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
       </article>
 
       <article className="v2-today-panel" aria-labelledby="v2-today-title">
-        <div className="v2-section-heading"><div><p className="eyebrow">TODAY</p><h2 id="v2-today-title">今見るもの</h2></div><span className="v2-today-readonly">READ ONLY</span></div>
-        <div className="v2-today-grid">
-          <section className="v2-today-item"><span className="v2-today-label">CURRENT PHASE</span><strong>{currentPhase?.name || 'Phase未設定'}</strong><small>{currentPhase?.startTime ? `${currentPhase.startTime.slice(0,5)}〜` : '開始時刻なし'}</small></section>
-          <section className="v2-today-item"><span className="v2-today-label">未完了</span><strong>{todayModel.incomplete.length}件</strong><small>{todayModel.incomplete[0]?.name ?? '現在Phaseは完了'}</small></section>
-          <section className="v2-today-item"><span className="v2-today-label">次の時刻あり</span>{todayModel.nextTimed ? <><strong>{formatDestinationTime(todayModel.nextTimed)}</strong><small>{todayModel.nextTimed.name}</small></> : <><strong>なし</strong><small>これからの時刻指定はありません</small></>}</section>
-          <section className={`v2-today-item${todayModel.exceptionTasks.length ? ' is-attention' : ''}`}><span className="v2-today-label">例外・要確認</span><strong>{todayModel.exceptionTasks.length}件</strong><small>{todayModel.exceptionTasks[0]?.name ?? '時間とPhaseの矛盾なし'}</small></section>
+        <div className="v2-section-heading">
+          <div><p className="eyebrow">TODAY</p><h2 id="v2-today-title">今見るもの</h2></div>
+          <span className="v2-today-live">LIVE</span>
         </div>
+        <div className="v2-today-grid">
+          <section className="v2-today-item">
+            <span className="v2-today-label">CURRENT PHASE</span>
+            <strong>{currentPhase?.name || 'Phase未設定'}</strong>
+            <small>{currentDestinations.length ? `${completedCount} / ${currentDestinations.length} 完了` : currentPhase?.startTime ? `${currentPhase.startTime.slice(0,5)}〜` : '開始時刻なし'}</small>
+          </section>
+          <section className="v2-today-item v2-today-action-item">
+            <span className="v2-today-label">未完了</span>
+            <strong>{todayModel.incomplete.length}件</strong>
+            <small>{todayModel.incomplete[0]?.name ?? '現在Phaseは完了'}</small>
+            {todayModel.incomplete[0] ? (
+              <button className="v2-today-complete" type="button" disabled={progressSavingId === todayModel.incomplete[0].id} onClick={() => void toggleDestinationCompleted(todayModel.incomplete[0])}>
+                {progressSavingId === todayModel.incomplete[0].id ? '保存中…' : '✓ 完了にする'}
+              </button>
+            ) : null}
+          </section>
+          <section className="v2-today-item">
+            <span className="v2-today-label">次の時刻あり</span>
+            {todayModel.nextTimed ? <><strong>{formatDestinationTime(todayModel.nextTimed)}</strong><small>{todayModel.nextTimed.name}</small></> : <><strong>なし</strong><small>これからの時刻指定はありません</small></>}
+          </section>
+          <section className={`v2-today-item v2-today-action-item${todayModel.exceptionTasks.length ? ' is-attention' : ''}`}>
+            <span className="v2-today-label">例外・要確認</span>
+            <strong>{todayModel.exceptionTasks.length}件</strong>
+            <small>{todayModel.exceptionTasks[0]?.name ?? '時間とPhaseの矛盾なし'}</small>
+            {todayModel.exceptionTasks.length ? <Link className="v2-today-edit-link" to={`/routes/${routeId}/places`}>Placesで修正 ›</Link> : null}
+          </section>
+        </div>
+        {progressError ? <p className="v2-progress-error" role="alert">{progressError}</p> : null}
         <div className="v2-today-footer"><span>Planningから自動集約</span><Link className="v2-text-link" to={`/routes/${routeId}/places`}>Placesで確認 ›</Link></div>
       </article>
 

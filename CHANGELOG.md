@@ -1,3 +1,9 @@
+## v2.1.0-p27
+
+- Todayから先頭未完了Destinationを完了可能にした
+- 例外・要確認からPlacesへの修正導線を追加
+- DB変更なし
+
 ## v2.1.0-p26
 
 - Today Read Model追加

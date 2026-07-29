@@ -1,4 +1,4 @@
-# D Route v2.1.0-p26
+# D Route v2.1.0-p27
 
 ## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
@@ -257,3 +257,13 @@ Route Progress baseline。
 
 - Today Read Model追加（Current Phase / 未完了 / 次の時刻あり / 例外・要確認）
 - 読み取り専用、DB変更なし
+
+
+## v2.1.0-p27
+
+- Todayの先頭未完了Destinationをその場で完了可能
+- 完了保存は既存completed_at処理を再利用
+- Todayの未完了件数 / Current Phase進捗 / Routeカードへ即時反映
+- 例外・要確認がある場合はPlacesへの修正導線を表示
+- 次の時刻ありは読み取り表示のまま
+- DB変更なし
