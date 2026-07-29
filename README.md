@@ -1,6 +1,4 @@
-# D Route v2.1.0-p23.3
-
-Current baseline: v2.1.0-p22.1
+# D Route v2.1.0-p23.5
 
 ## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
@@ -161,3 +159,25 @@ Phase追加UIの実機不具合修正。
 - 終了時刻は任意のまま、設定後は×で解除可能
 - 5分刻みルールはp23.2から継続
 - DB変更なし
+
+
+## v2.1.0-p23.4
+
+- Destinationカード上段の時間表示と場所名の重なりを解消
+- 場所名を時間バッジとは別行へ移動
+- Add/Edit Placeモーダルを画面高超過時に内部スクロール可能へ修正
+- 保存/キャンセル操作領域をスクロール末尾で操作しやすいようsticky化
+- DB変更なし
+
+
+## v2.1.0-p23.5
+
+- Places全体上部に「＋ 目的地を追加」を追加
+- 各Phase内の「＋目的地」は維持
+- 時間指定カード右側の重複「時間」表示を削除
+- 時間指定カードと編集ボタンの干渉を解消
+- 時間ありDestinationをドラッグ不可の固定アンカーとして維持
+- 時間なしDestinationは固定アンカーの前後を跨いで並び替え可能
+- Phase内表示順はorder_valueを正として保存
+- Add/Edit Placeモーダルへscroll classを正しく適用しiPhone内部スクロールを修正
+- DB schema変更なし

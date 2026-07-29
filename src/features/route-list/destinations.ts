@@ -81,9 +81,9 @@ export async function updateRouteDestination(routeId:string,destinationId:string
 
 export async function saveRouteDestinationOrder(routeId:string,ordered:DestinationSummary[],original:DestinationSummary[]):Promise<DestinationSummary[]> {
   if (!routeId) throw new Error('Route IDがありません。'); if (ordered.length!==original.length) throw new Error('目的地の並び順が不正です。');
-  if (ordered.some(i=>i.timeType!=='none')) throw new Error('時刻ありの目的地は並び替えできません。');
-  const originalById=new Map(original.map(i=>[i.id,i])); const orderValues=original.map(i=>i.orderValue).sort((a,b)=>a-b); if(orderValues.some(v=>!Number.isFinite(v))) throw new Error('目的地の並び順が不正です。');
-  const next=ordered.map((i,index)=>({...i,orderValue:orderValues[index]})); const changed=next.filter(i=>originalById.get(i.id)?.orderValue!==i.orderValue); if(!changed.length)return next;
+  const originalById=new Map(original.map(i=>[i.id,i]));
+  const next=ordered.map((i,index)=>({...i,orderValue:(index+1)*1000}));
+  const changed=next.filter(i=>originalById.get(i.id)?.orderValue!==i.orderValue); if(!changed.length)return next;
   const supabase=requireSupabase(); const completed:DestinationSummary[]=[];
   try { for(const item of changed){ const {error}=await supabase.from('destinations').update({order_value:item.orderValue}).eq('id',item.id).eq('route_id',routeId).eq('record_status','active').is('deleted_at',null); if(error)throw error; completed.push(item);} }
   catch(error){ for(const item of completed){const prev=originalById.get(item.id); if(!prev)continue; await supabase.from('destinations').update({order_value:prev.orderValue}).eq('id',item.id).eq('route_id',routeId).eq('record_status','active').is('deleted_at',null);} throw error; }

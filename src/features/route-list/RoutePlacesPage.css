@@ -983,3 +983,81 @@
     font-size: .78rem;
   }
 }
+
+
+/* v2.1.0-p23.4 card metadata + modal scrolling */
+.place-meta {
+  display:flex; align-items:center; flex-wrap:wrap; gap:6px; min-width:0;
+}
+.place-location-line {
+  margin-top:4px; color:var(--muted); font-size:.74rem; line-height:1.25;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.place-time-badge { flex:0 0 auto; }
+.place-scroll-modal {
+  max-height:min(86dvh,760px); overflow:hidden; display:flex; flex-direction:column;
+}
+.place-scroll-modal .modal-header { flex:0 0 auto; }
+.place-scroll-form {
+  flex:1 1 auto; min-height:0; overflow-y:auto; overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch; padding-right:2px; padding-bottom:calc(18px + env(safe-area-inset-bottom));
+}
+.place-scroll-form .modal-actions {
+  position:sticky; bottom:0; z-index:2; margin-top:8px; padding-top:10px;
+  padding-bottom:calc(4px + env(safe-area-inset-bottom));
+  background:linear-gradient(to bottom, rgba(10,17,49,0), rgba(10,17,49,.96) 18%, rgba(10,17,49,.99) 100%);
+}
+@media (max-width:520px) { .place-scroll-modal { max-height:calc(100dvh - 24px); } }
+
+
+/* v2.1.0-p23.5 Places planning UX */
+.places-main-actions {
+  display: grid;
+  gap: 8px;
+  width: min(100%, 260px);
+}
+.places-main-actions .route-tab-action { width: 100%; }
+
+.place-card { grid-template-columns: 34px minmax(0, 1fr) auto; }
+.place-copy { min-width: 0; padding-right: 4px; }
+.place-location-line { max-width: 100%; }
+.place-card-actions.is-timed { align-self: center; min-width: 64px; }
+.place-card-actions.is-timed .place-edit-button { min-width: 64px; }
+.place-time-lock { display: none; }
+
+.place-scroll-modal {
+  width: min(calc(100% - 24px), 620px);
+  height: min(88dvh, 820px);
+  max-height: calc(100dvh - 24px);
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column;
+}
+.place-scroll-modal > .modal-header { flex: 0 0 auto; }
+.place-scroll-modal > .place-scroll-form {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  padding-bottom: calc(92px + env(safe-area-inset-bottom));
+}
+.place-scroll-form > .modal-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  padding: 14px 0 calc(6px + env(safe-area-inset-bottom));
+  background: linear-gradient(to bottom, rgba(10,17,49,0), rgba(10,17,49,.98) 24%);
+}
+
+@media (max-width: 520px) {
+  .route-tab-heading { align-items: stretch; }
+  .places-main-actions { width: 100%; }
+  .place-card-actions.is-timed { min-width: 58px; }
+  .place-card-actions.is-timed .place-edit-button { min-width: 58px; padding-inline: 8px; }
+  .place-scroll-modal {
+    height: calc(100dvh - 16px);
+    max-height: calc(100dvh - 16px);
+  }
+}
