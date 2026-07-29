@@ -1,4 +1,4 @@
-# D Route v2.1.0-p30
+# D Route v2.1.0-p30.1
 
 ## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
@@ -319,4 +319,13 @@ NOW / NEXT baseline。
 - Todayの予定超過 / 例外・要確認から先頭対象Destinationへ直接移動
 - 別Phase対象はPhase切替後にカード表示
 - 通常の完了操作は追加しない
+- DB変更なし
+
+
+## v2.1.0-p30.1
+
+- p30のbuild error `setManualPhaseId`未定義を修正
+- Todayから別Phaseの対象へ移動するためのmanual Phase stateを追加
+- 別Phaseを表示中は「現在Phaseへ戻る」を表示
+- 通常時は従来どおり時刻からCurrent Phaseを自動判定
 - DB変更なし

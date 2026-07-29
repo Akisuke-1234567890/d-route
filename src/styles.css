@@ -1822,3 +1822,17 @@ a { color: inherit; }
 .v2-today-jump{margin-top:10px;min-height:34px;padding:0 10px;border:1px solid rgba(196,203,255,.14);border-radius:11px;background:rgba(196,203,255,.045);color:#e7e9ff;font:inherit;font-size:.69rem;font-weight:850}
 .v2-today-jump.is-overdue{border-color:rgba(255,158,103,.2);background:rgba(255,158,103,.06);color:#ffc5a5}
 .v2-today-jump.is-attention{border-color:rgba(255,191,94,.19);background:rgba(255,191,94,.065);color:#ffd898}
+
+
+/* v2.1.0-p30.1 manual phase focus */
+.v2-return-current {
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid rgba(196,203,255,.14);
+  border-radius: 999px;
+  background: rgba(196,203,255,.04);
+  color: rgba(226,230,250,.82);
+  font: inherit;
+  font-size: .62rem;
+  font-weight: 850;
+}

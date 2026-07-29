@@ -1,3 +1,9 @@
+## v2.1.0-p30.1
+
+- p30のsetManualPhaseId未定義によるbuild failureを修正
+- manual Phase表示と現在Phaseへ戻る導線を追加
+- DB変更なし
+
 ## v2.1.0-p30
 
 - Today注意項目から対象Destinationへ直接フォーカス

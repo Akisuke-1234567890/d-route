@@ -79,6 +79,7 @@ function PhaseDashboard({ routeId }: { routeId: string }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [progressSavingId, setProgressSavingId] = useState<string | null>(null);
   const [progressError, setProgressError] = useState<string | null>(null);
+  const [manualPhaseId, setManualPhaseId] = useState<string | null>(null);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -111,9 +112,16 @@ function PhaseDashboard({ routeId }: { routeId: string }) {
     return () => window.clearInterval(timer);
   }, []);
 
-  const currentPhase = useMemo(
+  const autoCurrentPhase = useMemo(
     () => getCurrentPhase(phases, currentMinutes),
     [phases, currentMinutes]
+  );
+
+  const currentPhase = useMemo(
+    () => manualPhaseId
+      ? phases.find((phase) => phase.id === manualPhaseId) ?? autoCurrentPhase
+      : autoCurrentPhase,
+    [autoCurrentPhase, manualPhaseId, phases]
   );
 
   const currentDestinations = useMemo(
@@ -181,7 +189,9 @@ const focusDestinationFromToday = (destination: DestinationSummary | null) => {
     if (Number.isFinite(index)) setActiveIndex(index);
     card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
   }));
-  if (destination.phaseId && destination.phaseId !== currentPhase?.id) setManualPhaseId(destination.phaseId);
+  if (destination.phaseId && destination.phaseId !== currentPhase?.id) {
+    setManualPhaseId(destination.phaseId);
+  }
   focusCard();
 };
 
@@ -290,6 +300,11 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
           </div>
           {currentPhase ? (
             <div className="v2-phase-progress-wrap">
+              {manualPhaseId && currentPhase.id !== autoCurrentPhase?.id ? (
+                <button className="v2-return-current" type="button" onClick={() => setManualPhaseId(null)}>
+                  現在Phaseへ戻る
+                </button>
+              ) : null}
               {currentPhase.startTime ? <span className="v2-phase-time">{currentPhase.startTime.slice(0, 5)}〜</span> : null}
               {currentDestinations.length > 0 ? (
                 <span className={`v2-phase-progress${completedCount === currentDestinations.length ? ' is-complete' : ''}`}>
