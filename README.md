@@ -1,4 +1,4 @@
-# D Route v2.1.0-p27.1
+# D Route v2.1.0-p28
 
 ## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
@@ -275,4 +275,18 @@ Route Progress baseline。
 - Destinationの完了操作は上部のDestinationカードへ一本化
 - TodayのCurrent Phase進捗、未完了、次の時刻あり、例外・要確認は維持
 - 例外・要確認からPlacesへの修正導線は維持
+- DB変更なし
+
+
+## v2.1.0-p28
+
+NOW / NEXT baseline。
+
+- NOW = Current Phase内の先頭未完了Destination
+- NEXT = Current Phase内の次の未完了Destination
+- Planningのorder_value順をそのまま利用
+- NOW / NEXTをタップすると該当Destinationカードへ移動
+- Phase表示時は完了済み先頭ではなくNOWカードへ自動フォーカス
+- 全件完了時はNOWにPhase完了状態を表示
+- 時刻によるNEXT追い越しルールはまだ入れない
 - DB変更なし

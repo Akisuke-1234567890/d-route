@@ -1,3 +1,10 @@
+## v2.1.0-p28
+
+- Current PhaseにNOW / NEXT表示を追加
+- 先頭未完了をNOW、次の未完了をNEXTとしてPlanning順から自動判定
+- Phase表示時にNOWカードへ自動フォーカス
+- DB変更なし
+
 ## v2.1.0-p27.1
 
 - Todayの重複していた完了操作を削除

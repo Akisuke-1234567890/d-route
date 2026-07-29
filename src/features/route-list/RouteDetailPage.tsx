@@ -122,6 +122,14 @@ const completedCount = useMemo(
   [currentDestinations]
 );
 
+  const routeFocus = useMemo(() => {
+    const incomplete = currentDestinations.filter((destination) => !destination.completedAt);
+    return {
+      now: incomplete[0] ?? null,
+      next: incomplete[1] ?? null,
+    };
+  }, [currentDestinations]);
+
   const todayModel = useMemo(() => {
     const incomplete = currentDestinations.filter((d) => !d.completedAt);
     const nextTimed = destinations.filter((d) => !d.completedAt && d.timeType !== 'none' && d.startTime).map((destination) => ({ destination, minutes: timeToMinutes(destination.startTime) })).filter((item): item is { destination: DestinationSummary; minutes: number } => item.minutes !== null && item.minutes >= currentMinutes).sort((a,b) => a.minutes-b.minutes || a.destination.orderValue-b.destination.orderValue)[0]?.destination ?? null;
@@ -167,9 +175,24 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
 
 
   useEffect(() => {
-    setActiveIndex(0);
-    scrollerRef.current?.scrollTo({ left: 0, behavior: 'auto' });
-  }, [currentPhase?.id]);
+    const nowIndex = routeFocus.now
+      ? currentDestinations.findIndex((destination) => destination.id === routeFocus.now?.id)
+      : 0;
+    const nextIndex = Math.max(0, nowIndex);
+
+    setActiveIndex(nextIndex);
+
+    window.requestAnimationFrame(() => {
+      const scroller = scrollerRef.current;
+      if (!scroller) return;
+      const card = scroller.querySelector<HTMLElement>(`[data-destination-index="${nextIndex}"]`);
+      if (card) {
+        card.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
+      } else {
+        scroller.scrollTo({ left: 0, behavior: 'auto' });
+      }
+    });
+  }, [currentDestinations, currentPhase?.id, routeFocus.now?.id]);
 
   const scrollToIndex = (nextIndex: number) => {
     if (!currentDestinations.length) return;
@@ -237,6 +260,42 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
             </div>
           ) : null}
         </div>
+
+        {currentPhase && currentDestinations.length > 0 ? (
+          <div className="v2-now-next" aria-label="今と次の予定">
+            <button
+              className={`v2-focus-slot v2-focus-now${routeFocus.now ? '' : ' is-empty'}`}
+              type="button"
+              disabled={!routeFocus.now}
+              onClick={() => {
+                if (!routeFocus.now) return;
+                const index = currentDestinations.findIndex((destination) => destination.id === routeFocus.now?.id);
+                if (index >= 0) scrollToIndex(index);
+              }}
+            >
+              <span className="v2-focus-label">NOW</span>
+              <strong>{routeFocus.now?.name ?? 'このPhaseは完了'}</strong>
+              <small>{routeFocus.now ? formatDestinationTime(routeFocus.now) || '時刻指定なし' : `${completedCount} / ${currentDestinations.length} 完了`}</small>
+            </button>
+
+            <span className="v2-focus-arrow" aria-hidden="true">›</span>
+
+            <button
+              className={`v2-focus-slot v2-focus-next${routeFocus.next ? '' : ' is-empty'}`}
+              type="button"
+              disabled={!routeFocus.next}
+              onClick={() => {
+                if (!routeFocus.next) return;
+                const index = currentDestinations.findIndex((destination) => destination.id === routeFocus.next?.id);
+                if (index >= 0) scrollToIndex(index);
+              }}
+            >
+              <span className="v2-focus-label">NEXT</span>
+              <strong>{routeFocus.next?.name ?? (routeFocus.now ? '次の予定なし' : '—')}</strong>
+              <small>{routeFocus.next ? formatDestinationTime(routeFocus.next) || '時刻指定なし' : 'Planning順で自動判定'}</small>
+            </button>
+          </div>
+        ) : null}
 
         {!currentPhase ? (
           <div className="v2-phase-empty">
