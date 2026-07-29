@@ -809,8 +809,8 @@ export function RoutePlacesPage() {
                 <button className="primary-button" type="submit" disabled={!name.trim() || saving || (timeType !== 'none' && !startTime)}>
                   {saving ? '追加中…' : '追加'}
                 </button>
-              </div></div>
-              
+              </div>
+              </div>
             </form>
           </section>
         </div>
@@ -923,6 +923,7 @@ export function RoutePlacesPage() {
               >
                 この目的地を削除
               </button>
+              </div>
             </form>
           </section>
         </div>
@@ -1016,8 +1017,7 @@ export function RoutePlacesPage() {
               </div>
               <div className="field-group"><label htmlFor="phase-description">メモ <span className="field-optional">任意</span></label><textarea id="phase-description" value={phaseDescription} onChange={(event) => setPhaseDescription(event.target.value)} maxLength={200} rows={3} disabled={phaseSaving} /></div>
               {phaseError && <p className="form-error" role="alert">{phaseError}</p>}
-              <div className="modal-actions"><button className="secondary-button" type="button" disabled={phaseSaving} onClick={() => { setPhaseCreateOpen(false); setPhaseEditing(null); }}>キャンセル</button><button className="primary-button" type="submit" disabled={phaseSaving || (!phaseEditing?.isDefault && !phaseName.trim())}>{phaseSaving ? '保存中…' : phaseEditing ? '保存' : '追加'}</button></div></div>
-              
+              <div className="modal-actions"><button className="secondary-button" type="button" disabled={phaseSaving} onClick={() => { setPhaseCreateOpen(false); setPhaseEditing(null); }}>キャンセル</button><button className="primary-button" type="submit" disabled={phaseSaving || (!phaseEditing?.isDefault && !phaseName.trim())}>{phaseSaving ? '保存中…' : phaseEditing ? '保存' : '追加'}</button></div>
             </form>
           </section>
         </div>

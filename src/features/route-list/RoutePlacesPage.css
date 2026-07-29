@@ -1129,9 +1129,9 @@
 }
 
 
-/* v2.1.0-p23.7 modal positioning / natural Place actions */
+/* v2.1.0-p23.7.1 modal layout fix */
 
-/* Short Phase form: keep it visually centered in the viewport. */
+/* Phase add/edit: short form, vertically centered. */
 .modal-backdrop:has(.phase-centered-modal) {
   align-items: center;
   padding-top: max(16px, env(safe-area-inset-top));
@@ -1143,12 +1143,24 @@
   max-height: calc(100dvh - 32px);
 }
 
-/* Long Place form: actions belong to the end of the scrollable content. */
+/* Add/Edit Place: actions are ordinary content at the bottom of the scroll area. */
 .place-scroll-modal > .place-scroll-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
   overflow: hidden !important;
+  padding-bottom: 0;
 }
 
 .place-scroll-content {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  padding-right: 2px;
   padding-bottom: calc(18px + env(safe-area-inset-bottom));
 }
 
@@ -1156,20 +1168,18 @@
 .place-scroll-content > .modal-actions.edit-place-actions {
   position: static !important;
   margin-top: 18px;
-  padding: 0 0 calc(6px + env(safe-area-inset-bottom));
+  padding: 0;
   background: transparent !important;
   border-top: 0 !important;
 }
 
-.place-scroll-form > .modal-actions {
-  position: static !important;
-  background: transparent !important;
-  border-top: 0 !important;
+.place-scroll-content > .place-delete-button {
+  margin-top: 12px;
+  margin-bottom: calc(6px + env(safe-area-inset-bottom));
 }
 
 @media (max-width: 520px) {
   .phase-centered-modal {
-    margin-block: auto;
     max-height: calc(100dvh - 24px);
   }
 }
