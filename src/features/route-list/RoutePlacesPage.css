@@ -789,3 +789,98 @@
 /* v2.1.0-p23 Destination time */
 .destination-time-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.destination-time-grid input[type="time"]{width:100%;min-width:0;height:48px;padding:0 12px;border:1px solid rgba(196,203,255,.16);border-radius:15px;background:rgba(4,9,29,.72);color:var(--text);font:inherit;box-sizing:border-box}.destination-time-grid input[type="time"]::-webkit-date-and-time-value{display:flex;align-items:center;height:100%;margin:0;text-align:left}.auto-phase-preview{padding:10px 12px;border:1px solid rgba(91,203,255,.14);border-radius:14px;background:rgba(91,203,255,.05);color:var(--muted);font-size:.78rem;line-height:1.45}.auto-phase-preview strong{color:#bde9ff}.place-time-badge,.place-time-lock{display:inline-flex;align-items:center;min-height:22px;padding:3px 8px;border-radius:999px;font-size:.69rem;font-weight:850;white-space:nowrap}.place-time-badge.is-fixed{background:rgba(91,203,255,.10);color:#b9eaff}.place-time-badge.is-approx{background:rgba(184,154,255,.10);color:#d7c5ff}.place-time-lock{border:1px solid rgba(91,203,255,.12);color:#9fd9f5;background:rgba(91,203,255,.045)}
 .exception-management{border-color:rgba(255,184,86,.22)}.exception-management .places-phase-header{background:rgba(255,184,86,.06)}.exception-count,.place-time-badge.is-exception-time{display:inline-flex;align-items:center;min-height:22px;padding:3px 8px;border-radius:999px;background:rgba(255,184,86,.12);color:#ffd08a;font-size:.69rem;font-weight:850}.place-card.is-exception{border-color:rgba(255,184,86,.13)}
+
+
+/* v2.1.0-p23.1 compact Destination time UI + D Route 5-minute time standard */
+.time-type-segment {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  overflow: hidden;
+  border: 1px solid rgba(196, 203, 255, .16);
+  border-radius: 16px;
+  background: rgba(4, 9, 29, .72);
+}
+
+.time-type-option {
+  min-height: 46px;
+  padding: 8px 6px;
+  border: 0;
+  border-right: 1px solid rgba(196, 203, 255, .13);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-weight: 800;
+}
+
+.time-type-option:last-child { border-right: 0; }
+
+.time-type-option.is-active {
+  background: linear-gradient(135deg, rgba(153, 132, 255, .95), rgba(111, 83, 255, .95));
+  color: #fff;
+}
+
+.destination-time-stack {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.destination-time-stack input[type="time"] {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  height: 48px;
+  padding: 0 14px;
+  border: 1px solid rgba(196, 203, 255, .16);
+  border-radius: 15px;
+  background: rgba(4, 9, 29, .72);
+  color: var(--text);
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.destination-time-stack input[type="time"]::-webkit-date-and-time-value {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  margin: 0;
+  text-align: left;
+}
+
+.required-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  min-height: 32px;
+  color: var(--muted);
+  font-size: .82rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.required-toggle input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.required-toggle-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid rgba(196, 203, 255, .20);
+  border-radius: 8px;
+  color: rgba(255,255,255,.30);
+  background: rgba(255,255,255,.035);
+}
+
+.required-toggle input:checked + .required-toggle-mark {
+  color: #ffd56a;
+  border-color: rgba(255, 213, 106, .32);
+  background: rgba(255, 213, 106, .09);
+}
+
+.destination-time-grid { grid-template-columns: 1fr; }

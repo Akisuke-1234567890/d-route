@@ -65,6 +65,19 @@ function formatDestinationTime(destination: DestinationSummary): string | null {
   return destination.timeType === 'approx' ? `目安 ${range}` : range;
 }
 
+
+function normalizeFiveMinuteTime(value: string): string {
+  if (!value) return '';
+  const [hourText, minuteText] = value.split(':');
+  const hour = Number(hourText);
+  const minute = Number(minuteText);
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return '';
+  const rounded = Math.round(minute / 5) * 5;
+  const nextHour = rounded === 60 ? (hour + 1) % 24 : hour;
+  const nextMinute = rounded === 60 ? 0 : rounded;
+  return `${String(nextHour).padStart(2, '0')}:${String(nextMinute).padStart(2, '0')}`;
+}
+
 export function RoutePlacesPage() {
   const { routeId = '' } = useParams<{ routeId: string }>();
   const [destinations, setDestinations] = useState<DestinationSummary[]>([]);
@@ -683,36 +696,31 @@ export function RoutePlacesPage() {
             </div>
 
             <form className="route-create-form place-form" onSubmit={handleCreate}>
-              <div className="field-group">
-                <span className="field-label">重要度</span>
-                <div className="importance-segment" role="group" aria-label="重要度">
-                  <button
-                    className={`importance-option ${importance === 'must' ? 'is-active' : ''}`}
-                    type="button"
-                    onClick={() => setImportance('must')}
-                    disabled={saving}
-                    aria-pressed={importance === 'must'}
-                  >
-                    必須
-                  </button>
-                  <button
-                    className={`importance-option ${importance === 'optional' ? 'is-active' : ''}`}
-                    type="button"
-                    onClick={() => setImportance('optional')}
-                    disabled={saving}
-                    aria-pressed={importance === 'optional'}
-                  >
-                    任意
-                  </button>
+              <div className="field-group compact-time-type">
+                <span className="field-label">時間</span>
+                <div className="time-type-segment" role="group" aria-label="時間">
+                  <button className={`time-type-option ${timeType === 'none' ? 'is-active' : ''}`} type="button" onClick={() => { setTimeType('none'); setStartTime(''); setEndTime(''); }} disabled={saving} aria-pressed={timeType === 'none'}>なし</button>
+                  <button className={`time-type-option ${timeType === 'fixed' ? 'is-active' : ''}`} type="button" onClick={() => setTimeType('fixed')} disabled={saving} aria-pressed={timeType === 'fixed'}>確定</button>
+                  <button className={`time-type-option ${timeType === 'approx' ? 'is-active' : ''}`} type="button" onClick={() => setTimeType('approx')} disabled={saving} aria-pressed={timeType === 'approx'}>目安</button>
                 </div>
               </div>
 
-              <div className="field-group"><span className="field-label">時間</span><div className="importance-segment"><button className={`importance-option ${timeType === 'none' ? 'is-active' : ''}`} type="button" onClick={() => { setTimeType('none'); setStartTime(''); setEndTime(''); }} disabled={saving}>指定なし</button><button className={`importance-option ${timeType !== 'none' ? 'is-active' : ''}`} type="button" onClick={() => setTimeType(timeType === 'none' ? 'fixed' : timeType)} disabled={saving}>時間あり</button></div></div>
-              {timeType !== 'none' ? <>
-                <div className="field-group"><span className="field-label">時間の種類</span><div className="importance-segment"><button className={`importance-option ${timeType === 'fixed' ? 'is-active' : ''}`} type="button" onClick={() => setTimeType('fixed')} disabled={saving}>確定</button><button className={`importance-option ${timeType === 'approx' ? 'is-active' : ''}`} type="button" onClick={() => setTimeType('approx')} disabled={saving}>目安</button></div></div>
-                <div className="destination-time-grid"><div className="field-group"><label htmlFor="destination-start-time">開始</label><input id="destination-start-time" type="time" value={startTime} onChange={(e)=>setStartTime(e.target.value)} disabled={saving} required /></div><div className="field-group"><label htmlFor="destination-end-time">終了 <span className="field-optional">任意</span></label><input id="destination-end-time" type="time" value={endTime} onChange={(e)=>setEndTime(e.target.value)} disabled={saving} /></div></div>
-                <div className="auto-phase-preview">{startTime ? (()=>{const p=resolvePhaseForTime(phases,startTime); return p ? <>Phase：<strong>{p.name || '名前未設定のPhase'}</strong>へ自動配置</> : <>該当Phaseなし：<strong>例外管理</strong>に表示されます</>;})() : <>開始時刻を入れるとPhaseを自動判定します</>}</div>
-              </> : <div className="field-group"><label htmlFor="destination-phase">Phase</label><select id="destination-phase" value={selectedPhaseId} onChange={(event) => setSelectedPhaseId(event.target.value)} disabled={saving}>{phases.map((phase) => <option value={phase.id} key={phase.id}>{phase.name || '名前未設定のPhase'}{phase.startTime ? ` (${phase.startTime.slice(0,5)}〜)` : ''}</option>)}</select></div>}
+              {timeType !== 'none' ? (
+                <>
+                  <div className="destination-time-stack">
+                    <div className="field-group"><label htmlFor="destination-start-time">開始時刻</label><input id="destination-start-time" type="time" step="300" value={startTime} onChange={(event) => setStartTime(normalizeFiveMinuteTime(event.target.value))} disabled={saving} required /></div>
+                    <div className="field-group"><label htmlFor="destination-end-time">終了時刻 <span className="field-optional">任意</span></label><input id="destination-end-time" type="time" step="300" value={endTime} onChange={(event) => setEndTime(normalizeFiveMinuteTime(event.target.value))} disabled={saving} /></div>
+                  </div>
+                  <div className="auto-phase-preview">{startTime ? (()=>{const p=resolvePhaseForTime(phases,startTime); return p ? <>Phase：<strong>{p.name || '名前未設定のPhase'}</strong>へ自動配置</> : <>該当Phaseなし：<strong>例外管理</strong>に表示されます</>;})() : <>開始時刻を入れるとPhaseを自動判定します</>}</div>
+                </>
+              ) : <div className="field-group"><label htmlFor="destination-phase">Phase</label><select id="destination-phase" value={selectedPhaseId} onChange={(event) => setSelectedPhaseId(event.target.value)} disabled={saving}>{phases.map((phase) => <option value={phase.id} key={phase.id}>{phase.name || '名前未設定のPhase'}{phase.startTime ? ` (${phase.startTime.slice(0,5)}〜)` : ''}</option>)}</select></div>}
+
+              <label className="required-toggle">
+                <input type="checkbox" checked={importance === 'must'} onChange={(event) => setImportance(event.target.checked ? 'must' : 'optional')} disabled={saving} />
+                <span className="required-toggle-mark" aria-hidden="true">★</span>
+                <span>必須にする</span>
+              </label>
+
               <div className="field-group">
                 <label htmlFor="destination-name">目的地名</label>
                 <input ref={nameInputRef} id="destination-name" value={name}
@@ -763,36 +771,31 @@ export function RoutePlacesPage() {
             </div>
 
             <form className="route-create-form place-form" onSubmit={handleEdit}>
-              <div className="field-group">
-                <span className="field-label">重要度</span>
-                <div className="importance-segment" role="group" aria-label="重要度">
-                  <button
-                    className={`importance-option ${editImportance === 'must' ? 'is-active' : ''}`}
-                    type="button"
-                    onClick={() => setEditImportance('must')}
-                    disabled={editSaving}
-                    aria-pressed={editImportance === 'must'}
-                  >
-                    必須
-                  </button>
-                  <button
-                    className={`importance-option ${editImportance === 'optional' ? 'is-active' : ''}`}
-                    type="button"
-                    onClick={() => setEditImportance('optional')}
-                    disabled={editSaving}
-                    aria-pressed={editImportance === 'optional'}
-                  >
-                    任意
-                  </button>
+              <div className="field-group compact-time-type">
+                <span className="field-label">時間</span>
+                <div className="time-type-segment" role="group" aria-label="時間">
+                  <button className={`time-type-option ${editTimeType === 'none' ? 'is-active' : ''}`} type="button" onClick={() => { setEditTimeType('none'); setEditStartTime(''); setEditEndTime(''); }} disabled={editSaving} aria-pressed={editTimeType === 'none'}>なし</button>
+                  <button className={`time-type-option ${editTimeType === 'fixed' ? 'is-active' : ''}`} type="button" onClick={() => setEditTimeType('fixed')} disabled={editSaving} aria-pressed={editTimeType === 'fixed'}>確定</button>
+                  <button className={`time-type-option ${editTimeType === 'approx' ? 'is-active' : ''}`} type="button" onClick={() => setEditTimeType('approx')} disabled={editSaving} aria-pressed={editTimeType === 'approx'}>目安</button>
                 </div>
               </div>
 
-              <div className="field-group"><span className="field-label">時間</span><div className="importance-segment"><button className={`importance-option ${editTimeType === 'none' ? 'is-active' : ''}`} type="button" onClick={() => { setEditTimeType('none'); setEditStartTime(''); setEditEndTime(''); }} disabled={editSaving}>指定なし</button><button className={`importance-option ${editTimeType !== 'none' ? 'is-active' : ''}`} type="button" onClick={() => setEditTimeType(editTimeType === 'none' ? 'fixed' : editTimeType)} disabled={editSaving}>時間あり</button></div></div>
-              {editTimeType !== 'none' ? <>
-                <div className="field-group"><span className="field-label">時間の種類</span><div className="importance-segment"><button className={`importance-option ${editTimeType === 'fixed' ? 'is-active' : ''}`} type="button" onClick={() => setEditTimeType('fixed')} disabled={editSaving}>確定</button><button className={`importance-option ${editTimeType === 'approx' ? 'is-active' : ''}`} type="button" onClick={() => setEditTimeType('approx')} disabled={editSaving}>目安</button></div></div>
-                <div className="destination-time-grid"><div className="field-group"><label htmlFor="edit-destination-start-time">開始</label><input id="edit-destination-start-time" type="time" value={editStartTime} onChange={(e)=>setEditStartTime(e.target.value)} disabled={editSaving} required /></div><div className="field-group"><label htmlFor="edit-destination-end-time">終了 <span className="field-optional">任意</span></label><input id="edit-destination-end-time" type="time" value={editEndTime} onChange={(e)=>setEditEndTime(e.target.value)} disabled={editSaving} /></div></div>
-                <div className="auto-phase-preview">{editStartTime ? (()=>{const p=resolvePhaseForTime(phases,editStartTime); return p ? <>Phase：<strong>{p.name || '名前未設定のPhase'}</strong>へ自動配置</> : <>該当Phaseなし：<strong>例外管理</strong>に表示されます</>;})() : <>開始時刻を入れるとPhaseを自動判定します</>}</div>
-              </> : <div className="field-group"><label htmlFor="edit-destination-phase">Phase</label><select id="edit-destination-phase" value={editPhaseId} onChange={(event) => setEditPhaseId(event.target.value)} disabled={editSaving}>{phases.map((phase) => <option value={phase.id} key={phase.id}>{phase.name || '名前未設定のPhase'}{phase.startTime ? ` (${phase.startTime.slice(0,5)}〜)` : ''}</option>)}</select></div>}
+              {editTimeType !== 'none' ? (
+                <>
+                  <div className="destination-time-stack">
+                    <div className="field-group"><label htmlFor="edit-destination-start-time">開始時刻</label><input id="edit-destination-start-time" type="time" step="300" value={editStartTime} onChange={(event) => setEditStartTime(normalizeFiveMinuteTime(event.target.value))} disabled={editSaving} required /></div>
+                    <div className="field-group"><label htmlFor="edit-destination-end-time">終了時刻 <span className="field-optional">任意</span></label><input id="edit-destination-end-time" type="time" step="300" value={editEndTime} onChange={(event) => setEditEndTime(normalizeFiveMinuteTime(event.target.value))} disabled={editSaving} /></div>
+                  </div>
+                  <div className="auto-phase-preview">{editStartTime ? (()=>{const p=resolvePhaseForTime(phases,editStartTime); return p ? <>Phase：<strong>{p.name || '名前未設定のPhase'}</strong>へ自動配置</> : <>該当Phaseなし：<strong>例外管理</strong>に表示されます</>;})() : <>開始時刻を入れるとPhaseを自動判定します</>}</div>
+                </>
+              ) : <div className="field-group"><label htmlFor="edit-destination-phase">Phase</label><select id="edit-destination-phase" value={editPhaseId} onChange={(event) => setEditPhaseId(event.target.value)} disabled={editSaving}>{phases.map((phase) => <option value={phase.id} key={phase.id}>{phase.name || '名前未設定のPhase'}{phase.startTime ? ` (${phase.startTime.slice(0,5)}〜)` : ''}</option>)}</select></div>}
+
+              <label className="required-toggle">
+                <input type="checkbox" checked={editImportance === 'must'} onChange={(event) => setEditImportance(event.target.checked ? 'must' : 'optional')} disabled={editSaving} />
+                <span className="required-toggle-mark" aria-hidden="true">★</span>
+                <span>必須にする</span>
+              </label>
+
               <div className="field-group">
                 <label htmlFor="edit-destination-name">目的地名</label>
                 <input ref={editNameInputRef} id="edit-destination-name" value={editName}
@@ -911,8 +914,9 @@ export function RoutePlacesPage() {
                   <input
                     id="phase-start-time"
                     type="time"
+                    step="300"
                     value={phaseStartTime}
-                    onChange={(event) => setPhaseStartTime(event.target.value)}
+                    onChange={(event) => setPhaseStartTime(normalizeFiveMinuteTime(event.target.value))}
                     disabled={phaseSaving}
                   />
                   {phaseStartTime ? (

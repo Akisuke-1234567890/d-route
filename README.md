@@ -1,4 +1,4 @@
-# D Route v2.1.0-p23
+# D Route v2.1.0-p23.1
 
 Current baseline: v2.1.0-p22.1
 
@@ -132,3 +132,13 @@ Phase追加UIの実機不具合修正。
 - migration: `supabase/migrations/202607290001_destination_time_model.sql`
 
 - 時刻からPhaseを決められない/不一致の項目は表示上の『例外管理』へ退避（DB上の所属は保持）
+
+
+## v2.1.0-p23.1
+
+- Destination時間選択を `なし / 確定 / 目安` の1段へ統合
+- 重要度の大型選択を廃止し、小型の「★ 必須にする」へ変更
+- 開始 / 終了時刻を縦配置し、iPhoneでの重なりを解消
+- D Routeの時刻入力標準を5分刻みに統一
+- Phase開始、Destination開始、Destination終了に5分刻みを適用
+- DB変更なし
