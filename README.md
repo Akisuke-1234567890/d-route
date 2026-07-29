@@ -1,4 +1,4 @@
-# D Route v2.1.0-p27
+# D Route v2.1.0-p27.1
 
 ## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
@@ -266,4 +266,13 @@ Route Progress baseline。
 - Todayの未完了件数 / Current Phase進捗 / Routeカードへ即時反映
 - 例外・要確認がある場合はPlacesへの修正導線を表示
 - 次の時刻ありは読み取り表示のまま
+- DB変更なし
+
+
+## v2.1.0-p27.1
+
+- Today内のDestination完了ボタンを削除
+- Destinationの完了操作は上部のDestinationカードへ一本化
+- TodayのCurrent Phase進捗、未完了、次の時刻あり、例外・要確認は維持
+- 例外・要確認からPlacesへの修正導線は維持
 - DB変更なし

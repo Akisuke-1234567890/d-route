@@ -320,8 +320,7 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
                 />
               ))}
             </div>
-            {progressError ? <p className="v2-progress-error" role="alert">{progressError}</p> : null}
-          </>
+              </>
         )}
 
         <div className="v2-phase-source-note">
@@ -341,15 +340,10 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
             <strong>{currentPhase?.name || 'Phase未設定'}</strong>
             <small>{currentDestinations.length ? `${completedCount} / ${currentDestinations.length} 完了` : currentPhase?.startTime ? `${currentPhase.startTime.slice(0,5)}〜` : '開始時刻なし'}</small>
           </section>
-          <section className="v2-today-item v2-today-action-item">
+          <section className="v2-today-item">
             <span className="v2-today-label">未完了</span>
             <strong>{todayModel.incomplete.length}件</strong>
             <small>{todayModel.incomplete[0]?.name ?? '現在Phaseは完了'}</small>
-            {todayModel.incomplete[0] ? (
-              <button className="v2-today-complete" type="button" disabled={progressSavingId === todayModel.incomplete[0].id} onClick={() => void toggleDestinationCompleted(todayModel.incomplete[0])}>
-                {progressSavingId === todayModel.incomplete[0].id ? '保存中…' : '✓ 完了にする'}
-              </button>
-            ) : null}
           </section>
           <section className="v2-today-item">
             <span className="v2-today-label">次の時刻あり</span>

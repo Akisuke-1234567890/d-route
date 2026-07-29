@@ -1799,8 +1799,5 @@ a { color: inherit; }
 /* v2.1.0-p27 Today Commands */
 .v2-today-live{align-self:center;padding:4px 8px;border:1px solid rgba(107,224,183,.18);border-radius:999px;background:rgba(107,224,183,.06);color:#a9efd4;font-size:.58rem;font-weight:900;letter-spacing:.08em}
 .v2-today-action-item{display:flex;flex-direction:column}
-.v2-today-complete,.v2-today-edit-link{margin-top:10px;min-height:34px;border-radius:11px;font:inherit;font-size:.69rem;font-weight:850}
-.v2-today-complete{border:1px solid rgba(107,224,183,.2);background:rgba(107,224,183,.075);color:#b5f3dc}
-.v2-today-complete:disabled{opacity:.55}
+.v2-today-edit-link{margin-top:10px;min-height:34px;border-radius:11px;font:inherit;font-size:.69rem;font-weight:850}
 .v2-today-edit-link{display:inline-flex;align-items:center;justify-content:center;padding:0 10px;border:1px solid rgba(255,191,94,.19);background:rgba(255,191,94,.065);color:#ffd898;text-decoration:none}
-.v2-today-panel>.v2-progress-error{margin-inline:0}
