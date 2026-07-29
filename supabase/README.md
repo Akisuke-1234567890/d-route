@@ -46,3 +46,13 @@ Migration: `migrations/202607290001_destination_time_model.sql`
 - time_type: none / fixed / approx
 - start_time: 時間ありで必須
 - end_time: 任意
+
+
+## v2.1.0-p25 Destination progress
+
+Migration: `migrations/202607290002_destination_progress.sql`
+
+- `destinations.completed_at timestamptz null`
+- NULL = 未完了
+- timestamp = 完了
+- Phase進捗はDestinationのcompleted_atから算出

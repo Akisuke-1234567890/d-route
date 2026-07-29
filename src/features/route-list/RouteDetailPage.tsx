@@ -5,7 +5,7 @@ import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { getRoute, type RouteSummary } from './routes';
 import { getRoutePhases, type PhaseSummary } from './phases';
-import { getRouteDestinations, type DestinationSummary } from './destinations';
+import { getRouteDestinations, setRouteDestinationCompleted, type DestinationSummary } from './destinations';
 import { RouteBottomNav } from './RouteBottomNav';
 
 function timeToMinutes(value: string | null | undefined): number | null {
@@ -68,6 +68,8 @@ function PhaseDashboard({ routeId }: { routeId: string }) {
     return now.getHours() * 60 + now.getMinutes();
   });
   const [activeIndex, setActiveIndex] = useState(0);
+  const [progressSavingId, setProgressSavingId] = useState<string | null>(null);
+  const [progressError, setProgressError] = useState<string | null>(null);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -114,6 +116,42 @@ function PhaseDashboard({ routeId }: { routeId: string }) {
       : [],
     [currentPhase, destinations]
   );
+
+const completedCount = useMemo(
+  () => currentDestinations.filter((destination) => Boolean(destination.completedAt)).length,
+  [currentDestinations]
+);
+
+const toggleDestinationCompleted = async (destination: DestinationSummary) => {
+  if (progressSavingId) return;
+
+  const nextCompleted = !destination.completedAt;
+  setProgressSavingId(destination.id);
+  setProgressError(null);
+
+  setDestinations((current) =>
+    current.map((item) =>
+      item.id === destination.id
+        ? { ...item, completedAt: nextCompleted ? new Date().toISOString() : null }
+        : item
+    )
+  );
+
+  try {
+    const saved = await setRouteDestinationCompleted(routeId, destination.id, nextCompleted);
+    setDestinations((current) =>
+      current.map((item) => item.id === saved.id ? saved : item)
+    );
+  } catch (error) {
+    setDestinations((current) =>
+      current.map((item) => item.id === destination.id ? destination : item)
+    );
+    setProgressError(getErrorMessage(error, '完了状態を保存できませんでした。'));
+  } finally {
+    setProgressSavingId(null);
+  }
+};
+
 
   useEffect(() => {
     setActiveIndex(0);
@@ -175,7 +213,16 @@ function PhaseDashboard({ routeId }: { routeId: string }) {
             <p className="eyebrow">CURRENT PHASE</p>
             <h2 id="v2-phase-title">{currentPhase?.name || 'Phase'}</h2>
           </div>
-          {currentPhase?.startTime ? <span className="v2-phase-time">{currentPhase.startTime.slice(0, 5)}〜</span> : null}
+          {currentPhase ? (
+            <div className="v2-phase-progress-wrap">
+              {currentPhase.startTime ? <span className="v2-phase-time">{currentPhase.startTime.slice(0, 5)}〜</span> : null}
+              {currentDestinations.length > 0 ? (
+                <span className={`v2-phase-progress${completedCount === currentDestinations.length ? ' is-complete' : ''}`}>
+                  {completedCount} / {currentDestinations.length} 完了
+                </span>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
         {!currentPhase ? (
@@ -207,7 +254,7 @@ function PhaseDashboard({ routeId }: { routeId: string }) {
                   const note = getDestinationNote(destination);
                   return (
                     <article
-                      className={`v2-destination-card${destination.importance === 'must' ? ' is-attention' : ''}`}
+                      className={`v2-destination-card${destination.importance === 'must' ? ' is-attention' : ''}${destination.completedAt ? ' is-completed' : ''}`}
                       data-destination-index={index}
                       key={destination.id}
                       aria-label={`${index + 1}/${currentDestinations.length} ${destination.name}`}
@@ -223,7 +270,16 @@ function PhaseDashboard({ routeId }: { routeId: string }) {
                         {note ? <p className="v2-card-note">{note}</p> : <p className="v2-card-note is-empty">このPhase内で行う予定</p>}
                       </div>
 
-                      <div className="v2-card-plan-state" aria-label="Planning表示">予定</div>
+                      <button
+                        className={`v2-complete-button${destination.completedAt ? ' is-completed' : ''}`}
+                        type="button"
+                        aria-pressed={Boolean(destination.completedAt)}
+                        disabled={progressSavingId === destination.id}
+                        onClick={() => void toggleDestinationCompleted(destination)}
+                      >
+                        <span aria-hidden="true">{destination.completedAt ? '✓' : '○'}</span>
+                        {progressSavingId === destination.id ? '保存中' : destination.completedAt ? '完了' : '完了にする'}
+                      </button>
                     </article>
                   );
                 })}
@@ -251,6 +307,7 @@ function PhaseDashboard({ routeId }: { routeId: string }) {
                 />
               ))}
             </div>
+            {progressError ? <p className="v2-progress-error" role="alert">{progressError}</p> : null}
           </>
         )}
 

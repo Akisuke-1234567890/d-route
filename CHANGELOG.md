@@ -1,3 +1,10 @@
+## v2.1.0-p25
+
+- Destination完了状態`completed_at`を追加
+- Route画面から完了/未完了を切替可能にした
+- Current Phaseの完了数を自動集計
+- DB migration追加
+
 ## v2.1.0-p24
 
 - Route CURRENT PHASEをPlanningデータへ接続

@@ -1,4 +1,4 @@
-# D Route v2.1.0-p24
+# D Route v2.1.0-p25
 
 ## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
@@ -210,3 +210,17 @@ Phase追加UIの実機不具合修正。
 - 確定/目安/時刻なし、必須表示をRouteカードへ反映
 - 進行操作・完了処理は未実装（表示接続のみ）
 - DB変更なし
+
+
+## v2.1.0-p25
+
+Route Progress baseline。
+
+- Destinationに`completed_at`を追加
+- Route画面で未完了 / 完了をワンタップで切替
+- 完了操作は再タップで未完了へ戻せる
+- 保存失敗時は表示を元へ戻しエラー表示
+- Current Phaseに `完了数 / 全件数` を表示
+- 全件完了時はPhase進捗バッジを完了表示
+- Phase自体の完了状態はまだ保存しない
+- migration: `supabase/migrations/202607290002_destination_progress.sql`

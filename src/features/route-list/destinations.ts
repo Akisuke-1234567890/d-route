@@ -19,6 +19,7 @@ export type DestinationSummary = {
   timeType: DestinationTimeType;
   startTime: string | null;
   endTime: string | null;
+  completedAt: string | null;
 };
 
 export type CreateDestinationInput = {
@@ -37,10 +38,10 @@ type DestinationRow = {
   id: string; route_id: string; phase_id: string; name: string; description: string | null;
   location_name: string | null; map_url: string | null; meeting_point: string | null;
   importance: DestinationImportance; order_value: number | string; estimated_duration_minutes: number | null;
-  is_optional: boolean; time_type: DestinationTimeType; start_time: string | null; end_time: string | null;
+  is_optional: boolean; time_type: DestinationTimeType; start_time: string | null; end_time: string | null; completed_at: string | null;
 };
 
-const columns = 'id, route_id, phase_id, name, description, location_name, map_url, meeting_point, importance, order_value, estimated_duration_minutes, is_optional, time_type, start_time, end_time';
+const columns = 'id, route_id, phase_id, name, description, location_name, map_url, meeting_point, importance, order_value, estimated_duration_minutes, is_optional, time_type, start_time, end_time, completed_at';
 
 function requireSupabase() { const supabase=getSupabaseClient(); if (!supabase) throw new Error('Supabaseの環境変数が設定されていません。'); return supabase; }
 function cleanTime(v?: string | null) { const t=v?.trim(); return t || null; }
@@ -48,7 +49,7 @@ function toSummary(row: DestinationRow): DestinationSummary { return {
   id:row.id, routeId:row.route_id, phaseId:row.phase_id, name:row.name, description:row.description,
   locationName:row.location_name, mapUrl:row.map_url, meetingPoint:row.meeting_point, importance:row.importance,
   orderValue:Number(row.order_value), estimatedDurationMinutes:row.estimated_duration_minutes, isOptional:row.is_optional,
-  timeType:row.time_type ?? 'none', startTime:row.start_time, endTime:row.end_time,
+  timeType:row.time_type ?? 'none', startTime:row.start_time, endTime:row.end_time, completedAt:row.completed_at,
 }; }
 
 export async function getRouteDestinations(routeId:string):Promise<DestinationSummary[]> {
@@ -93,4 +94,28 @@ export async function saveRouteDestinationOrder(routeId:string,ordered:Destinati
 export async function softDeleteRouteDestination(routeId:string,destinationId:string):Promise<void>{
   if(!routeId)throw new Error('Route IDがありません。'); if(!destinationId)throw new Error('Destination IDがありません。'); const supabase=requireSupabase();
   const {error}=await supabase.from('destinations').update({deleted_at:new Date().toISOString()}).eq('id',destinationId).eq('route_id',routeId).eq('record_status','active').is('deleted_at',null); if(error)throw error;
+}
+
+
+export async function setRouteDestinationCompleted(
+  routeId: string,
+  destinationId: string,
+  completed: boolean
+): Promise<DestinationSummary> {
+  if (!routeId) throw new Error('Route IDがありません。');
+  if (!destinationId) throw new Error('Destination IDがありません。');
+
+  const supabase = requireSupabase();
+  const { data, error } = await supabase
+    .from('destinations')
+    .update({ completed_at: completed ? new Date().toISOString() : null })
+    .eq('id', destinationId)
+    .eq('route_id', routeId)
+    .eq('record_status', 'active')
+    .is('deleted_at', null)
+    .select(columns)
+    .single();
+
+  if (error) throw error;
+  return toSummary(data as DestinationRow);
 }
