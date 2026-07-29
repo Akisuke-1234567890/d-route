@@ -122,6 +122,19 @@ const completedCount = useMemo(
   [currentDestinations]
 );
 
+  const todayModel = useMemo(() => {
+    const incomplete = currentDestinations.filter((d) => !d.completedAt);
+    const nextTimed = destinations.filter((d) => !d.completedAt && d.timeType !== 'none' && d.startTime).map((destination) => ({ destination, minutes: timeToMinutes(destination.startTime) })).filter((item): item is { destination: DestinationSummary; minutes: number } => item.minutes !== null && item.minutes >= currentMinutes).sort((a,b) => a.minutes-b.minutes || a.destination.orderValue-b.destination.orderValue)[0]?.destination ?? null;
+    const exceptionTasks = destinations.filter((d) => {
+      if (d.completedAt || d.timeType === 'none' || !d.startTime) return false;
+      const task=timeToMinutes(d.startTime), phase=phases.find((p)=>p.id===d.phaseId), start=timeToMinutes(phase?.startTime);
+      if (task===null || start===null) return false;
+      const next=phases.filter((p)=>p.id!==phase?.id).map((p)=>timeToMinutes(p.startTime)).filter((v): v is number => v!==null && v>start).sort((a,b)=>a-b)[0];
+      return task<start || (next!==undefined && task>=next);
+    }).sort((a,b)=>(timeToMinutes(a.startTime)??9999)-(timeToMinutes(b.startTime)??9999));
+    return { incomplete, nextTimed, exceptionTasks };
+  }, [currentDestinations, currentMinutes, destinations, phases]);
+
 const toggleDestinationCompleted = async (destination: DestinationSummary) => {
   if (progressSavingId) return;
 
@@ -315,6 +328,17 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
           <span>現在時刻からPhaseを自動表示</span>
           <Link className="v2-text-link" to={`/routes/${routeId}/places`}>Placesを見る ›</Link>
         </div>
+      </article>
+
+      <article className="v2-today-panel" aria-labelledby="v2-today-title">
+        <div className="v2-section-heading"><div><p className="eyebrow">TODAY</p><h2 id="v2-today-title">今見るもの</h2></div><span className="v2-today-readonly">READ ONLY</span></div>
+        <div className="v2-today-grid">
+          <section className="v2-today-item"><span className="v2-today-label">CURRENT PHASE</span><strong>{currentPhase?.name || 'Phase未設定'}</strong><small>{currentPhase?.startTime ? `${currentPhase.startTime.slice(0,5)}〜` : '開始時刻なし'}</small></section>
+          <section className="v2-today-item"><span className="v2-today-label">未完了</span><strong>{todayModel.incomplete.length}件</strong><small>{todayModel.incomplete[0]?.name ?? '現在Phaseは完了'}</small></section>
+          <section className="v2-today-item"><span className="v2-today-label">次の時刻あり</span>{todayModel.nextTimed ? <><strong>{formatDestinationTime(todayModel.nextTimed)}</strong><small>{todayModel.nextTimed.name}</small></> : <><strong>なし</strong><small>これからの時刻指定はありません</small></>}</section>
+          <section className={`v2-today-item${todayModel.exceptionTasks.length ? ' is-attention' : ''}`}><span className="v2-today-label">例外・要確認</span><strong>{todayModel.exceptionTasks.length}件</strong><small>{todayModel.exceptionTasks[0]?.name ?? '時間とPhaseの矛盾なし'}</small></section>
+        </div>
+        <div className="v2-today-footer"><span>Planningから自動集約</span><Link className="v2-text-link" to={`/routes/${routeId}/places`}>Placesで確認 ›</Link></div>
       </article>
 
       <article className="v2-chat-summary">

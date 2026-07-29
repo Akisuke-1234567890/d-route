@@ -1,3 +1,8 @@
+## v2.1.0-p26
+
+- Today Read Model追加
+- DB変更なし
+
 ## v2.1.0-p25.1.2
 
 - Phase soft delete時のRLS 42501を修正

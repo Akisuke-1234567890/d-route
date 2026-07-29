@@ -1,4 +1,4 @@
-# D Route v2.1.0-p25.1.2
+# D Route v2.1.0-p26
 
 ## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
@@ -251,3 +251,9 @@ Route Progress baseline。
 - 通常アプリ表示は従来どおり`deleted_at is null`で除外するため、削除済みPhaseは画面に出ない
 - Phase削除処理自体はp25.1.1を維持
 - migration: `supabase/migrations/202607290003_phase_soft_delete_rls.sql`
+
+
+## v2.1.0-p26
+
+- Today Read Model追加（Current Phase / 未完了 / 次の時刻あり / 例外・要確認）
+- 読み取り専用、DB変更なし

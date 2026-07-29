@@ -1786,3 +1786,11 @@ a { color: inherit; }
   font-size: .74rem;
   text-align: center;
 }
+
+/* v2.1.0-p26 Today Read Model */
+.v2-today-panel{margin-top:16px;padding:16px;border:1px solid rgba(196,203,255,.12);border-radius:22px;background:rgba(255,255,255,.025)}
+.v2-today-readonly{align-self:center;padding:4px 7px;border:1px solid rgba(196,203,255,.1);border-radius:999px;color:rgba(194,199,229,.48);font-size:.58rem;font-weight:850;letter-spacing:.08em}
+.v2-today-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:13px}.v2-today-item{min-width:0;padding:13px;border:1px solid rgba(196,203,255,.1);border-radius:16px;background:rgba(7,13,40,.28)}
+.v2-today-item.is-attention{border-color:rgba(255,191,94,.22);background:rgba(255,191,94,.055)}.v2-today-label{display:block;margin-bottom:7px;color:rgba(194,199,229,.58);font-size:.63rem;font-weight:850}
+.v2-today-item strong,.v2-today-item small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.v2-today-item strong{color:#f4f5ff;font-size:.92rem}.v2-today-item small{margin-top:5px;color:var(--muted);font-size:.68rem}
+.v2-today-footer{display:flex;justify-content:space-between;gap:12px;margin-top:12px;color:rgba(194,199,229,.5);font-size:.68rem}@media(max-width:420px){.v2-today-grid{grid-template-columns:1fr}}
