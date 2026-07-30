@@ -1,3 +1,15 @@
+## v2.1.0-p38
+
+- Route Chatをparticipating memberへ開放
+- DB RLS変更
+
+## v2.1.0-p37
+
+- Route member read access
+- route_members SELECT RLSの再帰を回避
+- Members招待ボタンをOwner限定表示
+- Chat member accessは未変更
+
 ## v2.1.0-p36
 
 - Member participation response

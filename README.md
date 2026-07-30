@@ -1,4 +1,4 @@
-# D Route v2.1.0-p36
+# D Route v2.1.0-p38
 
 ## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
@@ -435,3 +435,22 @@ Chat UI / 操作仕上げ。
 - 回答後も参加/不参加を変更可能
 - Route memberは同じRouteのMembers一覧を閲覧可能
 - Route一覧/詳細/Chat等の参加者開放は次工程
+
+
+## v2.1.0-p37
+
+- 招待済みRoute memberがRoute一覧で対象Routeを取得可能
+- 未回答 / 参加 / 不参加のいずれでもRouteとMembersを閲覧可能
+- RouteのPhase / Destinationをmember側から読み取り可能
+- route_membersの自己参照RLSをSecurity Definer helperへ置換し再帰を回避
+- Membersの「＋招待」はOwnerだけに表示
+- Phase / Destinationの作成・編集などOwner write権限はまだ維持
+- Chatのmember開放は次工程
+
+
+## v2.1.0-p38
+
+- Route Chatを参加中Route memberへ開放
+- participating memberはChat閲覧・送信可能
+- unanswered / declined memberはRouteとMembersのみ閲覧可能でChatは利用不可
+- 送信者IDはauth.uid()一致を維持
