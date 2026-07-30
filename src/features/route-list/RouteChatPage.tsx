@@ -113,8 +113,8 @@ export function RouteChatPage() {
                 <div className="chat-message-copy">
                   {!isContinuation ? (
                     <div className="chat-message-meta">
-                      <strong>{isSelf ? 'あなた' : message.authorName}</strong>
                       {message.isImportant ? <span className="chat-important-mark">重要</span> : null}
+                      <strong>{isSelf ? 'あなた' : message.authorName}</strong>
                       <time>{formatChatTime(message.createdAt)}</time>
                     </div>
                   ) : null}

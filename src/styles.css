@@ -1956,3 +1956,41 @@ a { color: inherit; }
 @media (max-width:420px){
   .chat-message-copy{max-width:84%}
 }
+
+
+/* v2.1.0-p33.1 Chat spacing / important meta */
+.chat-message-row{
+  margin-top:14px;
+}
+.chat-message-row:first-child{
+  margin-top:0;
+}
+.chat-message-row.is-continuation{
+  margin-top:9px;
+}
+.chat-message-meta{
+  gap:8px;
+}
+.chat-important-mark{
+  flex:0 0 auto;
+}
+.chat-message-copy{
+  width:auto;
+}
+.chat-bubble{
+  width:fit-content;
+  max-width:100%;
+}
+.chat-message-self .chat-bubble{
+  margin-left:auto;
+}
+.chat-message-row.is-important .chat-bubble{
+  width:fit-content;
+  max-width:100%;
+}
+.chat-send-button{
+  color:#fff !important;
+}
+.chat-send-button:disabled{
+  color:rgba(255,255,255,.72) !important;
+}
