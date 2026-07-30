@@ -2028,3 +2028,10 @@ a { color: inherit; }
 .member-invite-help,.member-invite-error{margin:7px 0 0;font-size:.68rem;line-height:1.45}
 .member-invite-help{color:var(--muted)}.member-invite-error{color:#ffc5a5}
 @media(max-width:420px){.member-invite-form{grid-template-columns:1fr}.member-invite-form .primary-button{width:100%}}
+
+/* v2.1.0-p36 participation response */
+.member-response-panel{margin:12px 0 14px;padding:14px;border:1px solid rgba(196,203,255,.12);border-radius:16px;background:rgba(196,203,255,.025)}
+.member-response-panel h2{margin:2px 0 4px;font-size:1rem}.member-response-panel p{margin:0;color:var(--muted);font-size:.72rem}
+.member-response-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.member-response-actions .is-selected{outline:2px solid rgba(196,203,255,.28);outline-offset:1px}
+@media(max-width:420px){.member-response-actions{grid-template-columns:1fr}}

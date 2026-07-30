@@ -4,7 +4,7 @@ import { BrandMark } from '../../shared/ui/BrandMark';
 import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { RouteBottomNav } from './RouteBottomNav';
-import { inviteRouteMemberByLoginId, listRouteMembers, type RouteMember, type RouteMemberStatus } from './members';
+import { getOwnRouteMember, inviteRouteMemberByLoginId, listRouteMembers, respondToRouteInvite, type RouteMember, type RouteMemberStatus } from './members';
 
 const labels: Record<RouteMemberStatus,string> = { participating:'参加', unanswered:'未回答', declined:'不参加' };
 
@@ -17,13 +17,16 @@ export function RouteMembersPage() {
   const [inviteLoginId, setInviteLoginId] = useState('');
   const [inviteSaving, setInviteSaving] = useState(false);
   const [inviteError, setInviteError] = useState('');
+  const [ownMember, setOwnMember] = useState<RouteMember | null>(null);
+  const [responseSaving, setResponseSaving] = useState(false);
+  const [responseError, setResponseError] = useState('');
 
 
   useEffect(() => {
     let active = true;
     setLoading(true); setError('');
-    void listRouteMembers(routeId)
-      .then((data) => { if (active) setMembers(data); })
+    void Promise.all([listRouteMembers(routeId), getOwnRouteMember(routeId)])
+      .then(([data, own]) => { if (active) { setMembers(data); setOwnMember(own); } })
       .catch((caught) => { if (active) setError(caught instanceof Error ? caught.message : 'Membersを読み込めませんでした。'); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
@@ -48,6 +51,19 @@ async function submitInvite(event: FormEvent<HTMLFormElement>) {
   } finally {
     setInviteSaving(false);
   }
+}
+
+
+async function answerInvite(status: 'participating' | 'declined') {
+  if (responseSaving) return;
+  setResponseSaving(true); setResponseError('');
+  try {
+    const updated = await respondToRouteInvite(routeId, status);
+    setOwnMember(updated);
+    setMembers((current) => current.map((member) => member.userId === updated.userId ? updated : member));
+  } catch (caught) {
+    setResponseError(caught instanceof Error ? caught.message : '参加回答を保存できませんでした。');
+  } finally { setResponseSaving(false); }
 }
 
   const answered = members.filter((m) => m.status !== 'unanswered').length;
@@ -80,6 +96,17 @@ async function submitInvite(event: FormEvent<HTMLFormElement>) {
           </form>
           <p className="member-invite-help">相手のD RouteログインIDを入力します。</p>
           {inviteError ? <p className="member-invite-error" role="alert">{inviteError}</p> : null}
+        </div>
+      ) : null}
+      {ownMember?.role === 'member' ? (
+        <div className="member-response-panel">
+          <div><p className="eyebrow">YOUR RESPONSE</p><h2>このRouteに参加しますか？</h2>
+          <p>{ownMember.status === 'unanswered' ? '招待への回答を選択してください。' : `現在の回答：${labels[ownMember.status]}`}</p></div>
+          <div className="member-response-actions">
+            <button className={`primary-button${ownMember.status === 'participating' ? ' is-selected' : ''}`} type="button" disabled={responseSaving} onClick={() => void answerInvite('participating')}>参加する</button>
+            <button className={`secondary-button${ownMember.status === 'declined' ? ' is-selected' : ''}`} type="button" disabled={responseSaving} onClick={() => void answerInvite('declined')}>参加しない</button>
+          </div>
+          {responseError ? <p className="member-invite-error" role="alert">{responseError}</p> : null}
         </div>
       ) : null}
       {loading ? <p className="route-tab-demo-note">Membersを読み込んでいます。</p> : null}

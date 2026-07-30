@@ -1,3 +1,8 @@
+## v2.1.0-p36
+
+- Member participation response
+- Members select RLSをRoute memberへ拡張
+
 ## v2.1.0-p35
 
 - Membersにlogin_id招待を追加

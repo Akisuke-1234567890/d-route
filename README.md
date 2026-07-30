@@ -1,4 +1,4 @@
-# D Route v2.1.0-p35
+# D Route v2.1.0-p36
 
 ## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
@@ -427,3 +427,11 @@ Chat UI / 操作仕上げ。
 - user_profilesの直接公開はせずSecurity Definer RPC経由で検索
 - 自分自身への招待は拒否
 - 参加/不参加回答、参加者側Route表示、Chat RLS拡張は次工程
+
+
+## v2.1.0-p36
+
+- 招待された本人がMembersで参加/不参加を回答可能
+- 回答後も参加/不参加を変更可能
+- Route memberは同じRouteのMembers一覧を閲覧可能
+- Route一覧/詳細/Chat等の参加者開放は次工程

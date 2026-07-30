@@ -53,3 +53,24 @@ export async function inviteRouteMemberByLoginId(routeId: string, loginId: strin
   if (!row) throw new Error('招待結果を確認できませんでした。');
   return mapMember(row);
 }
+
+export async function getOwnRouteMember(routeId: string): Promise<RouteMember | null> {
+  const supabase = requireSupabase();
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError) throw authError;
+  if (!authData.user) return null;
+  const { data, error } = await supabase.from('route_members').select(columns)
+    .eq('route_id', routeId).eq('user_id', authData.user.id).maybeSingle();
+  if (error) throw error;
+  return data ? mapMember(data) : null;
+}
+
+export async function respondToRouteInvite(routeId: string, status: 'participating' | 'declined'): Promise<RouteMember> {
+  const { data, error } = await requireSupabase().rpc('respond_to_route_invite', {
+    p_route_id: routeId, p_status: status,
+  });
+  if (error) throw error;
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) throw new Error('回答結果を確認できませんでした。');
+  return mapMember(row);
+}
