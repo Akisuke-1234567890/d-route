@@ -1,4 +1,4 @@
-# D Route v2.1.0-p32
+# D Route v2.1.0-p32.1
 
 ## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
@@ -366,3 +366,10 @@ NOW / NEXT baseline。
 - 既読・通知・Realtimeは未実装
 - 現在Route membership未実装のためRLSはRoute Owner限定
 - migration: `supabase/migrations/202607300001_route_chat_baseline.sql`
+
+
+## v2.1.0-p32.1
+
+- Route画面Chatの空表示が1文字ずつ縦折り返しになるレイアウト不具合を修正
+- 空表示を「まだ連絡はありません。 / 必要な連絡があればChatで共有できます。」の2行構成へ整理
+- DB変更なし

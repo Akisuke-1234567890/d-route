@@ -434,7 +434,12 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
             </div>
           </div>
         ) : (
-          <div className="v2-latest-message is-empty"><p>まだ連絡はありません。</p></div>
+          <div className="v2-latest-message is-empty">
+            <div className="v2-empty-message-copy">
+              <strong>まだ連絡はありません。</strong>
+              <p>必要な連絡があればChatで共有できます。</p>
+            </div>
+          </div>
         )}
       </article>
     </>

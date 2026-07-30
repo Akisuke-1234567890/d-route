@@ -1862,3 +1862,37 @@ a { color: inherit; }
 .chat-message-row.is-important .chat-bubble{border-color:rgba(255,191,94,.22)}
 .chat-important-mark{padding:2px 6px;border:1px solid rgba(255,191,94,.2);border-radius:999px;color:#ffd898;font-size:.58rem;font-weight:900}
 .v2-latest-message.is-empty{color:var(--muted)}
+
+
+/* v2.1.0-p32.1 Route Chat empty-state layout */
+.v2-latest-message.is-empty{
+  display:block;
+  min-height:0;
+  padding:16px 18px;
+  color:var(--muted);
+}
+.v2-latest-message.is-empty .v2-empty-message-copy{
+  width:100%;
+  min-width:0;
+}
+.v2-latest-message.is-empty strong,
+.v2-latest-message.is-empty p{
+  display:block;
+  width:100%;
+  margin:0;
+  white-space:normal;
+  overflow-wrap:normal;
+  word-break:keep-all;
+  writing-mode:horizontal-tb;
+}
+.v2-latest-message.is-empty strong{
+  color:#eef0ff;
+  font-size:.8rem;
+  line-height:1.45;
+}
+.v2-latest-message.is-empty p{
+  margin-top:5px;
+  color:var(--muted);
+  font-size:.68rem;
+  line-height:1.5;
+}
