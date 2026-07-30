@@ -1,3 +1,8 @@
+## v2.1.0-p34
+
+- Members DB foundation
+- OwnerをRoute memberとして自動登録
+
 ## v2.1.0-p33.3
 
 - Route Chat投稿上限を50文字へ変更

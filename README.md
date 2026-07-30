@@ -1,4 +1,4 @@
-# D Route v2.1.0-p33.3
+# D Route v2.1.0-p34
 
 ## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
@@ -409,3 +409,12 @@ Chat UI / 操作仕上げ。
 
 - Route Chat上限を50文字へ変更
 - DB CHECK制約も50文字へ変更
+
+
+## v2.1.0-p34
+
+- route_members基盤を追加
+- 既存RouteのOwnerをリーダー/参加として自動登録
+- 新規Route作成時もOwner memberを自動作成
+- Members画面をprototype固定値からDB表示へ移行
+- 招待/参加回答/Chat RLS拡張は次工程
