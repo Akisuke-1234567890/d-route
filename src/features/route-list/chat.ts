@@ -61,7 +61,7 @@ export async function sendRouteChatMessage(
 ): Promise<RouteChatMessage> {
   const normalizedBody = body.trim();
   if (!normalizedBody) throw new Error('メッセージを入力してください。');
-  if (normalizedBody.length > 500) throw new Error('メッセージは500文字以内で入力してください。');
+  if (normalizedBody.length > 50) throw new Error('メッセージは50文字以内で入力してください。');
 
   const supabase = requireSupabase();
   const { data: authData, error: authError } = await supabase.auth.getUser();

@@ -1,4 +1,4 @@
-# D Route v2.1.0-p33.2
+# D Route v2.1.0-p33.3
 
 ## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
@@ -403,3 +403,9 @@ Chat UI / 操作仕上げ。
 - 文字を1段階小さく、本文1行省略でコンパクト化
 - Phaseカード圧縮は地図導入後に判断
 - DB変更なし
+
+
+## v2.1.0-p33.3
+
+- Route Chat上限を50文字へ変更
+- DB CHECK制約も50文字へ変更

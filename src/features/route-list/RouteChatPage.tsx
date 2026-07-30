@@ -133,7 +133,7 @@ export function RouteChatPage() {
           <textarea
             ref={composerRef}
             value={draft}
-            maxLength={500}
+            maxLength={50}
             rows={1}
             placeholder="Routeに必要な連絡を入力"
             onChange={(event) => setDraft(event.target.value)}
@@ -153,7 +153,7 @@ export function RouteChatPage() {
             <input type="checkbox" checked={important} onChange={(event) => setImportant(event.target.checked)} />
             <span>重要として送信</span>
           </label>
-          <span>{draft.length}/500</span>
+          <span>{draft.length}/50</span>
         </div>
       </section>
 
