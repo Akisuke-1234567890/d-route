@@ -1,4 +1,4 @@
-# D Route v2.1.0-p38
+# D Route v2.1.0-p39
 
 ## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
@@ -454,3 +454,12 @@ Chat UI / 操作仕上げ。
 - participating memberはChat閲覧・送信可能
 - unanswered / declined memberはRouteとMembersのみ閲覧可能でChatは利用不可
 - 送信者IDはauth.uid()一致を維持
+
+
+## v2.1.0-p39
+
+- participating memberがRoute画面からDestinationの完了 / 完了解除を操作可能
+- 完了操作をSecurity Definer RPCへ移し、変更可能項目をcompleted_atだけに限定
+- Phaseの前後切替 / 現在Phaseへ戻る操作は端末内表示なのでmemberでもそのまま利用可能
+- Phase / Destinationの追加・編集・削除・並び替えなどRoute設計操作はOwner限定のまま
+- 未回答 / 不参加memberは完了操作不可

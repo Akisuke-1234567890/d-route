@@ -106,16 +106,14 @@ export async function setRouteDestinationCompleted(
   if (!destinationId) throw new Error('Destination IDがありません。');
 
   const supabase = requireSupabase();
-  const { data, error } = await supabase
-    .from('destinations')
-    .update({ completed_at: completed ? new Date().toISOString() : null })
-    .eq('id', destinationId)
-    .eq('route_id', routeId)
-    .eq('record_status', 'active')
-    .is('deleted_at', null)
-    .select(columns)
-    .single();
+  const { data, error } = await supabase.rpc('set_route_destination_completed', {
+    p_route_id: routeId,
+    p_destination_id: destinationId,
+    p_completed: completed,
+  });
 
   if (error) throw error;
-  return toSummary(data as DestinationRow);
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) throw new Error('Destinationの完了状態を確認できませんでした。');
+  return toSummary(row as DestinationRow);
 }

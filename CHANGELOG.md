@@ -1,3 +1,9 @@
+## v2.1.0-p39
+
+- participating memberへDestination完了操作を開放
+- 完了更新を限定RPC化しRoute設計権限とは分離
+- DB migration追加
+
 ## v2.1.0-p38
 
 - Route Chatをparticipating memberへ開放
