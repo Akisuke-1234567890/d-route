@@ -26,6 +26,7 @@ export function RouteChatPage() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
 
   const load = async () => {
     if (!routeId) return;
@@ -49,6 +50,13 @@ export function RouteChatPage() {
   useEffect(() => {
     if (!loading) endRef.current?.scrollIntoView({ block: 'end' });
   }, [loading, messages.length]);
+
+  useEffect(() => {
+    const composer = composerRef.current;
+    if (!composer) return;
+    composer.style.height = 'auto';
+    composer.style.height = `${Math.min(composer.scrollHeight, 120)}px`;
+  }, [draft]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -87,19 +95,31 @@ export function RouteChatPage() {
         <div className="chat-page-log" aria-live="polite">
           {loading ? <div className="chat-empty-state">Chatを読み込んでいます</div> : null}
           {!loading && messages.length === 0 ? <div className="chat-empty-state">まだ連絡はありません。</div> : null}
-          {messages.map((message) => {
+          {messages.map((message, index) => {
             const isSelf = message.authorUserId === currentUserId;
+            const previous = messages[index - 1];
+            const isContinuation = Boolean(
+              previous &&
+              previous.authorUserId === message.authorUserId &&
+              !previous.isImportant &&
+              !message.isImportant &&
+              new Date(message.createdAt).getTime() - new Date(previous.createdAt).getTime() < 5 * 60 * 1000
+            );
             const initial = message.authorName.slice(0, 1).toUpperCase();
+
             return (
-              <section className={`chat-message-row${isSelf ? ' chat-message-self' : ''}${message.isImportant ? ' is-important' : ''}`} key={message.id}>
-                {!isSelf ? <div className="chat-avatar" aria-hidden="true">{initial}</div> : null}
+              <section className={`chat-message-row${isSelf ? ' chat-message-self' : ''}${message.isImportant ? ' is-important' : ''}${isContinuation ? ' is-continuation' : ''}`} key={message.id}>
+                {!isSelf && !isContinuation ? <div className="chat-avatar" aria-hidden="true">{initial}</div> : !isSelf ? <div className="chat-avatar-spacer" aria-hidden="true" /> : null}
                 <div className="chat-message-copy">
-                  <div className="chat-message-meta">
-                    <strong>{isSelf ? 'あなた' : message.authorName}</strong>
-                    {message.isImportant ? <span className="chat-important-mark">重要</span> : null}
-                    <time>{formatChatTime(message.createdAt)}</time>
-                  </div>
+                  {!isContinuation ? (
+                    <div className="chat-message-meta">
+                      <strong>{isSelf ? 'あなた' : message.authorName}</strong>
+                      {message.isImportant ? <span className="chat-important-mark">重要</span> : null}
+                      <time>{formatChatTime(message.createdAt)}</time>
+                    </div>
+                  ) : null}
                   <p className="chat-bubble">{message.body}</p>
+                  {isContinuation ? <time className="chat-continuation-time">{formatChatTime(message.createdAt)}</time> : null}
                 </div>
               </section>
             );
@@ -111,11 +131,18 @@ export function RouteChatPage() {
 
         <form className="chat-page-composer" onSubmit={submit}>
           <textarea
+            ref={composerRef}
             value={draft}
             maxLength={500}
             rows={1}
             placeholder="Routeに必要な連絡を入力"
             onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+                event.preventDefault();
+                event.currentTarget.form?.requestSubmit();
+              }
+            }}
           />
           <button className="chat-send-button" type="submit" disabled={!draft.trim() || sending}>
             {sending ? '送信中' : '送信'}
@@ -124,7 +151,7 @@ export function RouteChatPage() {
         <div className="chat-composer-meta">
           <label className="chat-important-toggle">
             <input type="checkbox" checked={important} onChange={(event) => setImportant(event.target.checked)} />
-            重要
+            <span>重要として送信</span>
           </label>
           <span>{draft.length}/500</span>
         </div>

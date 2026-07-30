@@ -1896,3 +1896,63 @@ a { color: inherit; }
   font-size:.68rem;
   line-height:1.5;
 }
+
+
+/* v2.1.0-p33 Chat UI polish */
+.chat-page-log{
+  overflow-wrap:anywhere;
+}
+.chat-message-row{
+  align-items:flex-end;
+}
+.chat-message-row.is-continuation{
+  margin-top:-4px;
+}
+.chat-avatar-spacer{
+  width:34px;
+  flex:0 0 34px;
+}
+.chat-message-copy{
+  min-width:0;
+  max-width:min(78%, 520px);
+}
+.chat-message-self .chat-message-copy{
+  margin-left:auto;
+}
+.chat-bubble{
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+  line-height:1.55;
+}
+.chat-message-row.is-important .chat-bubble{
+  border-color:rgba(255,191,94,.28);
+  background:rgba(255,191,94,.06);
+}
+.chat-continuation-time{
+  display:block;
+  margin-top:3px;
+  color:rgba(194,199,229,.42);
+  font-size:.56rem;
+  text-align:right;
+}
+.chat-page-composer textarea{
+  min-height:42px;
+  max-height:120px;
+  resize:none;
+  overflow-y:auto;
+  line-height:1.45;
+}
+.chat-composer-meta{
+  align-items:center;
+}
+.chat-important-toggle{
+  cursor:pointer;
+}
+.chat-important-toggle input{
+  width:16px;
+  height:16px;
+}
+@media (max-width:420px){
+  .chat-message-copy{max-width:84%}
+}
