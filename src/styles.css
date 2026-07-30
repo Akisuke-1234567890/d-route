@@ -1842,3 +1842,6 @@ a { color: inherit; }
 .v2-today-warning-row strong{color:#eef0ff;font-size:.82rem;white-space:nowrap}
 .v2-today-warning-row.is-overdue{border-color:rgba(255,158,103,.22);background:rgba(255,158,103,.045);color:#ffc5a5}
 .v2-today-warning-row.is-attention{border-color:rgba(255,191,94,.20);background:rgba(255,191,94,.045);color:#ffd898}
+
+/* v2.1.0-p30.3 warnings only */
+.v2-route-alerts{display:grid;gap:7px;margin:10px 0 0}.v2-route-alerts .v2-today-warning-row{min-height:40px;padding:8px 12px;border-radius:12px}.v2-route-alerts-link{justify-self:end;color:var(--muted);font-size:.68rem;font-weight:800;text-decoration:none}

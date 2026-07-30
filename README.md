@@ -1,4 +1,4 @@
-# D Route v2.1.0-p30.2
+# D Route v2.1.0-p30.3
 
 ## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
@@ -336,4 +336,13 @@ NOW / NEXT baseline。
 - Today警告をコンパクト化
 - 対象を表示と自動ジャンプを撤去
 - 詳細確認はPlacesで確認へ集約
+- DB変更なし
+
+
+## v2.1.0-p30.3
+
+- Today枠を撤去
+- 予定超過・例外がある時だけ警告表示
+- 問題0件なら警告エリア非表示
+- 警告時のみPlacesで確認を表示
 - DB変更なし

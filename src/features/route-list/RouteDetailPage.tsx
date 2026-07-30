@@ -385,39 +385,13 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
         </div>
       </article>
 
-      <article className="v2-today-panel" aria-labelledby="v2-today-title">
-        <div className="v2-section-heading">
-          <div><p className="eyebrow">TODAY</p><h2 id="v2-today-title">今見るもの</h2></div>
-          <span className="v2-today-live">LIVE</span>
-        </div>
-        <div className="v2-today-grid">
-          <section className="v2-today-item">
-            <span className="v2-today-label">CURRENT PHASE</span>
-            <strong>{currentPhase?.name || 'Phase未設定'}</strong>
-            <small>{currentDestinations.length ? `${completedCount} / ${currentDestinations.length} 完了` : currentPhase?.startTime ? `${currentPhase.startTime.slice(0,5)}〜` : '開始時刻なし'}</small>
-          </section>
-          <section className="v2-today-item">
-            <span className="v2-today-label">未完了</span>
-            <strong>{todayModel.incomplete.length}件</strong>
-            <small>{todayModel.incomplete[0]?.name ?? '現在Phaseは完了'}</small>
-          </section>
-          <section className="v2-today-item">
-            <span className="v2-today-label">次の時刻あり</span>
-            {todayModel.nextTimed ? <><strong>{formatDestinationTime(todayModel.nextTimed)}</strong><small>{todayModel.nextTimed.name}</small></> : <><strong>なし</strong><small>これからの時刻指定はありません</small></>}
-          </section>
-          <section className={`v2-today-warning-row${todayModel.overdueTasks.length ? ' is-overdue' : ''}`}>
-            <span>予定超過</span>
-            <strong>{todayModel.overdueTasks.length}件</strong>
-          </section>
-
-          <section className={`v2-today-warning-row${todayModel.exceptionTasks.length ? ' is-attention' : ''}`}>
-            <span>例外・要確認</span>
-            <strong>{todayModel.exceptionTasks.length}件</strong>
-          </section>
-        </div>
-        {progressError ? <p className="v2-progress-error" role="alert">{progressError}</p> : null}
-        <div className="v2-today-footer"><span>Planningから自動集約</span><Link className="v2-text-link" to={`/routes/${routeId}/places`}>Placesで確認 ›</Link></div>
-      </article>
+      {(todayModel.overdueTasks.length > 0 || todayModel.exceptionTasks.length > 0) ? (
+        <section className="v2-route-alerts" aria-label="注意事項">
+          {todayModel.overdueTasks.length > 0 ? <div className="v2-today-warning-row is-overdue"><span>予定超過</span><strong>{todayModel.overdueTasks.length}件</strong></div> : null}
+          {todayModel.exceptionTasks.length > 0 ? <div className="v2-today-warning-row is-attention"><span>例外・要確認</span><strong>{todayModel.exceptionTasks.length}件</strong></div> : null}
+          <Link className="v2-route-alerts-link" to={`/routes/${routeId}/places`}>Placesで確認 ›</Link>
+        </section>
+      ) : null}
 
       <article className="v2-chat-summary">
         <div className="v2-section-heading">
