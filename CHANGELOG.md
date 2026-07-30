@@ -1,3 +1,8 @@
+## v2.1.0-p30.2
+
+- Today警告をコンパクト化し対象ジャンプを撤去
+- DB変更なし
+
 ## v2.1.0-p30.1
 
 - p30のsetManualPhaseId未定義によるbuild failureを修正

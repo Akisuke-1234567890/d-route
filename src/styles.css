@@ -1836,3 +1836,9 @@ a { color: inherit; }
   font-size: .62rem;
   font-weight: 850;
 }
+
+/* v2.1.0-p30.2 compact Today warnings */
+.v2-today-warning-row{min-height:46px;padding:10px 14px;border:1px solid rgba(196,203,255,.10);border-radius:14px;background:rgba(196,203,255,.025);display:flex;align-items:center;justify-content:space-between;gap:12px;color:rgba(207,211,238,.68);font-size:.72rem;font-weight:800}
+.v2-today-warning-row strong{color:#eef0ff;font-size:.82rem;white-space:nowrap}
+.v2-today-warning-row.is-overdue{border-color:rgba(255,158,103,.22);background:rgba(255,158,103,.045);color:#ffc5a5}
+.v2-today-warning-row.is-attention{border-color:rgba(255,191,94,.20);background:rgba(255,191,94,.045);color:#ffd898}

@@ -1,4 +1,4 @@
-# D Route v2.1.0-p30.1
+# D Route v2.1.0-p30.2
 
 ## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
@@ -328,4 +328,12 @@ NOW / NEXT baseline。
 - Todayから別Phaseの対象へ移動するためのmanual Phase stateを追加
 - 別Phaseを表示中は「現在Phaseへ戻る」を表示
 - 通常時は従来どおり時刻からCurrent Phaseを自動判定
+- DB変更なし
+
+
+## v2.1.0-p30.2
+
+- Today警告をコンパクト化
+- 対象を表示と自動ジャンプを撤去
+- 詳細確認はPlacesで確認へ集約
 - DB変更なし

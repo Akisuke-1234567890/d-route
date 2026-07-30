@@ -79,7 +79,6 @@ function PhaseDashboard({ routeId }: { routeId: string }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [progressSavingId, setProgressSavingId] = useState<string | null>(null);
   const [progressError, setProgressError] = useState<string | null>(null);
-  const [manualPhaseId, setManualPhaseId] = useState<string | null>(null);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -112,16 +111,9 @@ function PhaseDashboard({ routeId }: { routeId: string }) {
     return () => window.clearInterval(timer);
   }, []);
 
-  const autoCurrentPhase = useMemo(
+  const currentPhase = useMemo(
     () => getCurrentPhase(phases, currentMinutes),
     [phases, currentMinutes]
-  );
-
-  const currentPhase = useMemo(
-    () => manualPhaseId
-      ? phases.find((phase) => phase.id === manualPhaseId) ?? autoCurrentPhase
-      : autoCurrentPhase,
-    [autoCurrentPhase, manualPhaseId, phases]
   );
 
   const currentDestinations = useMemo(
@@ -177,23 +169,6 @@ const completedCount = useMemo(
       .sort((a,b)=>(timeToMinutes(a.startTime)??9999)-(timeToMinutes(b.startTime)??9999));
     return { incomplete, nextTimed, exceptionTasks, overdueTasks };
   }, [currentDestinations, currentMinutes, destinations, phases]);
-
-const focusDestinationFromToday = (destination: DestinationSummary | null) => {
-  if (!destination) return;
-  const focusCard = () => window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
-    const scroller = scrollerRef.current;
-    if (!scroller) return;
-    const card = scroller.querySelector<HTMLElement>(`[data-destination-id="${destination.id}"]`);
-    if (!card) return;
-    const index = Number(card.dataset.destinationIndex ?? '0');
-    if (Number.isFinite(index)) setActiveIndex(index);
-    card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-  }));
-  if (destination.phaseId && destination.phaseId !== currentPhase?.id) {
-    setManualPhaseId(destination.phaseId);
-  }
-  focusCard();
-};
 
 const toggleDestinationCompleted = async (destination: DestinationSummary) => {
   if (progressSavingId) return;
@@ -300,11 +275,6 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
           </div>
           {currentPhase ? (
             <div className="v2-phase-progress-wrap">
-              {manualPhaseId && currentPhase.id !== autoCurrentPhase?.id ? (
-                <button className="v2-return-current" type="button" onClick={() => setManualPhaseId(null)}>
-                  現在Phaseへ戻る
-                </button>
-              ) : null}
               {currentPhase.startTime ? <span className="v2-phase-time">{currentPhase.startTime.slice(0, 5)}〜</span> : null}
               {currentDestinations.length > 0 ? (
                 <span className={`v2-phase-progress${completedCount === currentDestinations.length ? ' is-complete' : ''}`}>
@@ -346,7 +316,6 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
                     <article
                       className={`v2-destination-card${destination.importance === 'must' ? ' is-attention' : ''}${destination.completedAt ? ' is-completed' : ''}${priorityDestination?.id === destination.id ? ' is-priority-focus' : ''}`}
                       data-destination-index={index}
-                    data-destination-id={destination.id}
                       key={destination.id}
                       aria-label={`${index + 1}/${currentDestinations.length} ${destination.name}`}
                     >
@@ -436,18 +405,14 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
             <span className="v2-today-label">次の時刻あり</span>
             {todayModel.nextTimed ? <><strong>{formatDestinationTime(todayModel.nextTimed)}</strong><small>{todayModel.nextTimed.name}</small></> : <><strong>なし</strong><small>これからの時刻指定はありません</small></>}
           </section>
-          <section className={`v2-today-item v2-today-action-item${todayModel.overdueTasks.length ? ' is-overdue' : ''}`}>
-            <span className="v2-today-label">予定超過</span>
+          <section className={`v2-today-warning-row${todayModel.overdueTasks.length ? ' is-overdue' : ''}`}>
+            <span>予定超過</span>
             <strong>{todayModel.overdueTasks.length}件</strong>
-            <small>{todayModel.overdueTasks[0]?.name ?? '遅れている予定なし'}</small>
-            {todayModel.overdueTasks[0] ? <button className="v2-today-jump is-overdue" type="button" onClick={() => focusDestinationFromToday(todayModel.overdueTasks[0])}>対象を表示 ›</button> : null}
           </section>
 
-          <section className={`v2-today-item v2-today-action-item${todayModel.exceptionTasks.length ? ' is-attention' : ''}`}>
-            <span className="v2-today-label">例外・要確認</span>
+          <section className={`v2-today-warning-row${todayModel.exceptionTasks.length ? ' is-attention' : ''}`}>
+            <span>例外・要確認</span>
             <strong>{todayModel.exceptionTasks.length}件</strong>
-            <small>{todayModel.exceptionTasks[0]?.name ?? '時間とPhaseの矛盾なし'}</small>
-            {todayModel.exceptionTasks[0] ? <button className="v2-today-jump is-attention" type="button" onClick={() => focusDestinationFromToday(todayModel.exceptionTasks[0])}>対象を表示 ›</button> : null}
           </section>
         </div>
         {progressError ? <p className="v2-progress-error" role="alert">{progressError}</p> : null}
