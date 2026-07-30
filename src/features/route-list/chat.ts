@@ -1,35 +1,113 @@
-export type ChatPhase = 'planning' | 'moving' | 'meeting' | 'finished';
+import { getSupabaseClient } from '../../shared/api/supabase';
 
-export const phaseLabels: Record<ChatPhase, string> = {
-  planning: 'Planning', moving: 'Moving', meeting: 'Meeting', finished: 'Finished',
+export type RouteChatMessage = {
+  id: string;
+  routeId: string;
+  authorUserId: string;
+  authorName: string;
+  body: string;
+  isImportant: boolean;
+  createdAt: string;
 };
 
-export type ChatMessage =
-  | { id: string; type: 'message'; author: string; initials: string; body: string; time: string; isSelf?: boolean }
-  | { id: string; type: 'system'; body: string; time?: string };
+const columns = 'id,route_id,author_user_id,author_name,body,is_important,created_at';
 
-export type ChatState = { phase: ChatPhase; messages: ChatMessage[] };
-
-const initialState: ChatState = {
-  phase: 'moving',
-  messages: [
-    { id: 'system-start', type: 'system', body: 'Routeを開始しました', time: '08:30' },
-    { id: 'chat-a', type: 'message', author: 'メンバーA', initials: 'A', body: '海老名SAに到着しました。入口近くで待っています。', time: '08:24' },
-    { id: 'chat-self', type: 'message', author: 'あなた', initials: 'YOU', body: 'あと5分ほどで到着します。先に休憩していてください。', time: '08:25', isSelf: true },
-    { id: 'system-join', type: 'system', body: 'メンバーBが参加しました', time: '08:27' },
-    { id: 'chat-b', type: 'message', author: 'メンバーB', initials: 'B', body: '少し遅れます。大観山駐車場で合流します。', time: '08:28' },
-  ],
-};
-
-function storageKey(routeId: string) { return `d-route-chat:${routeId}`; }
-export function loadChatState(routeId: string): ChatState {
-  try { const raw = localStorage.getItem(storageKey(routeId)); return raw ? JSON.parse(raw) as ChatState : initialState; }
-  catch { return initialState; }
+function requireSupabase() {
+  const supabase = getSupabaseClient();
+  if (!supabase) throw new Error('Supabaseの環境変数が設定されていません。');
+  return supabase;
 }
-export function saveChatState(routeId: string, state: ChatState) {
-  localStorage.setItem(storageKey(routeId), JSON.stringify(state));
-  window.dispatchEvent(new CustomEvent('d-route-chat-updated', { detail: { routeId } }));
+
+function mapMessage(row: any): RouteChatMessage {
+  return {
+    id: row.id,
+    routeId: row.route_id,
+    authorUserId: row.author_user_id,
+    authorName: row.author_name || 'メンバー',
+    body: row.body,
+    isImportant: Boolean(row.is_important),
+    createdAt: row.created_at,
+  };
 }
-export function formatChatTime(date: Date) {
-  return new Intl.DateTimeFormat('ja-JP', { hour: '2-digit', minute: '2-digit', hour12: false }).format(date);
+
+export async function getRouteChatMessages(routeId: string): Promise<RouteChatMessage[]> {
+  const supabase = requireSupabase();
+  const { data, error } = await supabase
+    .from('route_chat_messages')
+    .select(columns)
+    .eq('route_id', routeId)
+    .order('created_at', { ascending: true })
+    .limit(200);
+  if (error) throw error;
+  return (data ?? []).map(mapMessage);
+}
+
+export async function getLatestRouteChatMessage(routeId: string): Promise<RouteChatMessage | null> {
+  const supabase = requireSupabase();
+  const { data, error } = await supabase
+    .from('route_chat_messages')
+    .select(columns)
+    .eq('route_id', routeId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? mapMessage(data) : null;
+}
+
+export async function sendRouteChatMessage(
+  routeId: string,
+  body: string,
+  isImportant = false
+): Promise<RouteChatMessage> {
+  const normalizedBody = body.trim();
+  if (!normalizedBody) throw new Error('メッセージを入力してください。');
+  if (normalizedBody.length > 500) throw new Error('メッセージは500文字以内で入力してください。');
+
+  const supabase = requireSupabase();
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError) throw authError;
+  const user = authData.user;
+  if (!user) throw new Error('ログイン情報を確認できませんでした。');
+
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('display_name')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  const authorName =
+    profile?.display_name?.trim() ||
+    user.user_metadata?.display_name?.trim() ||
+    'あなた';
+
+  const { data, error } = await supabase
+    .from('route_chat_messages')
+    .insert({
+      route_id: routeId,
+      author_user_id: user.id,
+      author_name: authorName,
+      body: normalizedBody,
+      is_important: isImportant,
+    })
+    .select(columns)
+    .single();
+
+  if (error) throw error;
+  return mapMessage(data);
+}
+
+export async function getCurrentUserId(): Promise<string | null> {
+  const supabase = requireSupabase();
+  const { data, error } = await supabase.auth.getUser();
+  if (error) throw error;
+  return data.user?.id ?? null;
+}
+
+export function formatChatTime(value: string): string {
+  return new Intl.DateTimeFormat('ja-JP', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(new Date(value));
 }

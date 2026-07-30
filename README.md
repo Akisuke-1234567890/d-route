@@ -1,4 +1,4 @@
-# D Route v2.1.0-p31
+# D Route v2.1.0-p32
 
 ## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
@@ -356,3 +356,13 @@ NOW / NEXT baseline。
 - 手動表示時はVIEWING PHASEと現在Phaseへ戻るを表示
 - 通常時のCurrent Phase自動判定は維持
 - DB変更なし
+
+
+## v2.1.0-p32
+
+- ChatをlocalStorage prototypeからSupabase実データへ移行
+- Route Chatの一覧 / 新規送信 / 投稿者 / 時刻 / 重要マークを実装
+- Route画面の連絡欄は最新メッセージ1件をDBから表示
+- 既読・通知・Realtimeは未実装
+- 現在Route membership未実装のためRLSはRoute Owner限定
+- migration: `supabase/migrations/202607300001_route_chat_baseline.sql`

@@ -1,43 +1,137 @@
-import { useEffect, useRef, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
 import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { RouteBottomNav } from './RouteBottomNav';
-import { formatChatTime, loadChatState, phaseLabels, saveChatState, type ChatPhase, type ChatState } from './chat';
+import {
+  formatChatTime,
+  getCurrentUserId,
+  getRouteChatMessages,
+  sendRouteChatMessage,
+  type RouteChatMessage,
+} from './chat';
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
 
 export function RouteChatPage() {
   const { routeId = '' } = useParams<{ routeId: string }>();
-  const [state, setState] = useState<ChatState>(() => loadChatState(routeId));
+  const [messages, setMessages] = useState<RouteChatMessage[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
+  const [important, setImportant] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { saveChatState(routeId, state); endRef.current?.scrollIntoView({ block: 'end' }); }, [routeId, state]);
+  const load = async () => {
+    if (!routeId) return;
+    setError(null);
+    try {
+      const [nextMessages, userId] = await Promise.all([
+        getRouteChatMessages(routeId),
+        getCurrentUserId(),
+      ]);
+      setMessages(nextMessages);
+      setCurrentUserId(userId);
+    } catch (nextError) {
+      setError(getErrorMessage(nextError, 'Chatを読み込めませんでした。'));
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  function sendMessage() {
-    const body = draft.trim(); if (!body) return;
-    setState((current) => ({ ...current, messages: [...current.messages, { id: `chat-${Date.now()}`, type: 'message', author: 'あなた', initials: 'YOU', body, time: formatChatTime(new Date()), isSelf: true }] }));
-    setDraft('');
+  useEffect(() => { void load(); }, [routeId]);
+
+  useEffect(() => {
+    if (!loading) endRef.current?.scrollIntoView({ block: 'end' });
+  }, [loading, messages.length]);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const body = draft.trim();
+    if (!body || sending || !routeId) return;
+
+    setSending(true);
+    setError(null);
+    try {
+      const saved = await sendRouteChatMessage(routeId, body, important);
+      setMessages((current) => [...current, saved]);
+      setDraft('');
+      setImportant(false);
+    } catch (nextError) {
+      setError(getErrorMessage(nextError, 'メッセージを送信できませんでした。'));
+    } finally {
+      setSending(false);
+    }
   }
 
-  function changePhase(next: ChatPhase) {
-    if (next === state.phase) return;
-    const previous = phaseLabels[state.phase];
-    setState((current) => ({ phase: next, messages: [...current.messages, { id: `phase-${Date.now()}`, type: 'system', body: `フェーズを${previous}から${phaseLabels[next]}へ変更しました`, time: formatChatTime(new Date()) }] }));
-  }
+  return (
+    <main className="app-shell chat-page-shell">
+      <header className="global-header">
+        <div className="header-brand"><BrandMark size={34} /><strong>D Route</strong></div>
+        <div className="header-actions">
+          <Link className="icon-button header-link" to={`/routes/${routeId}`}>Routeへ戻る</Link>
+          <RefreshButton placement="header" />
+        </div>
+      </header>
 
-  return <main className="app-shell chat-page-shell">
-    <header className="global-header"><div className="header-brand"><BrandMark size={34} /><strong>D Route</strong></div><div className="header-actions"><Link className="icon-button header-link" to={`/routes/${routeId}`}>Routeへ戻る</Link><RefreshButton placement="header" /></div></header>
-    <section className="chat-page" aria-labelledby="chat-title">
-      <div className="chat-page-heading"><div><p className="eyebrow">ROUTE CHAT</p><h1 id="chat-title">移動中の連絡</h1></div><label className="phase-select-label">フェーズ<select value={state.phase} onChange={(e) => changePhase(e.target.value as ChatPhase)}>{Object.entries(phaseLabels).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label></div>
-      <div className="chat-page-log" aria-live="polite">
-        {state.messages.map((message) => message.type === 'system' ? <div className="chat-system-row" key={message.id}><span/><p>{message.body}{message.time ? <time>{message.time}</time> : null}</p><span/></div> : <section className={`chat-message-row${message.isSelf ? ' chat-message-self' : ''}`} key={message.id}>{!message.isSelf ? <div className="chat-avatar" aria-hidden="true">{message.initials}</div> : null}<div className="chat-message-copy"><div className="chat-message-meta"><strong>{message.author}</strong><time>{message.time}</time></div><p className="chat-bubble">{message.body}</p></div></section>)}
-        <div ref={endRef}/>
-      </div>
-      <form className="chat-page-composer" onSubmit={(e) => { e.preventDefault(); sendMessage(); }}><textarea value={draft} maxLength={120} rows={1} placeholder="Routeに必要な連絡を入力" onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}/><button className="chat-send-button" type="submit" disabled={!draft.trim()}>送信</button></form>
-      <div className="chat-composer-meta"><span>端末内の画面表示のみです</span><span>{draft.length}/120</span></div>
-    </section>
-    <footer className="app-footer"><VersionBadge/><span>Route Workspace</span></footer>
-    <RouteBottomNav routeId={routeId}/>
-  </main>;
+      <section className="chat-page" aria-labelledby="chat-title">
+        <div className="chat-page-heading">
+          <div><p className="eyebrow">ROUTE CHAT</p><h1 id="chat-title">連絡</h1></div>
+        </div>
+
+        <div className="chat-page-log" aria-live="polite">
+          {loading ? <div className="chat-empty-state">Chatを読み込んでいます</div> : null}
+          {!loading && messages.length === 0 ? <div className="chat-empty-state">まだ連絡はありません。</div> : null}
+          {messages.map((message) => {
+            const isSelf = message.authorUserId === currentUserId;
+            const initial = message.authorName.slice(0, 1).toUpperCase();
+            return (
+              <section className={`chat-message-row${isSelf ? ' chat-message-self' : ''}${message.isImportant ? ' is-important' : ''}`} key={message.id}>
+                {!isSelf ? <div className="chat-avatar" aria-hidden="true">{initial}</div> : null}
+                <div className="chat-message-copy">
+                  <div className="chat-message-meta">
+                    <strong>{isSelf ? 'あなた' : message.authorName}</strong>
+                    {message.isImportant ? <span className="chat-important-mark">重要</span> : null}
+                    <time>{formatChatTime(message.createdAt)}</time>
+                  </div>
+                  <p className="chat-bubble">{message.body}</p>
+                </div>
+              </section>
+            );
+          })}
+          <div ref={endRef}/>
+        </div>
+
+        {error ? <p className="chat-page-error" role="alert">{error}</p> : null}
+
+        <form className="chat-page-composer" onSubmit={submit}>
+          <textarea
+            value={draft}
+            maxLength={500}
+            rows={1}
+            placeholder="Routeに必要な連絡を入力"
+            onChange={(event) => setDraft(event.target.value)}
+          />
+          <button className="chat-send-button" type="submit" disabled={!draft.trim() || sending}>
+            {sending ? '送信中' : '送信'}
+          </button>
+        </form>
+        <div className="chat-composer-meta">
+          <label className="chat-important-toggle">
+            <input type="checkbox" checked={important} onChange={(event) => setImportant(event.target.checked)} />
+            重要
+          </label>
+          <span>{draft.length}/500</span>
+        </div>
+      </section>
+
+      <footer className="app-footer"><VersionBadge/><span>Route Workspace</span></footer>
+      <RouteBottomNav routeId={routeId}/>
+    </main>
+  );
 }

@@ -7,6 +7,7 @@ import { getRoute, type RouteSummary } from './routes';
 import { getRoutePhases, type PhaseSummary } from './phases';
 import { getRouteDestinations, setRouteDestinationCompleted, type DestinationSummary } from './destinations';
 import { RouteBottomNav } from './RouteBottomNav';
+import { formatChatTime, getLatestRouteChatMessage, type RouteChatMessage } from './chat';
 
 function timeToMinutes(value: string | null | undefined): number | null {
   if (!value) return null;
@@ -56,12 +57,6 @@ function getDestinationNote(destination: DestinationSummary): string | null {
   return null;
 }
 
-const prototypeChat = {
-  author: '佐藤',
-  body: '集合場所変更します',
-  time: '16:02',
-  priority: true,
-} as const;
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback;
@@ -80,6 +75,7 @@ function PhaseDashboard({ routeId }: { routeId: string }) {
   const [progressSavingId, setProgressSavingId] = useState<string | null>(null);
   const [progressError, setProgressError] = useState<string | null>(null);
   const [viewPhaseId, setViewPhaseId] = useState<string | null>(null);
+  const [latestChat, setLatestChat] = useState<RouteChatMessage | null>(null);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -100,6 +96,14 @@ function PhaseDashboard({ routeId }: { routeId: string }) {
         if (active) setPlanningLoading(false);
       });
 
+    return () => { active = false; };
+  }, [routeId]);
+
+  useEffect(() => {
+    let active = true;
+    void getLatestRouteChatMessage(routeId)
+      .then((message) => { if (active) setLatestChat(message); })
+      .catch(() => { if (active) setLatestChat(null); });
     return () => { active = false; };
   }, [routeId]);
 
@@ -421,13 +425,17 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
           </div>
           <Link className="v2-text-link" to={`/routes/${routeId}/chat`}>Chatを見る ›</Link>
         </div>
-        <div className={`v2-latest-message${prototypeChat.priority ? ' is-priority' : ''}`}>
-          <span className="v2-priority-mark" aria-hidden="true">!</span>
-          <div>
-            <div className="v2-message-meta"><strong>{prototypeChat.author}</strong><time>{prototypeChat.time}</time></div>
-            <p>{prototypeChat.body}</p>
+        {latestChat ? (
+          <div className={`v2-latest-message${latestChat.isImportant ? ' is-priority' : ''}`}>
+            {latestChat.isImportant ? <span className="v2-priority-mark" aria-hidden="true">!</span> : null}
+            <div>
+              <div className="v2-message-meta"><strong>{latestChat.authorName}</strong><time>{formatChatTime(latestChat.createdAt)}</time></div>
+              <p>{latestChat.body}</p>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="v2-latest-message is-empty"><p>まだ連絡はありません。</p></div>
+        )}
       </article>
     </>
   );

@@ -1,3 +1,9 @@
+## v2.1.0-p32
+
+- Route ChatをDB化
+- 一覧/送信/重要マーク/Route最新1件を追加
+- DB migration追加
+
 ## v2.1.0-p31
 
 - Routeに前後Phase手動切替を追加
