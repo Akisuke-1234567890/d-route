@@ -1,4 +1,4 @@
-# D Route v2.1.0-p30.3
+# D Route v2.1.0-p31
 
 ## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
@@ -345,4 +345,14 @@ NOW / NEXT baseline。
 - 予定超過・例外がある時だけ警告表示
 - 問題0件なら警告エリア非表示
 - 警告時のみPlacesで確認を表示
+- DB変更なし
+
+
+## v2.1.0-p31
+
+- Current Phase見出しに前後Phase切替を追加
+- 過去/未来PhaseをRoute上で手動表示可能
+- 手動表示中もDestinationの完了操作が可能
+- 手動表示時はVIEWING PHASEと現在Phaseへ戻るを表示
+- 通常時のCurrent Phase自動判定は維持
 - DB変更なし

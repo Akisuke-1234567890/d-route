@@ -79,6 +79,7 @@ function PhaseDashboard({ routeId }: { routeId: string }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [progressSavingId, setProgressSavingId] = useState<string | null>(null);
   const [progressError, setProgressError] = useState<string | null>(null);
+  const [viewPhaseId, setViewPhaseId] = useState<string | null>(null);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -111,10 +112,24 @@ function PhaseDashboard({ routeId }: { routeId: string }) {
     return () => window.clearInterval(timer);
   }, []);
 
-  const currentPhase = useMemo(
+  const autoCurrentPhase = useMemo(
     () => getCurrentPhase(phases, currentMinutes),
     [phases, currentMinutes]
   );
+
+  const currentPhase = useMemo(
+    () => viewPhaseId ? phases.find((phase) => phase.id === viewPhaseId) ?? autoCurrentPhase : autoCurrentPhase,
+    [autoCurrentPhase, phases, viewPhaseId]
+  );
+
+  const currentPhaseIndex = currentPhase ? phases.findIndex((phase) => phase.id === currentPhase.id) : -1;
+  const isManualPhase = Boolean(viewPhaseId && currentPhase?.id !== autoCurrentPhase?.id);
+  const showPreviousPhase = () => {
+    if (currentPhaseIndex > 0) setViewPhaseId(phases[currentPhaseIndex - 1].id);
+  };
+  const showNextPhase = () => {
+    if (currentPhaseIndex >= 0 && currentPhaseIndex < phases.length - 1) setViewPhaseId(phases[currentPhaseIndex + 1].id);
+  };
 
   const currentDestinations = useMemo(
     () => currentPhase
@@ -270,8 +285,13 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
       <article className="v2-phase-panel" aria-labelledby="v2-phase-title">
         <div className="v2-phase-heading">
           <div>
-            <p className="eyebrow">CURRENT PHASE</p>
-            <h2 id="v2-phase-title">{currentPhase?.name || 'Phase'}</h2>
+            <p className="eyebrow">{isManualPhase ? 'VIEWING PHASE' : 'CURRENT PHASE'}</p>
+            <div className="v2-phase-title-row">
+              <button className="v2-phase-nav-button" type="button" aria-label="前のPhase" disabled={currentPhaseIndex <= 0} onClick={showPreviousPhase}>‹</button>
+              <h2 id="v2-phase-title">{currentPhase?.name || 'Phase'}</h2>
+              <button className="v2-phase-nav-button" type="button" aria-label="次のPhase" disabled={currentPhaseIndex < 0 || currentPhaseIndex >= phases.length - 1} onClick={showNextPhase}>›</button>
+            </div>
+            {isManualPhase ? <button className="v2-phase-current-button" type="button" onClick={() => setViewPhaseId(null)}>現在Phaseへ戻る</button> : null}
           </div>
           {currentPhase ? (
             <div className="v2-phase-progress-wrap">

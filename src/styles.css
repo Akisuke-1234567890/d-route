@@ -1845,3 +1845,11 @@ a { color: inherit; }
 
 /* v2.1.0-p30.3 warnings only */
 .v2-route-alerts{display:grid;gap:7px;margin:10px 0 0}.v2-route-alerts .v2-today-warning-row{min-height:40px;padding:8px 12px;border-radius:12px}.v2-route-alerts-link{justify-self:end;color:var(--muted);font-size:.68rem;font-weight:800;text-decoration:none}
+
+
+/* v2.1.0-p31 manual Phase navigation */
+.v2-phase-title-row{display:flex;align-items:center;gap:8px;min-width:0}
+.v2-phase-title-row h2{min-width:0;margin:0}
+.v2-phase-nav-button{width:30px;height:30px;flex:0 0 30px;border:1px solid rgba(196,203,255,.14);border-radius:10px;background:rgba(196,203,255,.04);color:#eef0ff;font:inherit;font-size:1.15rem;line-height:1}
+.v2-phase-nav-button:disabled{opacity:.25}
+.v2-phase-current-button{margin-top:6px;min-height:27px;padding:0 9px;border:1px solid rgba(111,224,190,.18);border-radius:999px;background:rgba(111,224,190,.055);color:#b5f3dc;font:inherit;font-size:.61rem;font-weight:850}
