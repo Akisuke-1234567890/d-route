@@ -1994,3 +1994,13 @@ a { color: inherit; }
 .chat-send-button:disabled{
   color:rgba(255,255,255,.72) !important;
 }
+
+/* v2.1.0-p33.2 compact Route Chat */
+.v2-route-chat-preview{display:grid;border:1px solid rgba(196,203,255,.09);border-radius:14px;overflow:hidden;background:rgba(196,203,255,.018)}
+.v2-route-chat-line{min-width:0;padding:8px 11px 7px;border-top:1px solid rgba(196,203,255,.07)}
+.v2-route-chat-line:first-child{border-top:0}.v2-route-chat-line.is-priority{background:rgba(255,191,94,.035)}
+.v2-route-chat-meta{display:flex;align-items:center;gap:6px;min-width:0;font-size:.58rem;line-height:1.2}
+.v2-route-chat-meta strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:rgba(238,240,255,.82)}
+.v2-route-chat-meta time{margin-left:auto;flex:0 0 auto;color:rgba(194,199,229,.46)}
+.v2-route-chat-important{flex:0 0 auto;padding:1px 5px;border:1px solid rgba(255,191,94,.18);border-radius:999px;color:#ffd898;font-size:.52rem;font-weight:900}
+.v2-route-chat-line p{margin:3px 0 0;overflow:hidden;color:rgba(238,240,255,.76);font-size:.65rem;line-height:1.35;white-space:nowrap;text-overflow:ellipsis}

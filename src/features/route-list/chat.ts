@@ -42,17 +42,16 @@ export async function getRouteChatMessages(routeId: string): Promise<RouteChatMe
   return (data ?? []).map(mapMessage);
 }
 
-export async function getLatestRouteChatMessage(routeId: string): Promise<RouteChatMessage | null> {
+export async function getLatestRouteChatMessages(routeId: string, limit = 3): Promise<RouteChatMessage[]> {
   const supabase = requireSupabase();
   const { data, error } = await supabase
     .from('route_chat_messages')
     .select(columns)
     .eq('route_id', routeId)
     .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .limit(limit);
   if (error) throw error;
-  return data ? mapMessage(data) : null;
+  return (data ?? []).map(mapMessage).reverse();
 }
 
 export async function sendRouteChatMessage(
