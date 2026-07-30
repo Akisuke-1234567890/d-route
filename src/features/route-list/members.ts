@@ -36,3 +36,20 @@ export async function listRouteMembers(routeId: string): Promise<RouteMember[]> 
   if (error) throw error;
   return (data ?? []).map(mapMember);
 }
+
+
+export async function inviteRouteMemberByLoginId(routeId: string, loginId: string): Promise<RouteMember> {
+  const normalizedLoginId = loginId.trim().toLowerCase();
+  if (!normalizedLoginId) throw new Error('招待するログインIDを入力してください。');
+
+  const supabase = requireSupabase();
+  const { data, error } = await supabase.rpc('invite_route_member_by_login_id', {
+    p_route_id: routeId,
+    p_login_id: normalizedLoginId,
+  });
+  if (error) throw error;
+
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) throw new Error('招待結果を確認できませんでした。');
+  return mapMember(row);
+}

@@ -1,3 +1,8 @@
+## v2.1.0-p35
+
+- Membersにlogin_id招待を追加
+- Owner限定invite RPC追加
+
 ## v2.1.0-p34
 
 - Members DB foundation

@@ -1,4 +1,4 @@
-# D Route v2.1.0-p34
+# D Route v2.1.0-p35
 
 ## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
@@ -418,3 +418,12 @@ Chat UI / 操作仕上げ。
 - 新規Route作成時もOwner memberを自動作成
 - Members画面をprototype固定値からDB表示へ移行
 - 招待/参加回答/Chat RLS拡張は次工程
+
+
+## v2.1.0-p35
+
+- OwnerがMembers画面からログインIDでユーザーを招待可能
+- 招待されたユーザーはroute_membersへmember / unansweredで登録
+- user_profilesの直接公開はせずSecurity Definer RPC経由で検索
+- 自分自身への招待は拒否
+- 参加/不参加回答、参加者側Route表示、Chat RLS拡張は次工程

@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
 import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { RouteBottomNav } from './RouteBottomNav';
-import { listRouteMembers, type RouteMember, type RouteMemberStatus } from './members';
+import { inviteRouteMemberByLoginId, listRouteMembers, type RouteMember, type RouteMemberStatus } from './members';
 
 const labels: Record<RouteMemberStatus,string> = { participating:'参加', unanswered:'未回答', declined:'不参加' };
 
@@ -13,6 +13,11 @@ export function RouteMembersPage() {
   const [members, setMembers] = useState<RouteMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteLoginId, setInviteLoginId] = useState('');
+  const [inviteSaving, setInviteSaving] = useState(false);
+  const [inviteError, setInviteError] = useState('');
+
 
   useEffect(() => {
     let active = true;
@@ -24,11 +29,59 @@ export function RouteMembersPage() {
     return () => { active = false; };
   }, [routeId]);
 
+
+async function submitInvite(event: FormEvent<HTMLFormElement>) {
+  event.preventDefault();
+  if (inviteSaving) return;
+  setInviteSaving(true);
+  setInviteError('');
+  try {
+    const invited = await inviteRouteMemberByLoginId(routeId, inviteLoginId);
+    setMembers((current) => {
+      const exists = current.some((member) => member.id === invited.id || member.userId === invited.userId);
+      return exists ? current.map((member) => member.userId === invited.userId ? invited : member) : [...current, invited];
+    });
+    setInviteLoginId('');
+    setInviteOpen(false);
+  } catch (caught) {
+    setInviteError(caught instanceof Error ? caught.message : '招待できませんでした。');
+  } finally {
+    setInviteSaving(false);
+  }
+}
+
   const answered = members.filter((m) => m.status !== 'unanswered').length;
   return <main className="app-shell route-tab-shell">
     <header className="global-header"><div className="header-brand"><BrandMark size={34} /><strong>D Route</strong></div><div className="header-actions"><Link className="icon-button header-link" to="/routes">一覧へ戻る</Link><RefreshButton placement="header" /></div></header>
     <section className="page-content route-tab-content" aria-labelledby="members-title">
-      <div className="route-tab-heading"><div><p className="eyebrow">MEMBERS</p><h1 id="members-title">参加メンバー</h1><p>このRouteへの参加可否を確認します。</p></div><button className="primary-button route-tab-action" type="button" disabled title="招待機能は次工程で追加">＋ 招待</button></div>
+      <div className="route-tab-heading">
+        <div><p className="eyebrow">MEMBERS</p><h1 id="members-title">参加メンバー</h1><p>このRouteへの参加可否を確認します。</p></div>
+        <button className="primary-button route-tab-action" type="button" onClick={() => { setInviteError(''); setInviteOpen(true); }}>＋ 招待</button>
+      </div>
+      {inviteOpen ? (
+        <div className="member-invite-panel">
+          <div className="member-invite-heading">
+            <div><p className="eyebrow">INVITE</p><h2>ログインIDで招待</h2></div>
+            <button className="member-invite-close" type="button" aria-label="閉じる" onClick={() => setInviteOpen(false)}>×</button>
+          </div>
+          <form className="member-invite-form" onSubmit={submitInvite}>
+            <input
+              value={inviteLoginId}
+              onChange={(event) => setInviteLoginId(event.target.value)}
+              placeholder="login_id"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              maxLength={24}
+            />
+            <button className="primary-button" type="submit" disabled={!inviteLoginId.trim() || inviteSaving}>
+              {inviteSaving ? '招待中' : '招待する'}
+            </button>
+          </form>
+          <p className="member-invite-help">相手のD RouteログインIDを入力します。</p>
+          {inviteError ? <p className="member-invite-error" role="alert">{inviteError}</p> : null}
+        </div>
+      ) : null}
       {loading ? <p className="route-tab-demo-note">Membersを読み込んでいます。</p> : null}
       {error ? <p className="route-tab-demo-note" role="alert">{error}</p> : null}
       {!loading && !error ? <>
