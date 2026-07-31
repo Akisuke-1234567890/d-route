@@ -1,4 +1,4 @@
-# D Route v2.1.0-p48
+# D Route v2.1.0-p49
 
 ## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
@@ -548,3 +548,12 @@ Chat UI / 操作仕上げ。
 - Route名60文字、説明200文字上限
 - 他のMenu項目は未実装としてdisabled表示
 - DBにroutes.descriptionを追加
+
+
+## v2.1.0-p49
+
+- Route一覧カードからRoute説明を確認可能に変更
+- 説明があるRouteだけ「説明を見る」を表示
+- 説明は小型モーダルで表示し、Route実行画面には載せない
+- カード本体を押すと従来どおりRouteへ移動
+- DB変更なし（p48のdescriptionを利用）

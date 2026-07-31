@@ -27,6 +27,7 @@ export function RouteListPage({ onSignedOut }: { onSignedOut: () => void }) {
   const [routeName, setRouteName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [descriptionRoute, setDescriptionRoute] = useState<RouteSummary | null>(null);
   const routeNameInputRef = useRef<HTMLInputElement>(null);
 
   const recentRoutes = useMemo(
@@ -125,13 +126,25 @@ export function RouteListPage({ onSignedOut }: { onSignedOut: () => void }) {
 
             <div className="home-route-list">
               {recentRoutes.map((route) => (
-                <Link className="home-route-card" key={route.id} to={`/routes/${route.id}`} aria-label={`${route.name}を開く`}>
-                  <div className="home-route-card-copy">
-                    <h3>{route.name}</h3>
-                    <p>{formatUpdatedAt(route.updated_at)}</p>
-                  </div>
-                  <span className="home-route-chevron" aria-hidden="true">›</span>
-                </Link>
+                <article className="home-route-card" key={route.id}>
+                  <Link className="home-route-card-main" to={`/routes/${route.id}`} aria-label={`${route.name}を開く`}>
+                    <div className="home-route-card-copy">
+                      <h3>{route.name}</h3>
+                      <p>{formatUpdatedAt(route.updated_at)}</p>
+                    </div>
+                    <span className="home-route-chevron" aria-hidden="true">›</span>
+                  </Link>
+                  {route.description?.trim() ? (
+                    <button
+                      className="home-route-description-button"
+                      type="button"
+                      onClick={() => setDescriptionRoute(route)}
+                      aria-label={`${route.name}の説明を見る`}
+                    >
+                      説明を見る
+                    </button>
+                  ) : null}
+                </article>
               ))}
             </div>
 
@@ -147,6 +160,24 @@ export function RouteListPage({ onSignedOut }: { onSignedOut: () => void }) {
           <button className="home-footer-action" type="button" onClick={handleSignOut}>サインアウト</button>
         </div>
       </footer>
+
+      {descriptionRoute && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setDescriptionRoute(null); }}>
+          <section className="route-modal home-route-description-modal" role="dialog" aria-modal="true" aria-labelledby="route-description-title">
+            <div className="modal-header">
+              <div>
+                <p className="eyebrow">ROUTE INFO</p>
+                <h2 id="route-description-title">{descriptionRoute.name}</h2>
+              </div>
+              <button className="modal-close-button" type="button" onClick={() => setDescriptionRoute(null)} aria-label="閉じる">×</button>
+            </div>
+            <p className="home-route-description-text">{descriptionRoute.description}</p>
+            <div className="modal-actions">
+              <button className="primary-button" type="button" onClick={() => setDescriptionRoute(null)}>閉じる</button>
+            </div>
+          </section>
+        </div>
+      )}
 
       {isCreateOpen && (
         <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeCreateModal(); }}>
