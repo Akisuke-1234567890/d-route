@@ -399,7 +399,7 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
                             <button type="button" className={travelMode === 'driving' ? 'is-active' : ''} onClick={() => setTravelMode('driving')}>車</button>
                           </div>
                         ) : null}
-                        <div className="v2-route-actions">
+                        <div className="v2-route-actions is-single">
                           {getDestinationDirectionsUrl(destination, travelMode) ? (
                             <a
                               className="v2-map-button is-primary"
@@ -409,19 +409,7 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
                               aria-label={`現在地から${destination.name}までのルートを確認する`}
                             >
                               <span aria-hidden="true">➜</span>
-                              ここへ向かう
-                            </a>
-                          ) : null}
-                          {getDestinationMapUrl(destination) ? (
-                            <a
-                              className="v2-map-button is-map"
-                              href={getDestinationMapUrl(destination) ?? undefined}
-                              target="_blank"
-                              rel="noreferrer"
-                              aria-label={`${destination.name}を地図で開く`}
-                            >
-                              <span aria-hidden="true">↗</span>
-                              地図を見る
+                              ルートを見る
                             </a>
                           ) : null}
                         </div>

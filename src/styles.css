@@ -2271,3 +2271,13 @@ a { color: inherit; }
     font-size:.55rem;
   }
 }
+
+/* v2.1.0-p47 single route action */
+.v2-route-actions.is-single{
+  display:block;
+}
+.v2-route-actions.is-single .v2-map-button{
+  width:100%;
+  min-height:46px;
+  font-size:.72rem;
+}
