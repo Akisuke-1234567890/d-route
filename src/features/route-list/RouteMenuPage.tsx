@@ -11,7 +11,7 @@ import { useBodyScrollLock } from '../../shared/hooks/useBodyScrollLock';
 const items = [
   { key:'settings', icon:'⚙️', title:'Route設定', description:'名前・説明・基本情報を管理' },
   { key:'template', icon:'🧩', title:'テンプレート', description:'このRouteを再利用できる形で保存' },
-  { key:'share', icon:'🔗', title:'共有・招待', description:'参加用リンクや招待方法を確認' },
+  { key:'share', icon:'🔗', title:'メンバー・招待', description:'参加状況の確認やログインID招待' },
   { key:'duplicate', icon:'📄', title:'Routeを複製', description:'内容を引き継いだ新しいRouteを作成' },
   { key:'archive', icon:'📦', title:'完了・アーカイブ', description:'終了したRouteを整理' },
 ] as const;
@@ -110,14 +110,33 @@ async function handleSaveSettings() {
     <section className="page-content route-tab-content" aria-labelledby="menu-title">
       <div className="route-tab-heading"><div><p className="eyebrow">MENU</p><h1 id="menu-title">Route管理</h1><p>普段は触らない設定・共有・整理機能をまとめます。</p></div></div>
 
-      <div className="route-menu-list">{items.map((item)=><button
-        type="button"
-        className="route-menu-item"
-        key={item.key}
-        onClick={item.key === 'settings' ? openRouteSettings : undefined}
-        disabled={item.key === 'settings' ? !isOwner : true}
-        title={item.key === 'settings' && !isOwner ? 'Route設定はリーダーのみ変更できます。' : item.key !== 'settings' ? 'この機能は今後追加予定です。' : undefined}
-      ><span className="route-menu-icon" aria-hidden="true">{item.icon}</span><span><strong>{item.title}</strong><small>{item.description}</small></span><span aria-hidden="true">›</span></button>)}</div>
+      <div className="route-menu-list">{items.map((item) => {
+        const isSettings = item.key === 'settings';
+        const isShare = item.key === 'share';
+        const isAvailable = isSettings || isShare;
+        const isDisabled = isSettings ? !isOwner : !isAvailable;
+
+        return <button
+          type="button"
+          className="route-menu-item"
+          key={item.key}
+          onClick={() => {
+            if (isSettings) {
+              openRouteSettings();
+              return;
+            }
+            if (isShare) navigate(`/routes/${routeId}/members`);
+          }}
+          disabled={isDisabled}
+          title={
+            isSettings && !isOwner
+              ? 'Route設定はリーダーのみ変更できます。'
+              : !isAvailable
+                ? 'この機能は今後追加予定です。'
+                : undefined
+          }
+        ><span className="route-menu-icon" aria-hidden="true">{item.icon}</span><span><strong>{item.title}</strong><small>{item.description}</small></span><span aria-hidden="true">›</span></button>;
+      })}</div>
 
       {isOwner && route && (
         <section className="route-danger-zone" aria-labelledby="route-danger-title">

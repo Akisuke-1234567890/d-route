@@ -2408,3 +2408,6 @@ a { color: inherit; }
 .home-route-card.is-description-open .home-route-description-button{
   background:rgba(123,111,255,.075);
 }
+
+/* v2.1.0-p51 available Menu actions */
+.route-menu-item:not(:disabled):active{transform:translateY(1px);background:rgba(123,111,255,.075)}
