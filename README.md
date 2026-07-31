@@ -1,4 +1,4 @@
-# D Route v2.1.0-p45
+# D Route v2.1.0-p46
 
 ## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
@@ -519,4 +519,13 @@ Chat UI / 操作仕上げ。
 - Google Mapsへtravelmodeを渡して経路検索
 - 初期値は徒歩
 - 選択はその端末内のRoute画面で共通
+- DB変更なし
+
+
+## v2.1.0-p46
+
+- 「ここへ向かう」の挙動を変更
+- Google Mapsをいきなりナビ開始せず、現在地→Destinationのルート確認画面で開く
+- ルート確認後、Google Maps側の「開始」操作でナビを開始
+- 徒歩 / 公共交通 / 車の選択はそのまま反映
 - DB変更なし

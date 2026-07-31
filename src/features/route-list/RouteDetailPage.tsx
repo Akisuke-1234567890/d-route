@@ -70,7 +70,7 @@ function getDestinationDirectionsUrl(
 ): string | null {
   const destinationQuery = destination.locationName?.trim();
   if (!destinationQuery) return null;
-  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destinationQuery)}&travelmode=${travelMode}&dir_action=navigate`;
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destinationQuery)}&travelmode=${travelMode}`;
 }
 
 
@@ -406,7 +406,7 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
                               href={getDestinationDirectionsUrl(destination, travelMode) ?? undefined}
                               target="_blank"
                               rel="noreferrer"
-                              aria-label={`現在地から${destination.name}への経路を開く`}
+                              aria-label={`現在地から${destination.name}までのルートを確認する`}
                             >
                               <span aria-hidden="true">➜</span>
                               ここへ向かう
