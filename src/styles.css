@@ -2233,3 +2233,41 @@ a { color: inherit; }
 
 /* v2.1.0-p44 */
 .v2-card-meta{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0}.v2-card-meta .v2-attention-badge{margin:0}
+
+
+/* v2.1.0-p45 travel mode selector */
+.v2-travel-mode{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin:0 0 8px;
+}
+.v2-travel-mode button{
+  min-height:28px;
+  padding:0 10px;
+  border:1px solid rgba(196,203,255,.10);
+  border-radius:999px;
+  background:rgba(196,203,255,.025);
+  color:rgba(224,228,249,.58);
+  font:inherit;
+  font-size:.58rem;
+  font-weight:800;
+}
+.v2-travel-mode button.is-active{
+  border-color:rgba(255,181,76,.28);
+  background:rgba(255,181,76,.10);
+  color:#ffe2b3;
+}
+.v2-destination-card.is-completed .v2-travel-mode{
+  opacity:.64;
+}
+@media(max-width:420px){
+  .v2-travel-mode{
+    gap:5px;
+  }
+  .v2-travel-mode button{
+    min-height:26px;
+    padding:0 8px;
+    font-size:.55rem;
+  }
+}

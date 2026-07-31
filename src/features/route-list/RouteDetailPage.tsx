@@ -64,10 +64,13 @@ function getDestinationMapUrl(destination: DestinationSummary): string | null {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
 
-function getDestinationDirectionsUrl(destination: DestinationSummary): string | null {
+function getDestinationDirectionsUrl(
+  destination: DestinationSummary,
+  travelMode: 'driving' | 'walking' | 'transit'
+): string | null {
   const destinationQuery = destination.locationName?.trim();
   if (!destinationQuery) return null;
-  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destinationQuery)}&dir_action=navigate`;
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destinationQuery)}&travelmode=${travelMode}&dir_action=navigate`;
 }
 
 
@@ -86,6 +89,7 @@ function PhaseDashboard({ routeId }: { routeId: string }) {
   });
   const [activeIndex, setActiveIndex] = useState(0);
   const [progressSavingId, setProgressSavingId] = useState<string | null>(null);
+  const [travelMode, setTravelMode] = useState<'driving' | 'walking' | 'transit'>('walking');
   const [progressError, setProgressError] = useState<string | null>(null);
   const [viewPhaseId, setViewPhaseId] = useState<string | null>(null);
   const [latestChats, setLatestChats] = useState<RouteChatMessage[]>([]);
@@ -388,11 +392,18 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
                       </div>
 
                       <div className="v2-destination-actions">
+                        {getDestinationDirectionsUrl(destination, travelMode) ? (
+                          <div className="v2-travel-mode" aria-label="移動手段">
+                            <button type="button" className={travelMode === 'walking' ? 'is-active' : ''} onClick={() => setTravelMode('walking')}>徒歩</button>
+                            <button type="button" className={travelMode === 'transit' ? 'is-active' : ''} onClick={() => setTravelMode('transit')}>公共交通</button>
+                            <button type="button" className={travelMode === 'driving' ? 'is-active' : ''} onClick={() => setTravelMode('driving')}>車</button>
+                          </div>
+                        ) : null}
                         <div className="v2-route-actions">
-                          {getDestinationDirectionsUrl(destination) ? (
+                          {getDestinationDirectionsUrl(destination, travelMode) ? (
                             <a
                               className="v2-map-button is-primary"
-                              href={getDestinationDirectionsUrl(destination) ?? undefined}
+                              href={getDestinationDirectionsUrl(destination, travelMode) ?? undefined}
                               target="_blank"
                               rel="noreferrer"
                               aria-label={`現在地から${destination.name}への経路を開く`}

@@ -1,4 +1,4 @@
-# D Route v2.1.0-p44
+# D Route v2.1.0-p45
 
 ## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
@@ -509,4 +509,14 @@ Chat UI / 操作仕上げ。
 
 - 必須マークを番号直下へ移動
 - 右上を「○ 未完了 / ✓ 完了」に整理
+- DB変更なし
+
+
+## v2.1.0-p45
+
+- 「ここへ向かう」に移動手段選択を追加
+- 徒歩 / 公共交通 / 車をRoute画面で切替可能
+- Google Mapsへtravelmodeを渡して経路検索
+- 初期値は徒歩
+- 選択はその端末内のRoute画面で共通
 - DB変更なし
