@@ -2094,3 +2094,67 @@ a { color: inherit; }
     font-size:.62rem;
   }
 }
+
+
+/* v2.1.0-p42 route actions hierarchy */
+.v2-destination-actions{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:10px;
+  margin-top:14px;
+}
+.v2-route-actions{
+  display:grid;
+  grid-template-columns:minmax(0,1.25fr) minmax(0,.95fr);
+  gap:8px;
+  flex:1 1 auto;
+  min-width:0;
+}
+.v2-route-actions .v2-map-button{
+  min-height:44px;
+  padding:0 12px;
+  font-size:.69rem;
+}
+.v2-route-actions .v2-map-button.is-primary{
+  border-color:rgba(255,181,76,.42);
+  background:linear-gradient(180deg,rgba(255,181,76,.22),rgba(225,141,35,.13));
+  color:#ffe7bf;
+  box-shadow:0 0 0 1px rgba(255,181,76,.05) inset;
+}
+.v2-destination-actions>.v2-complete-button.is-compact{
+  flex:0 0 auto;
+  width:auto;
+  min-width:78px;
+  min-height:38px;
+  margin:0;
+  padding:0 12px;
+  border-radius:999px;
+  font-size:.66rem;
+  opacity:.88;
+}
+.v2-destination-actions>.v2-complete-button.is-compact:not(.is-completed){
+  border-color:rgba(154,164,205,.18);
+  background:rgba(154,164,205,.045);
+  color:rgba(230,233,250,.72);
+}
+.v2-destination-actions>.v2-complete-button.is-compact.is-completed{
+  border-color:rgba(111,224,190,.24);
+  background:rgba(111,224,190,.07);
+  color:#bdf5e1;
+}
+@media(max-width:420px){
+  .v2-destination-actions{gap:8px}
+  .v2-route-actions{gap:6px}
+  .v2-route-actions .v2-map-button{
+    min-height:42px;
+    padding:0 8px;
+    font-size:.64rem;
+  }
+  .v2-destination-actions>.v2-complete-button.is-compact{
+    min-width:68px;
+    min-height:36px;
+    padding:0 9px;
+    font-size:.62rem;
+  }
+}

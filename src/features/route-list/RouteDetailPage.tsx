@@ -377,39 +377,41 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
                       </div>
 
                       <div className="v2-destination-actions">
-                        {getDestinationDirectionsUrl(destination) ? (
-                          <a
-                            className="v2-map-button is-primary"
-                            href={getDestinationDirectionsUrl(destination) ?? undefined}
-                            target="_blank"
-                            rel="noreferrer"
-                            aria-label={`現在地から${destination.name}への経路を開く`}
-                          >
-                            <span aria-hidden="true">➜</span>
-                            ここへ向かう
-                          </a>
-                        ) : null}
-                        {getDestinationMapUrl(destination) ? (
-                          <a
-                            className="v2-map-button"
-                            href={getDestinationMapUrl(destination) ?? undefined}
-                            target="_blank"
-                            rel="noreferrer"
-                            aria-label={`${destination.name}を地図で開く`}
-                          >
-                            <span aria-hidden="true">↗</span>
-                            地図
-                          </a>
-                        ) : null}
+                        <div className="v2-route-actions">
+                          {getDestinationDirectionsUrl(destination) ? (
+                            <a
+                              className="v2-map-button is-primary"
+                              href={getDestinationDirectionsUrl(destination) ?? undefined}
+                              target="_blank"
+                              rel="noreferrer"
+                              aria-label={`現在地から${destination.name}への経路を開く`}
+                            >
+                              <span aria-hidden="true">➜</span>
+                              ここへ向かう
+                            </a>
+                          ) : null}
+                          {getDestinationMapUrl(destination) ? (
+                            <a
+                              className="v2-map-button"
+                              href={getDestinationMapUrl(destination) ?? undefined}
+                              target="_blank"
+                              rel="noreferrer"
+                              aria-label={`${destination.name}を地図で開く`}
+                            >
+                              <span aria-hidden="true">↗</span>
+                              地図を見る
+                            </a>
+                          ) : null}
+                        </div>
                         <button
-                          className={`v2-complete-button${destination.completedAt ? ' is-completed' : ''}`}
+                          className={`v2-complete-button is-compact${destination.completedAt ? ' is-completed' : ''}`}
                           type="button"
                           aria-pressed={Boolean(destination.completedAt)}
                           disabled={progressSavingId === destination.id}
                           onClick={() => void toggleDestinationCompleted(destination)}
                         >
                           <span aria-hidden="true">{destination.completedAt ? '✓' : '○'}</span>
-                          {progressSavingId === destination.id ? '保存中' : destination.completedAt ? '完了' : '完了にする'}
+                          {progressSavingId === destination.id ? '保存中' : '完了'}
                         </button>
                       </div>
                     </article>
