@@ -64,6 +64,12 @@ function getDestinationMapUrl(destination: DestinationSummary): string | null {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
 
+function getDestinationDirectionsUrl(destination: DestinationSummary): string | null {
+  const destinationQuery = destination.locationName?.trim();
+  if (!destinationQuery) return null;
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destinationQuery)}&dir_action=navigate`;
+}
+
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback;
@@ -371,6 +377,18 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
                       </div>
 
                       <div className="v2-destination-actions">
+                        {getDestinationDirectionsUrl(destination) ? (
+                          <a
+                            className="v2-map-button is-primary"
+                            href={getDestinationDirectionsUrl(destination) ?? undefined}
+                            target="_blank"
+                            rel="noreferrer"
+                            aria-label={`現在地から${destination.name}への経路を開く`}
+                          >
+                            <span aria-hidden="true">➜</span>
+                            ここへ向かう
+                          </a>
+                        ) : null}
                         {getDestinationMapUrl(destination) ? (
                           <a
                             className="v2-map-button"
@@ -380,7 +398,7 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
                             aria-label={`${destination.name}を地図で開く`}
                           >
                             <span aria-hidden="true">↗</span>
-                            地図で開く
+                            地図
                           </a>
                         ) : null}
                         <button
