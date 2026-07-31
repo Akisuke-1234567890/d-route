@@ -357,9 +357,8 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
                       aria-label={`${index + 1}/${currentDestinations.length} ${destination.name}`}
                     >
                       <div className="v2-card-topline">
-                        <span className="v2-card-count">{index + 1} / {currentDestinations.length}</span>
+                        <div className="v2-card-meta"><span className="v2-card-count">{index + 1} / {currentDestinations.length}</span>{destination.importance === 'must' ? <span className="v2-attention-badge">★ 必須</span> : null}</div>
                         <div className="v2-card-top-actions">
-                          {destination.importance === 'must' ? <span className="v2-attention-badge">★ 必須</span> : null}
                           <button
                             className={`v2-complete-button is-status${destination.completedAt ? ' is-completed' : ''}`}
                             type="button"
@@ -368,7 +367,7 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
                             onClick={() => void toggleDestinationCompleted(destination)}
                           >
                             <span aria-hidden="true">{destination.completedAt ? '✓' : '○'}</span>
-                            {progressSavingId === destination.id ? '保存中' : destination.completedAt ? '完了済み' : '完了'}
+                            {progressSavingId === destination.id ? '保存中' : destination.completedAt ? '完了' : '未完了'}
                           </button>
                         </div>
                       </div>

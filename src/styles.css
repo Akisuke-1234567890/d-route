@@ -2230,3 +2230,6 @@ a { color: inherit; }
   }
   .v2-route-actions{gap:7px}
 }
+
+/* v2.1.0-p44 */
+.v2-card-meta{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0}.v2-card-meta .v2-attention-badge{margin:0}
