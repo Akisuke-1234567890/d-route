@@ -2281,3 +2281,43 @@ a { color: inherit; }
   min-height:46px;
   font-size:.72rem;
 }
+
+
+/* v2.1.0-p48 Route settings */
+.route-menu-item:disabled{
+  opacity:.48;
+  cursor:default;
+}
+.route-settings-modal{
+  width:min(92vw,520px);
+}
+.route-settings-field{
+  display:grid;
+  gap:7px;
+  margin-top:14px;
+}
+.route-settings-field>span{
+  color:rgba(238,240,255,.86);
+  font-size:.72rem;
+  font-weight:800;
+}
+.route-settings-field input,
+.route-settings-field textarea{
+  width:100%;
+  box-sizing:border-box;
+  border:1px solid rgba(196,203,255,.14);
+  border-radius:12px;
+  background:rgba(7,10,28,.48);
+  color:#fff;
+  font:inherit;
+  padding:11px 12px;
+}
+.route-settings-field textarea{
+  resize:vertical;
+  min-height:100px;
+}
+.route-settings-field small{
+  justify-self:end;
+  color:rgba(194,199,229,.50);
+  font-size:.60rem;
+}

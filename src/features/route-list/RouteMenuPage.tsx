@@ -5,15 +5,15 @@ import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { getSupabaseClient } from '../../shared/api/supabase';
 import { RouteBottomNav } from './RouteBottomNav';
-import { deleteOwnedRoute, getRoute, type RouteSummary } from './routes';
+import { deleteOwnedRoute, getRoute, updateOwnedRouteSettings, type RouteSummary } from './routes';
 import { useBodyScrollLock } from '../../shared/hooks/useBodyScrollLock';
 
 const items = [
-  { icon:'⚙️', title:'Route設定', description:'名前・説明・基本情報を管理' },
-  { icon:'🧩', title:'テンプレート', description:'このRouteを再利用できる形で保存' },
-  { icon:'🔗', title:'共有・招待', description:'参加用リンクや招待方法を確認' },
-  { icon:'📄', title:'Routeを複製', description:'内容を引き継いだ新しいRouteを作成' },
-  { icon:'📦', title:'完了・アーカイブ', description:'終了したRouteを整理' },
+  { key:'settings', icon:'⚙️', title:'Route設定', description:'名前・説明・基本情報を管理' },
+  { key:'template', icon:'🧩', title:'テンプレート', description:'このRouteを再利用できる形で保存' },
+  { key:'share', icon:'🔗', title:'共有・招待', description:'参加用リンクや招待方法を確認' },
+  { key:'duplicate', icon:'📄', title:'Routeを複製', description:'内容を引き継いだ新しいRouteを作成' },
+  { key:'archive', icon:'📦', title:'完了・アーカイブ', description:'終了したRouteを整理' },
 ] as const;
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -28,8 +28,14 @@ export function RouteMenuPage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsName, setSettingsName] = useState('');
+  const [settingsDescription, setSettingsDescription] = useState('');
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [settingsError, setSettingsError] = useState('');
 
-  useBodyScrollLock(isDeleteOpen);
+
+  useBodyScrollLock(isDeleteOpen || settingsOpen);
 
   useEffect(() => {
     let active = true;
@@ -56,6 +62,33 @@ export function RouteMenuPage() {
     return () => { active = false; };
   }, [routeId]);
 
+
+function openRouteSettings() {
+  if (!route || !isOwner) return;
+  setSettingsName(route.name);
+  setSettingsDescription(route.description ?? '');
+  setSettingsError('');
+  setSettingsOpen(true);
+}
+
+async function handleSaveSettings() {
+  if (!route || !isOwner || settingsSaving) return;
+  setSettingsSaving(true);
+  setSettingsError('');
+  try {
+    const updated = await updateOwnedRouteSettings(route.id, {
+      name: settingsName,
+      description: settingsDescription,
+    });
+    setRoute(updated);
+    setSettingsOpen(false);
+  } catch (error) {
+    setSettingsError(getErrorMessage(error, 'Route設定を保存できませんでした。'));
+  } finally {
+    setSettingsSaving(false);
+  }
+}
+
   async function handleDeleteRoute() {
     if (!route || !isOwner || isDeleting) return;
 
@@ -77,7 +110,14 @@ export function RouteMenuPage() {
     <section className="page-content route-tab-content" aria-labelledby="menu-title">
       <div className="route-tab-heading"><div><p className="eyebrow">MENU</p><h1 id="menu-title">Route管理</h1><p>普段は触らない設定・共有・整理機能をまとめます。</p></div></div>
 
-      <div className="route-menu-list">{items.map((item)=><button type="button" className="route-menu-item" key={item.title}><span className="route-menu-icon" aria-hidden="true">{item.icon}</span><span><strong>{item.title}</strong><small>{item.description}</small></span><span aria-hidden="true">›</span></button>)}</div>
+      <div className="route-menu-list">{items.map((item)=><button
+        type="button"
+        className="route-menu-item"
+        key={item.key}
+        onClick={item.key === 'settings' ? openRouteSettings : undefined}
+        disabled={item.key === 'settings' ? !isOwner : true}
+        title={item.key === 'settings' && !isOwner ? 'Route設定はリーダーのみ変更できます。' : item.key !== 'settings' ? 'この機能は今後追加予定です。' : undefined}
+      ><span className="route-menu-icon" aria-hidden="true">{item.icon}</span><span><strong>{item.title}</strong><small>{item.description}</small></span><span aria-hidden="true">›</span></button>)}</div>
 
       {isOwner && route && (
         <section className="route-danger-zone" aria-labelledby="route-danger-title">
@@ -95,6 +135,41 @@ export function RouteMenuPage() {
 
     <footer className="app-footer"><VersionBadge/><span>Route Workspace</span></footer>
     <RouteBottomNav routeId={routeId}/>
+
+    {settingsOpen && route && isOwner && (
+      <div className="modal-backdrop" role="presentation">
+        <section className="route-modal route-settings-modal" role="dialog" aria-modal="true" aria-labelledby="route-settings-title">
+          <div className="modal-header">
+            <div>
+              <p className="eyebrow">ROUTE SETTINGS</p>
+              <h2 id="route-settings-title">Route設定</h2>
+            </div>
+            <button className="modal-close-button" type="button" onClick={() => setSettingsOpen(false)} aria-label="閉じる" disabled={settingsSaving}>×</button>
+          </div>
+
+          <label className="route-settings-field">
+            <span>Route名</span>
+            <input value={settingsName} maxLength={60} onChange={(event) => setSettingsName(event.target.value)} />
+            <small>{settingsName.length}/60</small>
+          </label>
+
+          <label className="route-settings-field">
+            <span>説明</span>
+            <textarea value={settingsDescription} maxLength={200} rows={4} onChange={(event) => setSettingsDescription(event.target.value)} placeholder="このRouteの目的や共有したい情報" />
+            <small>{settingsDescription.length}/200</small>
+          </label>
+
+          {settingsError && <div className="route-inline-error" role="alert">{settingsError}</div>}
+
+          <div className="modal-actions">
+            <button className="secondary-button" type="button" onClick={() => setSettingsOpen(false)} disabled={settingsSaving}>キャンセル</button>
+            <button className="primary-button" type="button" onClick={() => void handleSaveSettings()} disabled={settingsSaving || !settingsName.trim()}>
+              {settingsSaving ? '保存中…' : '保存'}
+            </button>
+          </div>
+        </section>
+      </div>
+    )}
 
     {isDeleteOpen && route && (
       <div className="modal-backdrop route-delete-backdrop" role="presentation">

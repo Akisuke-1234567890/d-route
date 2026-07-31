@@ -4,12 +4,13 @@ export type RouteSummary = {
   id: string;
   owner_user_id: string;
   name: string;
+  description: string | null;
   status: string;
   created_at: string;
   updated_at: string;
 };
 
-const routeSummaryColumns = 'id,owner_user_id,name,status,created_at,updated_at';
+const routeSummaryColumns = 'id,owner_user_id,name,description,status,created_at,updated_at';
 
 export async function listRoutes(): Promise<RouteSummary[]> {
   const supabase = getSupabaseClient();
@@ -81,4 +82,33 @@ export async function deleteOwnedRoute(routeId: string): Promise<void> {
   });
 
   if (error) throw error;
+}
+
+
+export async function updateOwnedRouteSettings(
+  routeId: string,
+  input: { name: string; description: string }
+): Promise<RouteSummary> {
+  const normalizedId = routeId.trim();
+  const normalizedName = input.name.trim();
+  const normalizedDescription = input.description.trim();
+
+  if (!normalizedId) throw new Error('Route IDを確認できませんでした。');
+  if (!normalizedName) throw new Error('Route名を入力してください。');
+  if (normalizedName.length > 60) throw new Error('Route名は60文字以内で入力してください。');
+  if (normalizedDescription.length > 200) throw new Error('説明は200文字以内で入力してください。');
+
+  const supabase = getSupabaseClient();
+  if (!supabase) throw new Error('Supabaseの環境変数が設定されていません。');
+
+  const { data, error } = await supabase.rpc('update_owned_route_settings', {
+    p_route_id: normalizedId,
+    p_name: normalizedName,
+    p_description: normalizedDescription || null,
+  });
+
+  if (error) throw error;
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) throw new Error('Route設定の保存結果を確認できませんでした。');
+  return row as RouteSummary;
 }

@@ -1,3 +1,8 @@
+## v2.1.0-p48
+
+- Menu Route設定を実装
+- routes.description追加
+
 ## v2.1.0-p47
 
 - Route操作を「ルートを見る」1ボタンへ統合

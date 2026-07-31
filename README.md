@@ -1,4 +1,4 @@
-# D Route v2.1.0-p47
+# D Route v2.1.0-p48
 
 ## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
@@ -539,3 +539,12 @@ Chat UI / 操作仕上げ。
 - 「ルートを見る」はカード横幅を使う主ボタンへ変更
 - Google Mapsではルート確認後にユーザーがナビ開始
 - DB変更なし
+
+
+## v2.1.0-p48
+
+- MenuのRoute設定を実装
+- OwnerがRoute名と説明を編集可能
+- Route名60文字、説明200文字上限
+- 他のMenu項目は未実装としてdisabled表示
+- DBにroutes.descriptionを追加
