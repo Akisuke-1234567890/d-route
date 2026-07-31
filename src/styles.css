@@ -2367,3 +2367,44 @@ a { color: inherit; }
   white-space:pre-wrap;
   overflow-wrap:anywhere;
 }
+
+/* v2.1.0-p50 inline Route description blind */
+.home-route-description-button{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+}
+.home-route-description-chevron{
+  font-size:.72rem;
+  line-height:1;
+  transition:transform .18s ease;
+}
+.home-route-description-blind{
+  display:grid;
+  grid-template-rows:0fr;
+  transition:grid-template-rows .22s ease, opacity .18s ease;
+  opacity:0;
+  border-top:1px solid transparent;
+}
+.home-route-description-blind.is-open{
+  grid-template-rows:1fr;
+  opacity:1;
+  border-top-color:rgba(196,203,255,.08);
+}
+.home-route-description-inner{
+  min-height:0;
+  overflow:hidden;
+}
+.home-route-description-inner p{
+  margin:0;
+  padding:13px 16px 16px;
+  color:rgba(235,238,255,.78);
+  font-size:.72rem;
+  line-height:1.7;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+}
+.home-route-card.is-description-open .home-route-description-button{
+  background:rgba(123,111,255,.075);
+}
