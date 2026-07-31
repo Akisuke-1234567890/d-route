@@ -2158,3 +2158,75 @@ a { color: inherit; }
     font-size:.62rem;
   }
 }
+
+
+/* v2.1.0-p43 completion status moved to card top */
+.v2-card-topline{
+  align-items:flex-start;
+}
+.v2-card-top-actions{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:7px;
+  min-width:0;
+}
+.v2-complete-button.is-status{
+  width:auto;
+  min-width:74px;
+  min-height:30px;
+  margin:0;
+  padding:0 9px;
+  border-radius:999px;
+  border:1px solid rgba(154,164,205,.18);
+  background:rgba(154,164,205,.045);
+  color:rgba(230,233,250,.72);
+  font-size:.61rem;
+  line-height:1;
+  opacity:.96;
+}
+.v2-complete-button.is-status.is-completed{
+  border-color:rgba(111,224,190,.30);
+  background:rgba(111,224,190,.085);
+  color:#bdf5e1;
+}
+.v2-destination-actions{
+  display:block;
+  margin-top:14px;
+}
+.v2-route-actions{
+  display:grid;
+  grid-template-columns:minmax(0,1.16fr) minmax(0,.84fr);
+  gap:9px;
+  width:100%;
+}
+.v2-route-actions .v2-map-button{
+  min-height:44px;
+}
+.v2-map-button.is-map{
+  border-color:rgba(68,196,255,.34);
+  background:linear-gradient(180deg,rgba(68,196,255,.16),rgba(52,118,255,.09));
+  color:#d2f2ff;
+}
+.v2-destination-card.is-completed{
+  filter:saturate(.68) brightness(.62);
+}
+.v2-destination-card.is-completed .v2-route-actions{
+  opacity:.68;
+}
+.v2-destination-card.is-completed .v2-attention-badge{
+  opacity:.48;
+}
+.v2-destination-card.is-completed .v2-complete-button.is-status{
+  filter:brightness(1.35) saturate(1.25);
+}
+@media(max-width:420px){
+  .v2-card-top-actions{gap:5px}
+  .v2-complete-button.is-status{
+    min-width:66px;
+    min-height:28px;
+    padding:0 7px;
+    font-size:.58rem;
+  }
+  .v2-route-actions{gap:7px}
+}

@@ -358,7 +358,19 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
                     >
                       <div className="v2-card-topline">
                         <span className="v2-card-count">{index + 1} / {currentDestinations.length}</span>
-                        {destination.importance === 'must' ? <span className="v2-attention-badge">★ 必須</span> : <span />}
+                        <div className="v2-card-top-actions">
+                          {destination.importance === 'must' ? <span className="v2-attention-badge">★ 必須</span> : null}
+                          <button
+                            className={`v2-complete-button is-status${destination.completedAt ? ' is-completed' : ''}`}
+                            type="button"
+                            aria-pressed={Boolean(destination.completedAt)}
+                            disabled={progressSavingId === destination.id}
+                            onClick={() => void toggleDestinationCompleted(destination)}
+                          >
+                            <span aria-hidden="true">{destination.completedAt ? '✓' : '○'}</span>
+                            {progressSavingId === destination.id ? '保存中' : destination.completedAt ? '完了済み' : '完了'}
+                          </button>
+                        </div>
                       </div>
 
                       <div className="v2-card-main">
@@ -392,7 +404,7 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
                           ) : null}
                           {getDestinationMapUrl(destination) ? (
                             <a
-                              className="v2-map-button"
+                              className="v2-map-button is-map"
                               href={getDestinationMapUrl(destination) ?? undefined}
                               target="_blank"
                               rel="noreferrer"
@@ -403,16 +415,6 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
                             </a>
                           ) : null}
                         </div>
-                        <button
-                          className={`v2-complete-button is-compact${destination.completedAt ? ' is-completed' : ''}`}
-                          type="button"
-                          aria-pressed={Boolean(destination.completedAt)}
-                          disabled={progressSavingId === destination.id}
-                          onClick={() => void toggleDestinationCompleted(destination)}
-                        >
-                          <span aria-hidden="true">{destination.completedAt ? '✓' : '○'}</span>
-                          {progressSavingId === destination.id ? '保存中' : '完了'}
-                        </button>
                       </div>
                     </article>
                   );
