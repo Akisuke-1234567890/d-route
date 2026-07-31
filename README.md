@@ -1,4 +1,4 @@
-# D Route v2.1.0-p39
+# D Route v2.1.0-p40
 
 ## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
@@ -463,3 +463,13 @@ Chat UI / 操作仕上げ。
 - Phaseの前後切替 / 現在Phaseへ戻る操作は端末内表示なのでmemberでもそのまま利用可能
 - Phase / Destinationの追加・編集・削除・並び替えなどRoute設計操作はOwner限定のまま
 - 未回答 / 不参加memberは完了操作不可
+
+
+## v2.1.0-p40
+
+- RouteのDestinationカードへ「地図で開く」を追加
+- location_nameがあるDestinationだけ地図導線を表示
+- map_urlが保存済みならそれを優先し、未設定ならlocation_nameを地図検索へ渡す
+- アプリ内ナビは持たず外部地図へ誘導するD Route方針
+- 地図導線追加後もカード高さを抑えるため完了ボタンと横並び
+- DB変更なし

@@ -2035,3 +2035,39 @@ a { color: inherit; }
 .member-response-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
 .member-response-actions .is-selected{outline:2px solid rgba(196,203,255,.28);outline-offset:1px}
 @media(max-width:420px){.member-response-actions{grid-template-columns:1fr}}
+
+
+/* v2.1.0-p40 external map guidance */
+.v2-destination-actions{
+  display:grid;
+  grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);
+  gap:8px;
+  margin-top:10px;
+}
+.v2-destination-actions>.v2-complete-button{
+  margin-top:0;
+  width:100%;
+}
+.v2-map-button{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  min-height:40px;
+  padding:0 10px;
+  border:1px solid rgba(196,203,255,.13);
+  border-radius:12px;
+  background:rgba(196,203,255,.035);
+  color:rgba(238,240,255,.82);
+  font-size:.68rem;
+  font-weight:800;
+  text-decoration:none;
+  white-space:nowrap;
+}
+.v2-map-button:active{
+  transform:translateY(1px);
+}
+@media(max-width:380px){
+  .v2-destination-actions{grid-template-columns:1fr 1fr;gap:6px}
+  .v2-map-button{padding:0 7px;font-size:.64rem}
+}

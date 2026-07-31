@@ -1,3 +1,8 @@
+## v2.1.0-p40
+
+- Destinationカードに外部地図導線を追加
+- DB変更なし
+
 ## v2.1.0-p39
 
 - participating memberへDestination完了操作を開放

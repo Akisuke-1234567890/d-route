@@ -57,6 +57,13 @@ function getDestinationNote(destination: DestinationSummary): string | null {
   return null;
 }
 
+function getDestinationMapUrl(destination: DestinationSummary): string | null {
+  if (destination.mapUrl) return destination.mapUrl;
+  const query = destination.locationName?.trim();
+  if (!query) return null;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback;
@@ -363,16 +370,30 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
                         {note ? <p className="v2-card-note">{note}</p> : <p className="v2-card-note is-empty">このPhase内で行う予定</p>}
                       </div>
 
-                      <button
-                        className={`v2-complete-button${destination.completedAt ? ' is-completed' : ''}`}
-                        type="button"
-                        aria-pressed={Boolean(destination.completedAt)}
-                        disabled={progressSavingId === destination.id}
-                        onClick={() => void toggleDestinationCompleted(destination)}
-                      >
-                        <span aria-hidden="true">{destination.completedAt ? '✓' : '○'}</span>
-                        {progressSavingId === destination.id ? '保存中' : destination.completedAt ? '完了' : '完了にする'}
-                      </button>
+                      <div className="v2-destination-actions">
+                        {getDestinationMapUrl(destination) ? (
+                          <a
+                            className="v2-map-button"
+                            href={getDestinationMapUrl(destination) ?? undefined}
+                            target="_blank"
+                            rel="noreferrer"
+                            aria-label={`${destination.name}を地図で開く`}
+                          >
+                            <span aria-hidden="true">↗</span>
+                            地図で開く
+                          </a>
+                        ) : null}
+                        <button
+                          className={`v2-complete-button${destination.completedAt ? ' is-completed' : ''}`}
+                          type="button"
+                          aria-pressed={Boolean(destination.completedAt)}
+                          disabled={progressSavingId === destination.id}
+                          onClick={() => void toggleDestinationCompleted(destination)}
+                        >
+                          <span aria-hidden="true">{destination.completedAt ? '✓' : '○'}</span>
+                          {progressSavingId === destination.id ? '保存中' : destination.completedAt ? '完了' : '完了にする'}
+                        </button>
+                      </div>
                     </article>
                   );
                 })}
