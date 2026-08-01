@@ -136,7 +136,7 @@ export async function duplicateOwnedRoute(routeId: string, name: string): Promis
   return row as RouteSummary;
 }
 
-export type BuiltInTemplateKey = 'touring' | 'day_drive' | 'errands' | 'day_trip' | 'event' | 'sports';
+export type BuiltInTemplateKey = 'touring' | 'day_drive' | 'day_trip' | 'event';
 
 export async function createRouteFromBuiltInTemplate(templateKey: BuiltInTemplateKey, name: string): Promise<RouteSummary> {
   const normalizedName = name.trim();

@@ -18,10 +18,8 @@ const items = [
 const builtInTemplates: Array<{ key: BuiltInTemplateKey; icon: string; name: string; description: string }> = [
   { key:'touring', icon:'🏍️', name:'ツーリング', description:'集合・休憩・食事・給油・目的地・帰路' },
   { key:'day_drive', icon:'🚗', name:'日帰りドライブ', description:'出発・立ち寄り・昼食・観光・帰宅' },
-  { key:'errands', icon:'🛍️', name:'買い物・用事回り', description:'複数の店舗や用事を順番に回る' },
-  { key:'day_trip', icon:'🧳', name:'旅行1日プラン', description:'朝・午前・昼・午後・夜の流れ' },
+  { key:'day_trip', icon:'🧳', name:'旅行・お出かけ', description:'集合・午前・昼食・午後・宿泊または帰宅' },
   { key:'event', icon:'🎫', name:'イベント参加', description:'集合・入場・メイン予定・食事・解散' },
-  { key:'sports', icon:'⛳', name:'ゴルフ・スポーツ', description:'集合・受付・開始・終了・解散' },
 ];
 
 
