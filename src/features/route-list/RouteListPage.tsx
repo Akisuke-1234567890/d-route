@@ -40,6 +40,7 @@ export function RouteListPage({ onSignedOut }: { onSignedOut: () => void }) {
   const [loading, setLoading] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [routeName, setRouteName] = useState('');
+  const [routeDescription, setRouteDescription] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [createMode, setCreateMode] = useState<CreateMode>('blank');
   const [selectedTemplateKey, setSelectedTemplateKey] = useState<BuiltInTemplateKey>('touring');
@@ -216,6 +217,7 @@ async function handleDeleteRoute() {
 
   function openCreateModal() {
     setRouteName('');
+    setRouteDescription('');
     setCreateMode('blank');
     setSelectedTemplateKey('touring');
     setIsCreateOpen(true);
@@ -225,6 +227,7 @@ async function handleDeleteRoute() {
     if (isCreating) return;
     setIsCreateOpen(false);
     setRouteName('');
+    setRouteDescription('');
     setCreateMode('blank');
     setSelectedTemplateKey('touring');
   }
@@ -252,11 +255,12 @@ async function handleDeleteRoute() {
     setIsCreating(true);
     try {
       const newRoute = createMode === 'template'
-        ? await createRouteFromBuiltInTemplate(selectedTemplateKey, normalizedName)
-        : await createRoute(normalizedName);
+        ? await createRouteFromBuiltInTemplate(selectedTemplateKey, normalizedName, routeDescription)
+        : await createRoute(normalizedName, routeDescription);
       setRoutes((current) => [newRoute, ...current.filter((route) => route.id !== newRoute.id)]);
       setIsCreateOpen(false);
       setRouteName('');
+      setRouteDescription('');
       setCreateMode('blank');
       setSelectedTemplateKey('touring');
     } catch (error) {
@@ -546,6 +550,20 @@ async function handleDeleteRoute() {
                   required
                 />
                 <p className="field-hint">60文字まで。あとから変更できます。</p>
+              </div>
+              <div className="field-group">
+                <label htmlFor="route-description">説明 <span className="route-create-optional">任意</span></label>
+                <textarea
+                  id="route-description"
+                  name="route-description"
+                  value={routeDescription}
+                  onChange={(event) => setRouteDescription(event.target.value)}
+                  placeholder="例：途中から合流あり／帰りは自由解散"
+                  maxLength={200}
+                  rows={4}
+                  disabled={isCreating}
+                />
+                <p className="field-hint">{routeDescription.length}/200文字。あとからRoute設定で変更できます。</p>
               </div>
               <div className="modal-actions">
                 <button className="secondary-button" type="button" onClick={closeCreateModal} disabled={isCreating}>キャンセル</button>

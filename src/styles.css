@@ -2828,3 +2828,24 @@ a { color: inherit; }
     min-height:82px;
   }
 }
+
+
+/* v2.1.0-p63 Route create description */
+.route-create-form textarea{
+  width:100%;
+  box-sizing:border-box;
+  min-height:96px;
+  resize:vertical;
+  border:1px solid rgba(196,203,255,.14);
+  border-radius:12px;
+  background:rgba(7,10,28,.48);
+  color:#fff;
+  font:inherit;
+  padding:11px 12px;
+}
+.route-create-optional{
+  margin-left:6px;
+  color:rgba(211,216,241,.48);
+  font-size:.58rem;
+  font-weight:700;
+}

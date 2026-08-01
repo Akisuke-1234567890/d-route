@@ -46,9 +46,13 @@ export async function getRoute(id: string): Promise<RouteSummary> {
   return data as RouteSummary;
 }
 
-export async function createRoute(name: string): Promise<RouteSummary> {
+export async function createRoute(name: string, description = ''): Promise<RouteSummary> {
   const normalizedName = name.trim();
+  const normalizedDescription = description.trim();
+
   if (!normalizedName) throw new Error('Route名を入力してください。');
+  if (normalizedName.length > 60) throw new Error('Route名は60文字以内で入力してください。');
+  if (normalizedDescription.length > 200) throw new Error('説明は200文字以内で入力してください。');
 
   const supabase = getSupabaseClient();
   if (!supabase) throw new Error('Supabaseの環境変数が設定されていません。');
@@ -61,7 +65,8 @@ export async function createRoute(name: string): Promise<RouteSummary> {
     .from('routes')
     .insert({
       owner_user_id: authData.user.id,
-      name: normalizedName
+      name: normalizedName,
+      description: normalizedDescription || null,
     })
     .select(routeSummaryColumns)
     .single();
@@ -139,14 +144,25 @@ export async function duplicateOwnedRoute(routeId: string, name: string): Promis
 
 export type BuiltInTemplateKey = 'touring' | 'day_drive' | 'day_trip' | 'event';
 
-export async function createRouteFromBuiltInTemplate(templateKey: BuiltInTemplateKey, name: string): Promise<RouteSummary> {
+export async function createRouteFromBuiltInTemplate(
+  templateKey: BuiltInTemplateKey,
+  name: string,
+  description = ''
+): Promise<RouteSummary> {
   const normalizedName = name.trim();
+  const normalizedDescription = description.trim();
+
   if (!normalizedName) throw new Error('新しいRoute名を入力してください。');
   if (normalizedName.length > 60) throw new Error('Route名は60文字以内で入力してください。');
+  if (normalizedDescription.length > 200) throw new Error('説明は200文字以内で入力してください。');
+
   const supabase = getSupabaseClient();
   if (!supabase) throw new Error('Supabaseの環境変数が設定されていません。');
+
   const { data, error } = await supabase.rpc('create_route_from_builtin_template', {
-    p_template_key: templateKey, p_name: normalizedName,
+    p_template_key: templateKey,
+    p_name: normalizedName,
+    p_description: normalizedDescription || null,
   });
   if (error) throw error;
   const row = Array.isArray(data) ? data[0] : data;
