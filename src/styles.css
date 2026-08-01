@@ -2533,3 +2533,74 @@ a { color: inherit; }
 @media (prefers-reduced-motion: reduce){
   .home-route-swipe-panel{transition:none}
 }
+
+
+/* v2.1.0-p57 swipe affordance and hidden delete layer */
+.home-route-swipe-delete{
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transform:translateX(16px);
+  transition:
+    opacity .14s ease,
+    transform .18s ease,
+    visibility 0s linear .18s;
+}
+
+.home-route-swipe-shell.is-open .home-route-swipe-delete{
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
+  transform:translateX(0);
+  transition:
+    opacity .14s ease,
+    transform .18s ease,
+    visibility 0s;
+}
+
+.home-route-swipe-hint{
+  flex:0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  min-width:58px;
+  color:rgba(190,177,255,.62);
+  line-height:1;
+  pointer-events:none;
+  user-select:none;
+  -webkit-user-select:none;
+}
+
+.home-route-swipe-hint b{
+  font-size:1.38rem;
+  font-weight:500;
+  letter-spacing:-.18em;
+  transform:translateY(-1px);
+}
+
+.home-route-swipe-hint i{
+  font-size:1rem;
+  font-style:normal;
+  letter-spacing:.08em;
+  opacity:.72;
+}
+
+.home-route-swipe-shell.is-open .home-route-swipe-hint{
+  opacity:.25;
+}
+
+@media(max-width:420px){
+  .home-route-swipe-hint{
+    min-width:52px;
+    gap:4px;
+  }
+
+  .home-route-swipe-hint b{
+    font-size:1.25rem;
+  }
+
+  .home-route-swipe-hint i{
+    font-size:.92rem;
+  }
+}

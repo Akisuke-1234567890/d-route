@@ -257,7 +257,7 @@ async function handleDeleteRoute() {
                           <h3>{route.name}</h3>
                           <p>{formatUpdatedAt(route.updated_at)}</p>
                         </div>
-                        <span className="home-route-chevron" aria-hidden="true">›</span>
+                        <span className="home-route-swipe-hint" aria-hidden="true"><b>≪</b><i>⋯</i></span>
                       </Link>
                       {route.description?.trim() ? (
                         <>
