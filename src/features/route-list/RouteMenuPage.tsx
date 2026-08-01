@@ -5,7 +5,7 @@ import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { getSupabaseClient } from '../../shared/api/supabase';
 import { RouteBottomNav } from './RouteBottomNav';
-import { deleteOwnedRoute, getRoute, updateOwnedRouteSettings, type RouteSummary } from './routes';
+import { deleteOwnedRoute, duplicateOwnedRoute, getRoute, updateOwnedRouteSettings, type RouteSummary } from './routes';
 import { useBodyScrollLock } from '../../shared/hooks/useBodyScrollLock';
 
 const items = [
@@ -32,9 +32,14 @@ export function RouteMenuPage() {
   const [settingsDescription, setSettingsDescription] = useState('');
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsError, setSettingsError] = useState('');
+  const [duplicateOpen, setDuplicateOpen] = useState(false);
+  const [duplicateName, setDuplicateName] = useState('');
+  const [duplicateSaving, setDuplicateSaving] = useState(false);
+  const [duplicateError, setDuplicateError] = useState('');
 
 
-  useBodyScrollLock(isDeleteOpen || settingsOpen);
+
+  useBodyScrollLock(isDeleteOpen || settingsOpen || duplicateOpen);
 
   useEffect(() => {
     let active = true;
@@ -88,6 +93,31 @@ async function handleSaveSettings() {
   }
 }
 
+
+function openDuplicateRoute() {
+  if (!route || !isOwner) return;
+  const suffix = '（コピー）';
+  const baseName = route.name.endsWith(suffix) ? route.name : `${route.name}${suffix}`;
+  setDuplicateName(baseName.slice(0, 60));
+  setDuplicateError('');
+  setDuplicateOpen(true);
+}
+
+async function handleDuplicateRoute() {
+  if (!route || !isOwner || duplicateSaving) return;
+  setDuplicateSaving(true);
+  setDuplicateError('');
+  try {
+    const duplicated = await duplicateOwnedRoute(route.id, duplicateName);
+    setDuplicateOpen(false);
+    navigate(`/routes/${duplicated.id}`);
+  } catch (error) {
+    setDuplicateError(getErrorMessage(error, 'Routeを複製できませんでした。'));
+  } finally {
+    setDuplicateSaving(false);
+  }
+}
+
   async function handleDeleteRoute() {
     if (!route || !isOwner || isDeleting) return;
 
@@ -111,16 +141,21 @@ async function handleSaveSettings() {
 
       <div className="route-menu-list">{items.map((item) => {
         const isSettings = item.key === 'settings';
+        const isDuplicate = item.key === 'duplicate';
+        const isAvailable = isSettings || isDuplicate;
         return <button
           type="button"
           className="route-menu-item"
           key={item.key}
-          onClick={isSettings ? openRouteSettings : undefined}
-          disabled={isSettings ? !isOwner : true}
+          onClick={() => {
+            if (isSettings) openRouteSettings();
+            if (isDuplicate) openDuplicateRoute();
+          }}
+          disabled={isAvailable ? !isOwner : true}
           title={
-            isSettings && !isOwner
-              ? 'Route設定はリーダーのみ変更できます。'
-              : !isSettings
+            isAvailable && !isOwner
+              ? 'この操作はリーダーのみ利用できます。'
+              : !isAvailable
                 ? 'この機能は今後追加予定です。'
                 : undefined
           }
@@ -173,6 +208,39 @@ async function handleSaveSettings() {
             <button className="secondary-button" type="button" onClick={() => setSettingsOpen(false)} disabled={settingsSaving}>キャンセル</button>
             <button className="primary-button" type="button" onClick={() => void handleSaveSettings()} disabled={settingsSaving || !settingsName.trim()}>
               {settingsSaving ? '保存中…' : '保存'}
+            </button>
+          </div>
+        </section>
+      </div>
+    )}
+
+    {duplicateOpen && route && isOwner && (
+      <div className="modal-backdrop" role="presentation">
+        <section className="route-modal route-duplicate-modal" role="dialog" aria-modal="true" aria-labelledby="duplicate-route-title">
+          <div className="modal-header">
+            <div>
+              <p className="eyebrow">DUPLICATE ROUTE</p>
+              <h2 id="duplicate-route-title">Routeを複製</h2>
+            </div>
+            <button className="modal-close-button" type="button" onClick={() => setDuplicateOpen(false)} aria-label="閉じる" disabled={duplicateSaving}>×</button>
+          </div>
+
+          <p className="route-duplicate-description">
+            PhaseとDestinationを新しいRouteへコピーします。完了状態・Chat・Membersは引き継ぎません。
+          </p>
+
+          <label className="route-settings-field">
+            <span>新しいRoute名</span>
+            <input value={duplicateName} maxLength={60} onChange={(event) => setDuplicateName(event.target.value)} />
+            <small>{duplicateName.length}/60</small>
+          </label>
+
+          {duplicateError && <div className="route-inline-error" role="alert">{duplicateError}</div>}
+
+          <div className="modal-actions">
+            <button className="secondary-button" type="button" onClick={() => setDuplicateOpen(false)} disabled={duplicateSaving}>キャンセル</button>
+            <button className="primary-button" type="button" onClick={() => void handleDuplicateRoute()} disabled={duplicateSaving || !duplicateName.trim()}>
+              {duplicateSaving ? '複製中…' : '複製する'}
             </button>
           </div>
         </section>

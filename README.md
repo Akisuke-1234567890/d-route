@@ -1,4 +1,4 @@
-# D Route v2.1.0-p52
+# D Route v2.1.0-p53
 
 ## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
@@ -585,3 +585,13 @@ Chat UI / 操作仕上げ。
 - 招待・参加状況確認はMembersタブから行う
 - MenuはRoute設定、テンプレート、複製、アーカイブなど管理機能に限定
 - DB変更なし
+
+
+## v2.1.0-p53
+
+- Menuの「Routeを複製」を実装
+- 複製後のRoute名を確認・変更して作成可能
+- Route説明、Phase、Destinationをコピー
+- Destinationの場所・時間・必須/任意・並び順を維持
+- 完了状態、Chat、招待済みMembersはコピーしない
+- 複製後は新しいRouteを自動的に開く

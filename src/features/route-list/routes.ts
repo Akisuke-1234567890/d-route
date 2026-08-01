@@ -112,3 +112,26 @@ export async function updateOwnedRouteSettings(
   if (!row) throw new Error('Route設定の保存結果を確認できませんでした。');
   return row as RouteSummary;
 }
+
+
+export async function duplicateOwnedRoute(routeId: string, name: string): Promise<RouteSummary> {
+  const normalizedId = routeId.trim();
+  const normalizedName = name.trim();
+
+  if (!normalizedId) throw new Error('Route IDを確認できませんでした。');
+  if (!normalizedName) throw new Error('複製後のRoute名を入力してください。');
+  if (normalizedName.length > 60) throw new Error('Route名は60文字以内で入力してください。');
+
+  const supabase = getSupabaseClient();
+  if (!supabase) throw new Error('Supabaseの環境変数が設定されていません。');
+
+  const { data, error } = await supabase.rpc('duplicate_owned_route', {
+    p_route_id: normalizedId,
+    p_name: normalizedName,
+  });
+
+  if (error) throw error;
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) throw new Error('複製したRouteを確認できませんでした。');
+  return row as RouteSummary;
+}

@@ -2411,3 +2411,15 @@ a { color: inherit; }
 
 /* v2.1.0-p51 available Menu actions */
 .route-menu-item:not(:disabled):active{transform:translateY(1px);background:rgba(123,111,255,.075)}
+
+
+/* v2.1.0-p53 Route duplicate */
+.route-duplicate-modal{
+  width:min(92vw,520px);
+}
+.route-duplicate-description{
+  margin:12px 0 2px;
+  color:rgba(221,225,246,.68);
+  font-size:.72rem;
+  line-height:1.65;
+}
