@@ -2680,3 +2680,7 @@ a { color: inherit; }
     animation-duration:.01ms;
   }
 }
+
+
+/* v2.1.0-p59 rounded swipe delete action */
+.home-route-swipe-delete{border-radius:18px;}
