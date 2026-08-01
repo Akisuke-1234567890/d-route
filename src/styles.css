@@ -2604,3 +2604,79 @@ a { color: inherit; }
     font-size:.92rem;
   }
 }
+
+
+/* v2.1.0-p58 centered animated delete confirmation */
+.route-list-delete-backdrop{
+  display:grid;
+  place-items:center;
+  align-items:center;
+  justify-items:center;
+  padding:
+    max(20px, env(safe-area-inset-top))
+    18px
+    max(20px, env(safe-area-inset-bottom));
+  opacity:0;
+  animation:routeDeleteBackdropIn .20s ease forwards;
+}
+
+.route-list-delete-backdrop.is-closing{
+  pointer-events:none;
+  animation:routeDeleteBackdropOut .18s ease forwards;
+}
+
+.route-list-delete-modal{
+  margin:0;
+  max-height:calc(100dvh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  overflow:auto;
+  opacity:0;
+  transform:translateY(10px) scale(.965);
+  transform-origin:center;
+  animation:routeDeleteModalIn .22s cubic-bezier(.2,.8,.2,1) forwards;
+}
+
+.route-list-delete-modal.is-closing{
+  pointer-events:none;
+  animation:routeDeleteModalOut .18s cubic-bezier(.4,0,1,1) forwards;
+}
+
+@keyframes routeDeleteBackdropIn{
+  from{opacity:0}
+  to{opacity:1}
+}
+
+@keyframes routeDeleteBackdropOut{
+  from{opacity:1}
+  to{opacity:0}
+}
+
+@keyframes routeDeleteModalIn{
+  from{
+    opacity:0;
+    transform:translateY(10px) scale(.965);
+  }
+  to{
+    opacity:1;
+    transform:translateY(0) scale(1);
+  }
+}
+
+@keyframes routeDeleteModalOut{
+  from{
+    opacity:1;
+    transform:translateY(0) scale(1);
+  }
+  to{
+    opacity:0;
+    transform:translateY(7px) scale(.97);
+  }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .route-list-delete-backdrop,
+  .route-list-delete-backdrop.is-closing,
+  .route-list-delete-modal,
+  .route-list-delete-modal.is-closing{
+    animation-duration:.01ms;
+  }
+}

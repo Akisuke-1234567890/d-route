@@ -33,6 +33,7 @@ export function RouteListPage({ onSignedOut }: { onSignedOut: () => void }) {
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [deleteTarget, setDeleteTarget] = useState<RouteSummary | null>(null);
   const [isDeletingRoute, setIsDeletingRoute] = useState(false);
+  const [isDeleteClosing, setIsDeleteClosing] = useState(false);
   const swipeStartXRef = useRef(0);
   const swipeStartOffsetRef = useRef(0);
   const activeSwipeRouteIdRef = useRef<string | null>(null);
@@ -122,23 +123,33 @@ function shouldSuppressRouteClick() {
 
 function requestDeleteRoute(route: RouteSummary) {
   closeSwipe();
+  setIsDeleteClosing(false);
   setDeleteTarget(route);
 }
 
 function closeDeleteConfirmation() {
-  if (isDeletingRoute) return;
-  setDeleteTarget(null);
+  if (isDeletingRoute || isDeleteClosing) return;
+  setIsDeleteClosing(true);
+  window.setTimeout(() => {
+    setDeleteTarget(null);
+    setIsDeleteClosing(false);
+  }, 180);
 }
 
 async function handleDeleteRoute() {
   if (!deleteTarget || isDeletingRoute) return;
   setIsDeletingRoute(true);
   try {
-    await deleteOwnedRoute(deleteTarget.id);
-    setRoutes((current) => current.filter((route) => route.id !== deleteTarget.id));
-    setExpandedDescriptionId((current) => current === deleteTarget.id ? null : current);
-    setDeleteTarget(null);
-    setToast(`「${deleteTarget.name}」を削除しました。`);
+    const deletedRoute = deleteTarget;
+    await deleteOwnedRoute(deletedRoute.id);
+    setRoutes((current) => current.filter((route) => route.id !== deletedRoute.id));
+    setExpandedDescriptionId((current) => current === deletedRoute.id ? null : current);
+    setToast(`「${deletedRoute.name}」を削除しました。`);
+    setIsDeleteClosing(true);
+    window.setTimeout(() => {
+      setDeleteTarget(null);
+      setIsDeleteClosing(false);
+    }, 180);
   } catch (error) {
     setToast(getErrorMessage(error, 'Routeを削除できませんでした。リーダー権限を確認してください。'));
   } finally {
@@ -310,13 +321,13 @@ async function handleDeleteRoute() {
 
       {deleteTarget && (
         <div
-          className="modal-backdrop"
+          className={`modal-backdrop route-list-delete-backdrop${isDeleteClosing ? ' is-closing' : ''}`}
           role="presentation"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) closeDeleteConfirmation();
           }}
         >
-          <section className="route-modal route-list-delete-modal" role="dialog" aria-modal="true" aria-labelledby="route-list-delete-title">
+          <section className={`route-modal route-list-delete-modal${isDeleteClosing ? ' is-closing' : ''}`} role="dialog" aria-modal="true" aria-labelledby="route-list-delete-title">
             <div className="route-list-delete-icon" aria-hidden="true">!</div>
             <h2 id="route-list-delete-title">本当に削除しますか？</h2>
             <p className="route-list-delete-name">「{deleteTarget.name}」</p>
