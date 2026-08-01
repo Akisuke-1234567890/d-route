@@ -2435,3 +2435,101 @@ a { color: inherit; }
 .route-template-card strong{font-size:.75rem}
 .route-template-card small{color:rgba(211,216,241,.58);font-size:.60rem;line-height:1.45}
 @media(max-width:520px){.route-template-grid{grid-template-columns:1fr}.route-template-card{min-height:68px}}
+
+
+/* v2.1.0-p56 full-swipe Route delete */
+.home-route-swipe-shell{
+  position:relative;
+  overflow:hidden;
+  border-radius:18px;
+}
+.home-route-swipe-delete{
+  position:absolute;
+  inset:0 0 0 auto;
+  width:96px;
+  border:0;
+  border-radius:0 18px 18px 0;
+  background:linear-gradient(160deg,#ff514b,#d91f28);
+  color:#fff;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  font:inherit;
+  box-shadow:inset 1px 0 rgba(255,255,255,.12);
+}
+.home-route-swipe-delete span{
+  font-size:1.28rem;
+  line-height:1;
+  transform:rotate(180deg);
+}
+.home-route-swipe-delete strong{
+  font-size:.68rem;
+}
+.home-route-swipe-panel{
+  position:relative;
+  z-index:1;
+  width:100%;
+  box-sizing:border-box;
+  touch-action:pan-y;
+  user-select:none;
+  -webkit-user-select:none;
+  transition:transform .19s cubic-bezier(.2,.8,.2,1);
+  will-change:transform;
+}
+.home-route-swipe-panel:active{
+  transform:none;
+}
+.home-route-swipe-shell.is-open .home-route-swipe-panel{
+  box-shadow:0 14px 34px rgba(0,0,0,.24);
+}
+.route-list-delete-modal{
+  width:min(90vw,450px);
+  text-align:center;
+}
+.route-list-delete-icon{
+  width:50px;
+  height:50px;
+  margin:0 auto 12px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  background:rgba(255,73,73,.14);
+  border:1px solid rgba(255,93,93,.32);
+  color:#ff6a67;
+  font-size:1.35rem;
+  font-weight:900;
+}
+.route-list-delete-modal h2{
+  margin:0;
+}
+.route-list-delete-name{
+  margin:12px 0 0;
+  color:#fff;
+  font-weight:850;
+  overflow-wrap:anywhere;
+}
+.route-list-delete-copy{
+  margin:10px auto 0;
+  max-width:34ch;
+  color:rgba(226,230,248,.68);
+  font-size:.72rem;
+  line-height:1.65;
+}
+.route-list-delete-confirm{
+  min-height:44px;
+  padding:0 18px;
+  border:1px solid rgba(255,110,105,.32);
+  border-radius:12px;
+  background:linear-gradient(160deg,#ff514b,#d91f28);
+  color:#fff;
+  font:inherit;
+  font-weight:850;
+}
+.route-list-delete-confirm:disabled{
+  opacity:.55;
+}
+@media (prefers-reduced-motion: reduce){
+  .home-route-swipe-panel{transition:none}
+}

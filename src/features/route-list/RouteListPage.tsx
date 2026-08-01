@@ -1,10 +1,11 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { FormEvent, PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { RefreshButton } from '../../shared/ui/RefreshButton';
+import { useBodyScrollLock } from '../../shared/hooks/useBodyScrollLock';
 import { signOut } from '../auth/auth';
-import { createRoute, listRoutes, type RouteSummary } from './routes';
+import { createRoute, deleteOwnedRoute, listRoutes, type RouteSummary } from './routes';
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback;
@@ -28,7 +29,19 @@ export function RouteListPage({ onSignedOut }: { onSignedOut: () => void }) {
   const [isCreating, setIsCreating] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [expandedDescriptionId, setExpandedDescriptionId] = useState<string | null>(null);
+  const [swipedRouteId, setSwipedRouteId] = useState<string | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [deleteTarget, setDeleteTarget] = useState<RouteSummary | null>(null);
+  const [isDeletingRoute, setIsDeletingRoute] = useState(false);
+  const swipeStartXRef = useRef(0);
+  const swipeStartOffsetRef = useRef(0);
+  const activeSwipeRouteIdRef = useRef<string | null>(null);
+  const swipeMovedRef = useRef(false);
+  const suppressClickUntilRef = useRef(0);
+
   const routeNameInputRef = useRef<HTMLInputElement>(null);
+
+  useBodyScrollLock(Boolean(deleteTarget));
 
   const recentRoutes = useMemo(
     () => [...routes].sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at)),
@@ -54,6 +67,84 @@ export function RouteListPage({ onSignedOut }: { onSignedOut: () => void }) {
     if (!isCreateOpen) return;
     window.setTimeout(() => routeNameInputRef.current?.focus(), 0);
   }, [isCreateOpen]);
+
+
+const DELETE_REVEAL_WIDTH = 96;
+
+function closeSwipe() {
+  setSwipedRouteId(null);
+  setSwipeOffset(0);
+  activeSwipeRouteIdRef.current = null;
+}
+
+function handleRoutePointerDown(event: ReactPointerEvent<HTMLElement>, routeId: string) {
+  if (event.pointerType === 'mouse' && event.button !== 0) return;
+  if (swipedRouteId && swipedRouteId !== routeId) closeSwipe();
+
+  activeSwipeRouteIdRef.current = routeId;
+  swipeStartXRef.current = event.clientX;
+  swipeStartOffsetRef.current = swipedRouteId === routeId ? swipeOffset : 0;
+  swipeMovedRef.current = false;
+  event.currentTarget.setPointerCapture(event.pointerId);
+}
+
+function handleRoutePointerMove(event: ReactPointerEvent<HTMLElement>, routeId: string) {
+  if (activeSwipeRouteIdRef.current !== routeId) return;
+  const deltaX = event.clientX - swipeStartXRef.current;
+  if (Math.abs(deltaX) > 6) swipeMovedRef.current = true;
+
+  const nextOffset = Math.max(
+    -DELETE_REVEAL_WIDTH,
+    Math.min(0, swipeStartOffsetRef.current + deltaX),
+  );
+  setSwipedRouteId(routeId);
+  setSwipeOffset(nextOffset);
+}
+
+function handleRoutePointerEnd(event: ReactPointerEvent<HTMLElement>, routeId: string) {
+  if (activeSwipeRouteIdRef.current !== routeId) return;
+  try {
+    event.currentTarget.releasePointerCapture(event.pointerId);
+  } catch {
+    // Pointer capture may already be released by the browser.
+  }
+
+  if (swipeMovedRef.current) suppressClickUntilRef.current = Date.now() + 350;
+  const shouldOpen = swipeOffset <= -(DELETE_REVEAL_WIDTH * 0.58);
+  setSwipedRouteId(shouldOpen ? routeId : null);
+  setSwipeOffset(shouldOpen ? -DELETE_REVEAL_WIDTH : 0);
+  activeSwipeRouteIdRef.current = null;
+}
+
+function shouldSuppressRouteClick() {
+  return Date.now() < suppressClickUntilRef.current || swipeOffset < 0;
+}
+
+function requestDeleteRoute(route: RouteSummary) {
+  closeSwipe();
+  setDeleteTarget(route);
+}
+
+function closeDeleteConfirmation() {
+  if (isDeletingRoute) return;
+  setDeleteTarget(null);
+}
+
+async function handleDeleteRoute() {
+  if (!deleteTarget || isDeletingRoute) return;
+  setIsDeletingRoute(true);
+  try {
+    await deleteOwnedRoute(deleteTarget.id);
+    setRoutes((current) => current.filter((route) => route.id !== deleteTarget.id));
+    setExpandedDescriptionId((current) => current === deleteTarget.id ? null : current);
+    setDeleteTarget(null);
+    setToast(`「${deleteTarget.name}」を削除しました。`);
+  } catch (error) {
+    setToast(getErrorMessage(error, 'Routeを削除できませんでした。リーダー権限を確認してください。'));
+  } finally {
+    setIsDeletingRoute(false);
+  }
+}
 
   async function handleSignOut() {
     await signOut();
@@ -127,39 +218,79 @@ export function RouteListPage({ onSignedOut }: { onSignedOut: () => void }) {
             <div className="home-route-list">
               {recentRoutes.map((route) => {
                 const descriptionOpen = expandedDescriptionId === route.id;
+                const swipeOpen = swipedRouteId === route.id;
+                const currentOffset = swipeOpen ? swipeOffset : 0;
+
                 return (
-                  <article className={`home-route-card${descriptionOpen ? ' is-description-open' : ''}`} key={route.id}>
-                    <Link className="home-route-card-main" to={`/routes/${route.id}`} aria-label={`${route.name}を開く`}>
-                      <div className="home-route-card-copy">
-                        <h3>{route.name}</h3>
-                        <p>{formatUpdatedAt(route.updated_at)}</p>
-                      </div>
-                      <span className="home-route-chevron" aria-hidden="true">›</span>
-                    </Link>
-                    {route.description?.trim() ? (
-                      <>
-                        <button
-                          className="home-route-description-button"
-                          type="button"
-                          aria-expanded={descriptionOpen}
-                          aria-controls={`route-description-${route.id}`}
-                          onClick={() => setExpandedDescriptionId((current) => current === route.id ? null : route.id)}
-                        >
-                          <span>{descriptionOpen ? '説明を閉じる' : '説明を見る'}</span>
-                          <span className="home-route-description-chevron" aria-hidden="true">{descriptionOpen ? '⌃' : '⌄'}</span>
-                        </button>
-                        <div
-                          id={`route-description-${route.id}`}
-                          className={`home-route-description-blind${descriptionOpen ? ' is-open' : ''}`}
-                          aria-hidden={!descriptionOpen}
-                        >
-                          <div className="home-route-description-inner">
-                            <p>{route.description}</p>
-                          </div>
+                  <div className={`home-route-swipe-shell${swipeOpen ? ' is-open' : ''}`} key={route.id}>
+                    <button
+                      className="home-route-swipe-delete"
+                      type="button"
+                      onClick={() => requestDeleteRoute(route)}
+                      aria-label={`${route.name}を削除`}
+                      tabIndex={swipeOpen ? 0 : -1}
+                    >
+                      <span aria-hidden="true">⌫</span>
+                      <strong>削除</strong>
+                    </button>
+
+                    <article
+                      className={`home-route-card home-route-swipe-panel${descriptionOpen ? ' is-description-open' : ''}`}
+                      style={{ transform: `translateX(${currentOffset}px)` }}
+                      onPointerDown={(event) => handleRoutePointerDown(event, route.id)}
+                      onPointerMove={(event) => handleRoutePointerMove(event, route.id)}
+                      onPointerUp={(event) => handleRoutePointerEnd(event, route.id)}
+                      onPointerCancel={(event) => handleRoutePointerEnd(event, route.id)}
+                    >
+                      <Link
+                        className="home-route-card-main"
+                        to={`/routes/${route.id}`}
+                        aria-label={`${route.name}を開く`}
+                        onClick={(event) => {
+                          if (shouldSuppressRouteClick()) {
+                            event.preventDefault();
+                            closeSwipe();
+                          }
+                        }}
+                      >
+                        <div className="home-route-card-copy">
+                          <h3>{route.name}</h3>
+                          <p>{formatUpdatedAt(route.updated_at)}</p>
                         </div>
-                      </>
-                    ) : null}
-                  </article>
+                        <span className="home-route-chevron" aria-hidden="true">›</span>
+                      </Link>
+                      {route.description?.trim() ? (
+                        <>
+                          <button
+                            className="home-route-description-button"
+                            type="button"
+                            aria-expanded={descriptionOpen}
+                            aria-controls={`route-description-${route.id}`}
+                            onClick={(event) => {
+                              if (shouldSuppressRouteClick()) {
+                                event.preventDefault();
+                                closeSwipe();
+                                return;
+                              }
+                              setExpandedDescriptionId((current) => current === route.id ? null : route.id);
+                            }}
+                          >
+                            <span>{descriptionOpen ? '説明を閉じる' : '説明を見る'}</span>
+                            <span className="home-route-description-chevron" aria-hidden="true">{descriptionOpen ? '⌃' : '⌄'}</span>
+                          </button>
+                          <div
+                            id={`route-description-${route.id}`}
+                            className={`home-route-description-blind${descriptionOpen ? ' is-open' : ''}`}
+                            aria-hidden={!descriptionOpen}
+                          >
+                            <div className="home-route-description-inner">
+                              <p>{route.description}</p>
+                            </div>
+                          </div>
+                        </>
+                      ) : null}
+                    </article>
+                  </div>
                 );
               })}
             </div>
@@ -176,6 +307,33 @@ export function RouteListPage({ onSignedOut }: { onSignedOut: () => void }) {
           <button className="home-footer-action" type="button" onClick={handleSignOut}>サインアウト</button>
         </div>
       </footer>
+
+      {deleteTarget && (
+        <div
+          className="modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) closeDeleteConfirmation();
+          }}
+        >
+          <section className="route-modal route-list-delete-modal" role="dialog" aria-modal="true" aria-labelledby="route-list-delete-title">
+            <div className="route-list-delete-icon" aria-hidden="true">!</div>
+            <h2 id="route-list-delete-title">本当に削除しますか？</h2>
+            <p className="route-list-delete-name">「{deleteTarget.name}」</p>
+            <p className="route-list-delete-copy">
+              このRouteに含まれるPhase・Destination・Chat・メンバー情報も利用できなくなります。
+            </p>
+            <div className="modal-actions">
+              <button className="secondary-button" type="button" onClick={closeDeleteConfirmation} disabled={isDeletingRoute}>
+                キャンセル
+              </button>
+              <button className="route-list-delete-confirm" type="button" onClick={() => void handleDeleteRoute()} disabled={isDeletingRoute}>
+                {isDeletingRoute ? '削除中…' : '削除する'}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
 
       {isCreateOpen && (
         <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeCreateModal(); }}>
