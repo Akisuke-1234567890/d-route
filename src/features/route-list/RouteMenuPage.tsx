@@ -5,7 +5,7 @@ import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { getSupabaseClient } from '../../shared/api/supabase';
 import { RouteBottomNav } from './RouteBottomNav';
-import { deleteOwnedRoute, duplicateOwnedRoute, getRoute, updateOwnedRouteSettings, type RouteSummary } from './routes';
+import { createRouteFromBuiltInTemplate, deleteOwnedRoute, duplicateOwnedRoute, getRoute, updateOwnedRouteSettings, type BuiltInTemplateKey, type RouteSummary } from './routes';
 import { useBodyScrollLock } from '../../shared/hooks/useBodyScrollLock';
 
 const items = [
@@ -14,6 +14,16 @@ const items = [
   { key:'duplicate', icon:'📄', title:'Routeを複製', description:'内容を引き継いだ新しいRouteを作成' },
   { key:'archive', icon:'📦', title:'完了・アーカイブ', description:'終了したRouteを整理' },
 ] as const;
+
+const builtInTemplates: Array<{ key: BuiltInTemplateKey; icon: string; name: string; description: string }> = [
+  { key:'touring', icon:'🏍️', name:'ツーリング', description:'集合・休憩・食事・給油・目的地・帰路' },
+  { key:'day_drive', icon:'🚗', name:'日帰りドライブ', description:'出発・立ち寄り・昼食・観光・帰宅' },
+  { key:'errands', icon:'🛍️', name:'買い物・用事回り', description:'複数の店舗や用事を順番に回る' },
+  { key:'day_trip', icon:'🧳', name:'旅行1日プラン', description:'朝・午前・昼・午後・夜の流れ' },
+  { key:'event', icon:'🎫', name:'イベント参加', description:'集合・入場・メイン予定・食事・解散' },
+  { key:'sports', icon:'⛳', name:'ゴルフ・スポーツ', description:'集合・受付・開始・終了・解散' },
+];
+
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback;
@@ -36,10 +46,16 @@ export function RouteMenuPage() {
   const [duplicateName, setDuplicateName] = useState('');
   const [duplicateSaving, setDuplicateSaving] = useState(false);
   const [duplicateError, setDuplicateError] = useState('');
+  const [templateOpen, setTemplateOpen] = useState(false);
+  const [selectedTemplateKey, setSelectedTemplateKey] = useState<BuiltInTemplateKey>('touring');
+  const [templateRouteName, setTemplateRouteName] = useState('ツーリング');
+  const [templateSaving, setTemplateSaving] = useState(false);
+  const [templateError, setTemplateError] = useState('');
 
 
 
-  useBodyScrollLock(isDeleteOpen || settingsOpen || duplicateOpen);
+
+  useBodyScrollLock(isDeleteOpen || settingsOpen || duplicateOpen || templateOpen);
 
   useEffect(() => {
     let active = true;
@@ -94,6 +110,37 @@ async function handleSaveSettings() {
 }
 
 
+function openBuiltInTemplates() {
+  if (!isOwner) return;
+  setSelectedTemplateKey('touring');
+  setTemplateRouteName('ツーリング');
+  setTemplateError('');
+  setTemplateOpen(true);
+}
+
+function chooseBuiltInTemplate(key: BuiltInTemplateKey) {
+  const template = builtInTemplates.find((item) => item.key === key);
+  if (!template) return;
+  setSelectedTemplateKey(key);
+  setTemplateRouteName(template.name);
+  setTemplateError('');
+}
+
+async function handleCreateFromTemplate() {
+  if (!isOwner || templateSaving) return;
+  setTemplateSaving(true);
+  setTemplateError('');
+  try {
+    const created = await createRouteFromBuiltInTemplate(selectedTemplateKey, templateRouteName);
+    setTemplateOpen(false);
+    navigate(`/routes/${created.id}`);
+  } catch (error) {
+    setTemplateError(getErrorMessage(error, 'テンプレートからRouteを作成できませんでした。'));
+  } finally {
+    setTemplateSaving(false);
+  }
+}
+
 function openDuplicateRoute() {
   if (!route || !isOwner) return;
   const suffix = '（コピー）';
@@ -141,24 +188,17 @@ async function handleDuplicateRoute() {
 
       <div className="route-menu-list">{items.map((item) => {
         const isSettings = item.key === 'settings';
+        const isTemplate = item.key === 'template';
         const isDuplicate = item.key === 'duplicate';
-        const isAvailable = isSettings || isDuplicate;
-        return <button
-          type="button"
-          className="route-menu-item"
-          key={item.key}
+        const isAvailable = isSettings || isTemplate || isDuplicate;
+        return <button type="button" className="route-menu-item" key={item.key}
           onClick={() => {
             if (isSettings) openRouteSettings();
+            if (isTemplate) openBuiltInTemplates();
             if (isDuplicate) openDuplicateRoute();
           }}
           disabled={isAvailable ? !isOwner : true}
-          title={
-            isAvailable && !isOwner
-              ? 'この操作はリーダーのみ利用できます。'
-              : !isAvailable
-                ? 'この機能は今後追加予定です。'
-                : undefined
-          }
+          title={isAvailable && !isOwner ? 'この操作はリーダーのみ利用できます。' : !isAvailable ? 'この機能は今後追加予定です。' : undefined}
         ><span className="route-menu-icon" aria-hidden="true">{item.icon}</span><span><strong>{item.title}</strong><small>{item.description}</small></span><span aria-hidden="true">›</span></button>;
       })}</div>
 
@@ -208,6 +248,40 @@ async function handleDuplicateRoute() {
             <button className="secondary-button" type="button" onClick={() => setSettingsOpen(false)} disabled={settingsSaving}>キャンセル</button>
             <button className="primary-button" type="button" onClick={() => void handleSaveSettings()} disabled={settingsSaving || !settingsName.trim()}>
               {settingsSaving ? '保存中…' : '保存'}
+            </button>
+          </div>
+        </section>
+      </div>
+    )}
+
+    {templateOpen && isOwner && (
+      <div className="modal-backdrop" role="presentation">
+        <section className="route-modal route-template-modal" role="dialog" aria-modal="true" aria-labelledby="route-template-title">
+          <div className="modal-header">
+            <div><p className="eyebrow">BUILT-IN TEMPLATES</p><h2 id="route-template-title">テンプレートから作成</h2></div>
+            <button className="modal-close-button" type="button" onClick={() => setTemplateOpen(false)} aria-label="閉じる" disabled={templateSaving}>×</button>
+          </div>
+          <p className="route-template-description">現在のPhase・Destination機能だけで使える一般向けテンプレートです。場所や時間は作成後に編集します。</p>
+          <div className="route-template-grid" role="list">
+            {builtInTemplates.map((template) => (
+              <button type="button" role="listitem" key={template.key}
+                className={`route-template-card${selectedTemplateKey === template.key ? ' is-selected' : ''}`}
+                onClick={() => chooseBuiltInTemplate(template.key)} disabled={templateSaving}>
+                <span className="route-template-icon" aria-hidden="true">{template.icon}</span>
+                <span><strong>{template.name}</strong><small>{template.description}</small></span>
+              </button>
+            ))}
+          </div>
+          <label className="route-settings-field">
+            <span>新しいRoute名</span>
+            <input value={templateRouteName} maxLength={60} onChange={(event) => setTemplateRouteName(event.target.value)} />
+            <small>{templateRouteName.length}/60</small>
+          </label>
+          {templateError && <div className="route-inline-error" role="alert">{templateError}</div>}
+          <div className="modal-actions">
+            <button className="secondary-button" type="button" onClick={() => setTemplateOpen(false)} disabled={templateSaving}>キャンセル</button>
+            <button className="primary-button" type="button" onClick={() => void handleCreateFromTemplate()} disabled={templateSaving || !templateRouteName.trim()}>
+              {templateSaving ? '作成中…' : 'このテンプレートで作成'}
             </button>
           </div>
         </section>

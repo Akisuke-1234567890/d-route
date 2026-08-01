@@ -135,3 +135,20 @@ export async function duplicateOwnedRoute(routeId: string, name: string): Promis
   if (!row) throw new Error('複製したRouteを確認できませんでした。');
   return row as RouteSummary;
 }
+
+export type BuiltInTemplateKey = 'touring' | 'day_drive' | 'errands' | 'day_trip' | 'event' | 'sports';
+
+export async function createRouteFromBuiltInTemplate(templateKey: BuiltInTemplateKey, name: string): Promise<RouteSummary> {
+  const normalizedName = name.trim();
+  if (!normalizedName) throw new Error('新しいRoute名を入力してください。');
+  if (normalizedName.length > 60) throw new Error('Route名は60文字以内で入力してください。');
+  const supabase = getSupabaseClient();
+  if (!supabase) throw new Error('Supabaseの環境変数が設定されていません。');
+  const { data, error } = await supabase.rpc('create_route_from_builtin_template', {
+    p_template_key: templateKey, p_name: normalizedName,
+  });
+  if (error) throw error;
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) throw new Error('作成したRouteを確認できませんでした。');
+  return row as RouteSummary;
+}

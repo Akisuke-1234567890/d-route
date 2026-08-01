@@ -2423,3 +2423,15 @@ a { color: inherit; }
   font-size:.72rem;
   line-height:1.65;
 }
+
+/* v2.1.0-p54 built-in templates */
+.route-template-modal{width:min(94vw,620px);max-height:min(88vh,760px);overflow:auto}
+.route-template-description{margin:10px 0 14px;color:rgba(221,225,246,.66);font-size:.70rem;line-height:1.6}
+.route-template-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.route-template-card{display:flex;align-items:flex-start;gap:10px;min-height:78px;padding:12px;border:1px solid rgba(196,203,255,.11);border-radius:14px;background:rgba(196,203,255,.025);color:inherit;text-align:left}
+.route-template-card.is-selected{border-color:rgba(255,181,76,.36);background:rgba(255,181,76,.08)}
+.route-template-icon{flex:0 0 auto;font-size:1.25rem;line-height:1}
+.route-template-card span:last-child{display:grid;gap:4px;min-width:0}
+.route-template-card strong{font-size:.75rem}
+.route-template-card small{color:rgba(211,216,241,.58);font-size:.60rem;line-height:1.45}
+@media(max-width:520px){.route-template-grid{grid-template-columns:1fr}.route-template-card{min-height:68px}}
