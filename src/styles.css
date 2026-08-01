@@ -2849,3 +2849,65 @@ a { color: inherit; }
   font-size:.58rem;
   font-weight:700;
 }
+
+
+/* v2.1.0-p64 Destination completion refinement */
+.v2-destination-card.is-completed {
+  opacity: .7;
+  border-color: rgba(105, 225, 174, .22);
+}
+
+.v2-destination-card.is-completed .v2-card-main h3,
+.v2-destination-card.is-completed .v2-card-note {
+  text-decoration: none;
+}
+
+.v2-card-topline {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 9px;
+}
+
+.v2-destination-check {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 2px solid rgba(218, 222, 248, .32);
+  border-radius: 50%;
+  background: rgba(255,255,255,.025);
+  color: #0b1833;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 950;
+  cursor: pointer;
+  transition: transform .15s ease, border-color .15s ease, background .15s ease;
+}
+
+.v2-destination-check:active { transform: scale(.92); }
+.v2-destination-check:disabled { opacity: .55; cursor: default; }
+.v2-destination-check.is-completed {
+  border-color: #84e8bd;
+  background: #84e8bd;
+  box-shadow: 0 0 0 4px rgba(105,225,174,.08);
+}
+
+.v2-completion-label {
+  align-self: center;
+  padding: 5px 8px;
+  border: 1px solid rgba(196,203,255,.12);
+  border-radius: 999px;
+  color: rgba(226,230,250,.58);
+  background: rgba(255,255,255,.025);
+  font-size: .61rem;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.v2-completion-label.is-completed {
+  border-color: rgba(105,225,174,.22);
+  color: #b7f3d7;
+  background: rgba(105,225,174,.07);
+}

@@ -20,6 +20,7 @@ export type DestinationSummary = {
   startTime: string | null;
   endTime: string | null;
   completedAt: string | null;
+  completedBy: string | null;
 };
 
 export type CreateDestinationInput = {
@@ -38,10 +39,10 @@ type DestinationRow = {
   id: string; route_id: string; phase_id: string; name: string; description: string | null;
   location_name: string | null; map_url: string | null; meeting_point: string | null;
   importance: DestinationImportance; order_value: number | string; estimated_duration_minutes: number | null;
-  is_optional: boolean; time_type: DestinationTimeType; start_time: string | null; end_time: string | null; completed_at: string | null;
+  is_optional: boolean; time_type: DestinationTimeType; start_time: string | null; end_time: string | null; completed_at: string | null; completed_by: string | null;
 };
 
-const columns = 'id, route_id, phase_id, name, description, location_name, map_url, meeting_point, importance, order_value, estimated_duration_minutes, is_optional, time_type, start_time, end_time, completed_at';
+const columns = 'id, route_id, phase_id, name, description, location_name, map_url, meeting_point, importance, order_value, estimated_duration_minutes, is_optional, time_type, start_time, end_time, completed_at, completed_by';
 
 function requireSupabase() { const supabase=getSupabaseClient(); if (!supabase) throw new Error('Supabaseの環境変数が設定されていません。'); return supabase; }
 function cleanTime(v?: string | null) { const t=v?.trim(); return t || null; }
@@ -49,7 +50,7 @@ function toSummary(row: DestinationRow): DestinationSummary { return {
   id:row.id, routeId:row.route_id, phaseId:row.phase_id, name:row.name, description:row.description,
   locationName:row.location_name, mapUrl:row.map_url, meetingPoint:row.meeting_point, importance:row.importance,
   orderValue:Number(row.order_value), estimatedDurationMinutes:row.estimated_duration_minutes, isOptional:row.is_optional,
-  timeType:row.time_type ?? 'none', startTime:row.start_time, endTime:row.end_time, completedAt:row.completed_at,
+  timeType:row.time_type ?? 'none', startTime:row.start_time, endTime:row.end_time, completedAt:row.completed_at, completedBy:row.completed_by,
 }; }
 
 export async function getRouteDestinations(routeId:string):Promise<DestinationSummary[]> {

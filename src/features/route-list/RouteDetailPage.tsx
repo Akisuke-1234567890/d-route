@@ -6,6 +6,7 @@ import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { getRoute, type RouteSummary } from './routes';
 import { getRoutePhases, type PhaseSummary } from './phases';
 import { getRouteDestinations, setRouteDestinationCompleted, type DestinationSummary } from './destinations';
+import { getSupabaseClient } from '../../shared/api/supabase';
 import { RouteBottomNav } from './RouteBottomNav';
 import { formatChatTime, getLatestRouteChatMessages, type RouteChatMessage } from './chat';
 
@@ -94,6 +95,28 @@ function PhaseDashboard({ routeId }: { routeId: string }) {
   const [viewPhaseId, setViewPhaseId] = useState<string | null>(null);
   const [latestChats, setLatestChats] = useState<RouteChatMessage[]>([]);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const supabase = getSupabaseClient();
+    if (!supabase) return;
+
+    const channel = supabase
+      .channel(`route-destination-progress:${routeId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'destinations', filter: `route_id=eq.${routeId}` },
+        (payload) => {
+          const row = payload.new as { id?: string; completed_at?: string | null; completed_by?: string | null };
+          if (!row.id) return;
+          setDestinations((current) => current.map((item) => item.id === row.id
+            ? { ...item, completedAt: row.completed_at ?? null, completedBy: row.completed_by ?? null }
+            : item));
+        }
+      )
+      .subscribe();
+
+    return () => { void supabase.removeChannel(channel); };
+  }, [routeId]);
 
   useEffect(() => {
     let active = true;
@@ -216,7 +239,7 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
   setDestinations((current) =>
     current.map((item) =>
       item.id === destination.id
-        ? { ...item, completedAt: nextCompleted ? new Date().toISOString() : null }
+        ? { ...item, completedAt: nextCompleted ? new Date().toISOString() : null, completedBy: null }
         : item
     )
   );
@@ -361,19 +384,20 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
                       aria-label={`${index + 1}/${currentDestinations.length} ${destination.name}`}
                     >
                       <div className="v2-card-topline">
+                        <button
+                          className={`v2-destination-check${destination.completedAt ? ' is-completed' : ''}`}
+                          type="button"
+                          aria-label={`${destination.name}を${destination.completedAt ? '未完了に戻す' : '完了にする'}`}
+                          aria-pressed={Boolean(destination.completedAt)}
+                          disabled={progressSavingId === destination.id}
+                          onClick={() => void toggleDestinationCompleted(destination)}
+                        >
+                          <span aria-hidden="true">{destination.completedAt ? '✓' : ''}</span>
+                        </button>
                         <div className="v2-card-meta"><span className="v2-card-count">{index + 1} / {currentDestinations.length}</span>{destination.importance === 'must' ? <span className="v2-attention-badge">★ 必須</span> : null}</div>
-                        <div className="v2-card-top-actions">
-                          <button
-                            className={`v2-complete-button is-status${destination.completedAt ? ' is-completed' : ''}`}
-                            type="button"
-                            aria-pressed={Boolean(destination.completedAt)}
-                            disabled={progressSavingId === destination.id}
-                            onClick={() => void toggleDestinationCompleted(destination)}
-                          >
-                            <span aria-hidden="true">{destination.completedAt ? '✓' : '○'}</span>
-                            {progressSavingId === destination.id ? '保存中' : destination.completedAt ? '完了' : '未完了'}
-                          </button>
-                        </div>
+                        <span className={`v2-completion-label${destination.completedAt ? ' is-completed' : ''}`} aria-live="polite">
+                          {progressSavingId === destination.id ? '保存中' : destination.completedAt ? '完了' : '未完了'}
+                        </span>
                       </div>
 
                       <div className="v2-card-main">

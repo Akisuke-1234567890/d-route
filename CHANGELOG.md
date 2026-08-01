@@ -1,3 +1,11 @@
+# v2.1.0-p64
+
+- Destinationカード左側に完了チェックボタンを配置。
+- 完了済みカードは薄く表示し、タイトルと説明の取り消し線を廃止。
+- Destinationの完了操作ユーザーを `completed_by` に記録。
+- Destination更新をSupabase Realtimeで参加メンバー間に同期。
+- 完了解除時は `completed_at` と `completed_by` をクリア。
+
 ## v2.1.0-p63
 
 - Route作成時の任意説明入力を追加
