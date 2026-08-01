@@ -5,7 +5,7 @@ import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { useBodyScrollLock } from '../../shared/hooks/useBodyScrollLock';
 import { signOut } from '../auth/auth';
-import { createRoute, deleteOwnedRoute, listRoutes, setOwnedRouteArchived, type RouteSummary } from './routes';
+import { createRoute, createRouteFromBuiltInTemplate, deleteOwnedRoute, listRoutes, setOwnedRouteArchived, type BuiltInTemplateKey, type RouteSummary } from './routes';
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback;
@@ -21,12 +21,29 @@ function formatUpdatedAt(value: string) {
   }).format(date) + ' 更新';
 }
 
+const builtInTemplates: Array<{
+  key: BuiltInTemplateKey;
+  icon: string;
+  name: string;
+  description: string;
+}> = [
+  { key:'touring', icon:'🏍️', name:'ツーリング', description:'集合・休憩・食事・給油・目的地・帰路' },
+  { key:'day_drive', icon:'🚗', name:'日帰りドライブ', description:'出発・立ち寄り・昼食・観光・帰宅' },
+  { key:'day_trip', icon:'🧳', name:'旅行・お出かけ', description:'集合・午前・昼食・午後・宿泊または帰宅' },
+  { key:'event', icon:'🎫', name:'イベント参加', description:'集合・入場・メイン予定・食事・解散' },
+];
+
+type CreateMode = 'blank' | 'template';
+
 export function RouteListPage({ onSignedOut }: { onSignedOut: () => void }) {
   const [routes, setRoutes] = useState<RouteSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [routeName, setRouteName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [createMode, setCreateMode] = useState<CreateMode>('blank');
+  const [selectedTemplateKey, setSelectedTemplateKey] = useState<BuiltInTemplateKey>('touring');
+
   const [toast, setToast] = useState<string | null>(null);
   const [expandedDescriptionId, setExpandedDescriptionId] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
@@ -46,7 +63,7 @@ export function RouteListPage({ onSignedOut }: { onSignedOut: () => void }) {
 
   const routeNameInputRef = useRef<HTMLInputElement>(null);
 
-  useBodyScrollLock(Boolean(deleteTarget));
+  useBodyScrollLock(Boolean(deleteTarget || archiveActionTarget || isCreateOpen));
 
   const recentRoutes = useMemo(
     () => [...routes].sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at)),
@@ -55,7 +72,8 @@ export function RouteListPage({ onSignedOut }: { onSignedOut: () => void }) {
 
   useEffect(() => {
     let active = true;
-    void listRoutes()
+    setLoading(true);
+    void listRoutes(showArchived ? 'archived' : 'active')
       .then((nextRoutes) => { if (active) setRoutes(nextRoutes); })
       .catch((error) => { if (active) setToast(getErrorMessage(error, 'Route一覧を読み込めませんでした。')); })
       .finally(() => { if (active) setLoading(false); });
@@ -198,6 +216,8 @@ async function handleDeleteRoute() {
 
   function openCreateModal() {
     setRouteName('');
+    setCreateMode('blank');
+    setSelectedTemplateKey('touring');
     setIsCreateOpen(true);
   }
 
@@ -205,6 +225,23 @@ async function handleDeleteRoute() {
     if (isCreating) return;
     setIsCreateOpen(false);
     setRouteName('');
+    setCreateMode('blank');
+    setSelectedTemplateKey('touring');
+  }
+
+  function chooseCreateMode(mode: CreateMode) {
+    setCreateMode(mode);
+    if (mode === 'template') {
+      const selected = builtInTemplates.find((template) => template.key === selectedTemplateKey) ?? builtInTemplates[0];
+      setRouteName((current) => current.trim() ? current : selected.name);
+    }
+  }
+
+  function chooseCreateTemplate(templateKey: BuiltInTemplateKey) {
+    const template = builtInTemplates.find((item) => item.key === templateKey);
+    if (!template) return;
+    setSelectedTemplateKey(templateKey);
+    setRouteName(template.name);
   }
 
   async function handleCreateRoute(event: FormEvent<HTMLFormElement>) {
@@ -214,10 +251,14 @@ async function handleDeleteRoute() {
 
     setIsCreating(true);
     try {
-      const newRoute = await createRoute(normalizedName);
+      const newRoute = createMode === 'template'
+        ? await createRouteFromBuiltInTemplate(selectedTemplateKey, normalizedName)
+        : await createRoute(normalizedName);
       setRoutes((current) => [newRoute, ...current.filter((route) => route.id !== newRoute.id)]);
       setIsCreateOpen(false);
       setRouteName('');
+      setCreateMode('blank');
+      setSelectedTemplateKey('touring');
     } catch (error) {
       setToast(getErrorMessage(error, 'Routeを作成できませんでした。'));
     } finally {
@@ -442,6 +483,54 @@ async function handleDeleteRoute() {
               <button className="modal-close-button" type="button" onClick={closeCreateModal} aria-label="閉じる" disabled={isCreating}>×</button>
             </div>
             <form className="route-create-form" onSubmit={handleCreateRoute}>
+              <div className="route-create-methods" role="radiogroup" aria-label="Routeの作り方">
+                <button
+                  className={`route-create-method${createMode === 'blank' ? ' is-selected' : ''}`}
+                  type="button"
+                  role="radio"
+                  aria-checked={createMode === 'blank'}
+                  onClick={() => chooseCreateMode('blank')}
+                  disabled={isCreating}
+                >
+                  <span aria-hidden="true">＋</span>
+                  <strong>空のRoute</strong>
+                  <small>PhaseやDestinationを一から作る</small>
+                </button>
+                <button
+                  className={`route-create-method${createMode === 'template' ? ' is-selected' : ''}`}
+                  type="button"
+                  role="radio"
+                  aria-checked={createMode === 'template'}
+                  onClick={() => chooseCreateMode('template')}
+                  disabled={isCreating}
+                >
+                  <span aria-hidden="true">▦</span>
+                  <strong>テンプレートから</strong>
+                  <small>一般的な流れを入れて作る</small>
+                </button>
+              </div>
+
+              {createMode === 'template' && (
+                <div className="route-create-template-list" role="list" aria-label="テンプレートを選ぶ">
+                  {builtInTemplates.map((template) => (
+                    <button
+                      className={`route-create-template${selectedTemplateKey === template.key ? ' is-selected' : ''}`}
+                      type="button"
+                      role="listitem"
+                      key={template.key}
+                      onClick={() => chooseCreateTemplate(template.key)}
+                      disabled={isCreating}
+                    >
+                      <span aria-hidden="true">{template.icon}</span>
+                      <span>
+                        <strong>{template.name}</strong>
+                        <small>{template.description}</small>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
               <div className="field-group">
                 <label htmlFor="route-name">Route名</label>
                 <input
@@ -450,17 +539,19 @@ async function handleDeleteRoute() {
                   name="route-name"
                   value={routeName}
                   onChange={(event) => setRouteName(event.target.value)}
-                  placeholder="例：家族でディズニーシー"
-                  maxLength={20}
+                  placeholder={createMode === 'template' ? 'テンプレート名を変更できます' : '例：家族でディズニーシー'}
+                  maxLength={60}
                   autoComplete="off"
                   disabled={isCreating}
                   required
                 />
-                <p className="field-hint">20文字まで。あとから変更できます。</p>
+                <p className="field-hint">60文字まで。あとから変更できます。</p>
               </div>
               <div className="modal-actions">
                 <button className="secondary-button" type="button" onClick={closeCreateModal} disabled={isCreating}>キャンセル</button>
-                <button className="primary-button" type="submit" disabled={!routeName.trim() || isCreating}>{isCreating ? '作成中…' : '作成'}</button>
+                <button className="primary-button" type="submit" disabled={!routeName.trim() || isCreating}>
+                  {isCreating ? '作成中…' : createMode === 'template' ? 'テンプレートで作成' : '空のRouteを作成'}
+                </button>
               </div>
             </form>
           </section>
