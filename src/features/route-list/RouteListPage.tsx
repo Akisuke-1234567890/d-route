@@ -29,6 +29,7 @@ export function RouteListPage({ onSignedOut }: { onSignedOut: () => void }) {
   const [isCreating, setIsCreating] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [expandedDescriptionId, setExpandedDescriptionId] = useState<string | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
   const [swipedRouteId, setSwipedRouteId] = useState<string | null>(null);
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [deleteTarget, setDeleteTarget] = useState<RouteSummary | null>(null);
@@ -56,7 +57,7 @@ export function RouteListPage({ onSignedOut }: { onSignedOut: () => void }) {
       .catch((error) => { if (active) setToast(getErrorMessage(error, 'Route一覧を読み込めませんでした。')); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, []);
+  }, [showArchived]);
 
   useEffect(() => {
     if (!toast) return;
@@ -215,15 +216,32 @@ async function handleDeleteRoute() {
         ) : recentRoutes.length === 0 ? (
           <section className="home-empty-state">
             <div className="empty-orbit" aria-hidden="true"><BrandMark size={58} /></div>
-            <h2>Routeがまだありません</h2>
-            <p>最初のRouteを作って、みんなで目的地と順番を共有しましょう。</p>
-            <button className="primary-button" type="button" onClick={openCreateModal}>最初のRouteを作る</button>
+            <h2>{showArchived ? 'アーカイブはありません' : 'Routeがまだありません'}</h2>
+            <p>{showArchived ? '終了したRouteをアーカイブすると、ここに表示されます。' : '最初のRouteを作って、みんなで目的地と順番を共有しましょう。'}</p>
+            {showArchived ? (
+              <button className="secondary-button" type="button" onClick={() => setShowArchived(false)}>使用中のRouteへ戻る</button>
+            ) : (
+              <button className="primary-button" type="button" onClick={openCreateModal}>最初のRouteを作る</button>
+            )}
           </section>
         ) : (
           <section className="home-route-section" aria-labelledby="recent-routes-title">
             <div className="home-section-heading">
-              <h2 id="recent-routes-title">最近使ったRoute</h2>
-              <span>{recentRoutes.length}件</span>
+              <div>
+                <h2 id="recent-routes-title">{showArchived ? 'アーカイブ' : '最近使ったRoute'}</h2>
+                <span>{recentRoutes.length}件</span>
+              </div>
+              <button
+                className={`home-archive-toggle${showArchived ? ' is-active' : ''}`}
+                type="button"
+                onClick={() => {
+                  closeSwipe();
+                  setExpandedDescriptionId(null);
+                  setShowArchived((current) => !current);
+                }}
+              >
+                {showArchived ? '使用中を見る' : 'アーカイブを見る'}
+              </button>
             </div>
 
             <div className="home-route-list">

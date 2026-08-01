@@ -5,7 +5,7 @@ import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { getSupabaseClient } from '../../shared/api/supabase';
 import { RouteBottomNav } from './RouteBottomNav';
-import { createRouteFromBuiltInTemplate, deleteOwnedRoute, duplicateOwnedRoute, getRoute, updateOwnedRouteSettings, type BuiltInTemplateKey, type RouteSummary } from './routes';
+import { createRouteFromBuiltInTemplate, deleteOwnedRoute, duplicateOwnedRoute, getRoute, setOwnedRouteArchived, updateOwnedRouteSettings, type BuiltInTemplateKey, type RouteSummary } from './routes';
 import { useBodyScrollLock } from '../../shared/hooks/useBodyScrollLock';
 
 const items = [
@@ -49,11 +49,15 @@ export function RouteMenuPage() {
   const [templateRouteName, setTemplateRouteName] = useState('ツーリング');
   const [templateSaving, setTemplateSaving] = useState(false);
   const [templateError, setTemplateError] = useState('');
+  const [archiveOpen, setArchiveOpen] = useState(false);
+  const [archiveSaving, setArchiveSaving] = useState(false);
+  const [archiveError, setArchiveError] = useState('');
 
 
 
 
-  useBodyScrollLock(isDeleteOpen || settingsOpen || duplicateOpen || templateOpen);
+
+  useBodyScrollLock(isDeleteOpen || settingsOpen || duplicateOpen || templateOpen || archiveOpen);
 
   useEffect(() => {
     let active = true;
@@ -107,6 +111,30 @@ async function handleSaveSettings() {
   }
 }
 
+
+
+function openArchiveDialog() {
+  if (!route || !isOwner) return;
+  setArchiveError('');
+  setArchiveOpen(true);
+}
+
+async function handleArchiveRoute() {
+  if (!route || !isOwner || archiveSaving) return;
+  setArchiveSaving(true);
+  setArchiveError('');
+  try {
+    const archived = route.status !== 'archived';
+    const updated = await setOwnedRouteArchived(route.id, archived);
+    setRoute(updated);
+    setArchiveOpen(false);
+    navigate('/routes', { replace: true });
+  } catch (error) {
+    setArchiveError(getErrorMessage(error, route.status === 'archived' ? 'Routeを復元できませんでした。' : 'Routeをアーカイブできませんでした。'));
+  } finally {
+    setArchiveSaving(false);
+  }
+}
 
 function openBuiltInTemplates() {
   if (!isOwner) return;
@@ -188,16 +216,18 @@ async function handleDuplicateRoute() {
         const isSettings = item.key === 'settings';
         const isTemplate = item.key === 'template';
         const isDuplicate = item.key === 'duplicate';
-        const isAvailable = isSettings || isTemplate || isDuplicate;
+        const isArchive = item.key === 'archive';
+        const isAvailable = isSettings || isTemplate || isDuplicate || isArchive;
         return <button type="button" className="route-menu-item" key={item.key}
           onClick={() => {
             if (isSettings) openRouteSettings();
             if (isTemplate) openBuiltInTemplates();
             if (isDuplicate) openDuplicateRoute();
+            if (isArchive) openArchiveDialog();
           }}
           disabled={isAvailable ? !isOwner : true}
           title={isAvailable && !isOwner ? 'この操作はリーダーのみ利用できます。' : !isAvailable ? 'この機能は今後追加予定です。' : undefined}
-        ><span className="route-menu-icon" aria-hidden="true">{item.icon}</span><span><strong>{item.title}</strong><small>{item.description}</small></span><span aria-hidden="true">›</span></button>;
+        ><span className="route-menu-icon" aria-hidden="true">{item.icon}</span><span><strong>{isArchive && route?.status === 'archived' ? 'アーカイブから戻す' : item.title}</strong><small>{isArchive && route?.status === 'archived' ? '通常のRoute一覧へ復元' : item.description}</small></span><span aria-hidden="true">›</span></button>;
       })}</div>
 
       {isOwner && route && (
@@ -246,6 +276,32 @@ async function handleDuplicateRoute() {
             <button className="secondary-button" type="button" onClick={() => setSettingsOpen(false)} disabled={settingsSaving}>キャンセル</button>
             <button className="primary-button" type="button" onClick={() => void handleSaveSettings()} disabled={settingsSaving || !settingsName.trim()}>
               {settingsSaving ? '保存中…' : '保存'}
+            </button>
+          </div>
+        </section>
+      </div>
+    )}
+
+    {archiveOpen && route && isOwner && (
+      <div className="modal-backdrop" role="presentation">
+        <section className="route-modal route-archive-modal" role="dialog" aria-modal="true" aria-labelledby="route-archive-title">
+          <div className="modal-header">
+            <div>
+              <p className="eyebrow">{route.status === 'archived' ? 'RESTORE ROUTE' : 'ARCHIVE ROUTE'}</p>
+              <h2 id="route-archive-title">{route.status === 'archived' ? 'アーカイブから戻す' : 'Routeをアーカイブ'}</h2>
+            </div>
+            <button className="modal-close-button" type="button" onClick={() => setArchiveOpen(false)} aria-label="閉じる" disabled={archiveSaving}>×</button>
+          </div>
+          <p className="route-archive-copy">
+            {route.status === 'archived'
+              ? 'このRouteを通常のRoute一覧へ戻します。内容や進行状態はそのまま維持されます。'
+              : '終了したRouteを通常の一覧から隠します。削除ではないため、あとから復元できます。'}
+          </p>
+          {archiveError && <div className="route-inline-error" role="alert">{archiveError}</div>}
+          <div className="modal-actions">
+            <button className="secondary-button" type="button" onClick={() => setArchiveOpen(false)} disabled={archiveSaving}>キャンセル</button>
+            <button className="primary-button" type="button" onClick={() => void handleArchiveRoute()} disabled={archiveSaving}>
+              {archiveSaving ? '処理中…' : route.status === 'archived' ? '一覧へ戻す' : 'アーカイブする'}
             </button>
           </div>
         </section>

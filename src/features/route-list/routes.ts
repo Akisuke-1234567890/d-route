@@ -12,13 +12,14 @@ export type RouteSummary = {
 
 const routeSummaryColumns = 'id,owner_user_id,name,description,status,created_at,updated_at';
 
-export async function listRoutes(): Promise<RouteSummary[]> {
+export async function listRoutes(status: 'active' | 'archived' = 'active'): Promise<RouteSummary[]> {
   const supabase = getSupabaseClient();
   if (!supabase) throw new Error('Supabaseの環境変数が設定されていません。');
 
   const { data, error } = await supabase
     .from('routes')
     .select(routeSummaryColumns)
+    .eq('status', status)
     .is('deleted_at', null)
     .order('updated_at', { ascending: false });
 
@@ -150,5 +151,24 @@ export async function createRouteFromBuiltInTemplate(templateKey: BuiltInTemplat
   if (error) throw error;
   const row = Array.isArray(data) ? data[0] : data;
   if (!row) throw new Error('作成したRouteを確認できませんでした。');
+  return row as RouteSummary;
+}
+
+
+export async function setOwnedRouteArchived(routeId: string, archived: boolean): Promise<RouteSummary> {
+  const normalizedId = routeId.trim();
+  if (!normalizedId) throw new Error('Route IDを確認できませんでした。');
+
+  const supabase = getSupabaseClient();
+  if (!supabase) throw new Error('Supabaseの環境変数が設定されていません。');
+
+  const { data, error } = await supabase.rpc('set_owned_route_archived', {
+    p_route_id: normalizedId,
+    p_archived: archived,
+  });
+
+  if (error) throw error;
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) throw new Error('Routeの状態を確認できませんでした。');
   return row as RouteSummary;
 }

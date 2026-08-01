@@ -2684,3 +2684,39 @@ a { color: inherit; }
 
 /* v2.1.0-p59 rounded swipe delete action */
 .home-route-swipe-delete{border-radius:18px;}
+
+
+/* v2.1.0-p60 Route archive */
+.home-section-heading{
+  align-items:center;
+}
+.home-section-heading>div{
+  display:flex;
+  align-items:baseline;
+  gap:8px;
+}
+.home-archive-toggle{
+  min-height:32px;
+  padding:0 11px;
+  border:1px solid rgba(196,203,255,.12);
+  border-radius:999px;
+  background:rgba(196,203,255,.035);
+  color:rgba(221,225,246,.68);
+  font:inherit;
+  font-size:.60rem;
+  font-weight:800;
+}
+.home-archive-toggle.is-active{
+  border-color:rgba(123,111,255,.28);
+  background:rgba(123,111,255,.10);
+  color:#ddd8ff;
+}
+.route-archive-modal{
+  width:min(90vw,470px);
+}
+.route-archive-copy{
+  margin:14px 0 0;
+  color:rgba(224,228,248,.70);
+  font-size:.74rem;
+  line-height:1.7;
+}

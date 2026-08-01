@@ -1,4 +1,4 @@
-# D Route v2.1.0-p59
+# D Route v2.1.0-p60
 
 ## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
@@ -648,3 +648,12 @@ Chat UI / 操作仕上げ。
 - 削除領域全体を独立したカード状に調整
 - スワイプ、確認ダイアログ、削除処理は変更なし
 - DB変更なし
+
+
+## v2.1.0-p60
+
+- Routeのアーカイブ・復元を実装
+- Menuの「完了・アーカイブ」を有効化
+- Route一覧に「アーカイブを見る / 使用中を見る」の切替を追加
+- アーカイブは削除ではなく、Phase・Destination・Chat・Membersを維持
+- アーカイブ済みRouteはMenuから通常一覧へ復元可能
