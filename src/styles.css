@@ -2911,3 +2911,46 @@ a { color: inherit; }
   color: #b7f3d7;
   background: rgba(105,225,174,.07);
 }
+
+/* v2.1.0-p65 Route Chat read status */
+.chat-unread-badge{
+  padding:6px 10px;
+  border:1px solid rgba(126,211,255,.24);
+  border-radius:999px;
+  background:rgba(126,211,255,.08);
+  color:#bdeaff;
+  font-size:.68rem;
+  font-weight:900;
+  white-space:nowrap;
+}
+.chat-unread-divider{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin:12px 0 14px;
+  color:#a9ddff;
+  font-size:.62rem;
+  font-weight:900;
+}
+.chat-unread-divider::before,
+.chat-unread-divider::after{
+  content:"";
+  flex:1;
+  height:1px;
+  background:rgba(126,211,255,.22);
+}
+.chat-unread-divider span{white-space:nowrap}
+.chat-message-footer{
+  min-height:15px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+.chat-read-count{
+  margin-top:3px;
+  color:rgba(189,234,255,.68);
+  font-size:.56rem;
+  font-weight:800;
+  text-align:right;
+}

@@ -1,3 +1,10 @@
+## v2.1.0-p65
+
+- Route Chatの既読管理を追加
+- 未読区切り・未読件数・既読人数を表示
+- Chatメッセージと既読状態のRealtime同期を追加
+- DB migration追加
+
 # v2.1.0-p64
 
 - Destinationカード左側に完了チェックボタンを配置。

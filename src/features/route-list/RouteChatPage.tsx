@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
 import { RefreshButton } from '../../shared/ui/RefreshButton';
@@ -8,8 +8,12 @@ import {
   formatChatTime,
   getCurrentUserId,
   getRouteChatMessages,
+  getRouteChatReadStatuses,
+  markRouteChatRead,
   sendRouteChatMessage,
+  subscribeRouteChat,
   type RouteChatMessage,
+  type RouteChatReadStatus,
 } from './chat';
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -19,25 +23,49 @@ function getErrorMessage(error: unknown, fallback: string) {
 export function RouteChatPage() {
   const { routeId = '' } = useParams<{ routeId: string }>();
   const [messages, setMessages] = useState<RouteChatMessage[]>([]);
+  const [readStatuses, setReadStatuses] = useState<RouteChatReadStatus[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [initialLastReadAt, setInitialLastReadAt] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [important, setImportant] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const unreadRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
+  const didCaptureInitialRead = useRef(false);
 
-  const load = async () => {
+  const load = async (captureInitial = false) => {
     if (!routeId) return;
     setError(null);
     try {
-      const [nextMessages, userId] = await Promise.all([
+      const [nextMessages, userId, nextReadStatuses] = await Promise.all([
         getRouteChatMessages(routeId),
         getCurrentUserId(),
+        getRouteChatReadStatuses(routeId),
       ]);
       setMessages(nextMessages);
       setCurrentUserId(userId);
+      setReadStatuses(nextReadStatuses);
+
+      if (captureInitial && !didCaptureInitialRead.current) {
+        didCaptureInitialRead.current = true;
+        const ownRead = nextReadStatuses.find((status) => status.userId === userId);
+        setInitialLastReadAt(ownRead?.lastReadAt ?? null);
+      }
+
+      if (userId && nextMessages.length > 0) {
+        const latestCreatedAt = nextMessages[nextMessages.length - 1].createdAt;
+        const ownRead = nextReadStatuses.find((status) => status.userId === userId);
+        if (!ownRead || new Date(ownRead.lastReadAt).getTime() < new Date(latestCreatedAt).getTime()) {
+          const saved = await markRouteChatRead(routeId, latestCreatedAt);
+          setReadStatuses((current) => [
+            ...current.filter((status) => status.userId !== saved.userId),
+            saved,
+          ]);
+        }
+      }
     } catch (nextError) {
       setError(getErrorMessage(nextError, 'Chatを読み込めませんでした。'));
     } finally {
@@ -45,11 +73,38 @@ export function RouteChatPage() {
     }
   };
 
-  useEffect(() => { void load(); }, [routeId]);
+  useEffect(() => {
+    didCaptureInitialRead.current = false;
+    setInitialLastReadAt(null);
+    setLoading(true);
+    void load(true);
+  }, [routeId]);
 
   useEffect(() => {
-    if (!loading) endRef.current?.scrollIntoView({ block: 'end' });
-  }, [loading, messages.length]);
+    if (!routeId) return;
+    return subscribeRouteChat(routeId, () => { void load(false); });
+  }, [routeId]);
+
+  const firstUnreadIndex = useMemo(() => {
+    if (initialLastReadAt === null) {
+      return messages.findIndex((message) => message.authorUserId !== currentUserId);
+    }
+    const lastReadTime = new Date(initialLastReadAt).getTime();
+    return messages.findIndex(
+      (message) => message.authorUserId !== currentUserId && new Date(message.createdAt).getTime() > lastReadTime
+    );
+  }, [currentUserId, initialLastReadAt, messages]);
+
+  const unreadCount = useMemo(() => {
+    if (firstUnreadIndex < 0) return 0;
+    return messages.slice(firstUnreadIndex).filter((message) => message.authorUserId !== currentUserId).length;
+  }, [currentUserId, firstUnreadIndex, messages]);
+
+  useEffect(() => {
+    if (loading) return;
+    if (firstUnreadIndex >= 0) unreadRef.current?.scrollIntoView({ block: 'center' });
+    else endRef.current?.scrollIntoView({ block: 'end' });
+  }, [firstUnreadIndex, loading]);
 
   useEffect(() => {
     const composer = composerRef.current;
@@ -67,7 +122,8 @@ export function RouteChatPage() {
     setError(null);
     try {
       const saved = await sendRouteChatMessage(routeId, body, important);
-      setMessages((current) => [...current, saved]);
+      setMessages((current) => current.some((message) => message.id === saved.id) ? current : [...current, saved]);
+      await markRouteChatRead(routeId, saved.createdAt);
       setDraft('');
       setImportant(false);
     } catch (nextError) {
@@ -89,7 +145,11 @@ export function RouteChatPage() {
 
       <section className="chat-page" aria-labelledby="chat-title">
         <div className="chat-page-heading">
-          <div><p className="eyebrow">ROUTE CHAT</p><h1 id="chat-title">連絡</h1></div>
+          <div>
+            <p className="eyebrow">ROUTE CHAT</p>
+            <h1 id="chat-title">連絡</h1>
+          </div>
+          {unreadCount > 0 ? <span className="chat-unread-badge">未読 {unreadCount}</span> : null}
         </div>
 
         <div className="chat-page-log" aria-live="polite">
@@ -106,22 +166,33 @@ export function RouteChatPage() {
               new Date(message.createdAt).getTime() - new Date(previous.createdAt).getTime() < 5 * 60 * 1000
             );
             const initial = message.authorName.slice(0, 1).toUpperCase();
+            const readCount = isSelf
+              ? readStatuses.filter(
+                  (status) => status.userId !== currentUserId && new Date(status.lastReadAt).getTime() >= new Date(message.createdAt).getTime()
+                ).length
+              : 0;
 
             return (
-              <section className={`chat-message-row${isSelf ? ' chat-message-self' : ''}${message.isImportant ? ' is-important' : ''}${isContinuation ? ' is-continuation' : ''}`} key={message.id}>
-                {!isSelf && !isContinuation ? <div className="chat-avatar" aria-hidden="true">{initial}</div> : !isSelf ? <div className="chat-avatar-spacer" aria-hidden="true" /> : null}
-                <div className="chat-message-copy">
-                  {!isContinuation ? (
-                    <div className="chat-message-meta">
-                      {message.isImportant ? <span className="chat-important-mark">重要</span> : null}
-                      <strong>{isSelf ? 'あなた' : message.authorName}</strong>
-                      <time>{formatChatTime(message.createdAt)}</time>
+              <div key={message.id}>
+                {index === firstUnreadIndex ? <div className="chat-unread-divider" ref={unreadRef}><span>ここから未読</span></div> : null}
+                <section className={`chat-message-row${isSelf ? ' chat-message-self' : ''}${message.isImportant ? ' is-important' : ''}${isContinuation ? ' is-continuation' : ''}`}>
+                  {!isSelf && !isContinuation ? <div className="chat-avatar" aria-hidden="true">{initial}</div> : !isSelf ? <div className="chat-avatar-spacer" aria-hidden="true" /> : null}
+                  <div className="chat-message-copy">
+                    {!isContinuation ? (
+                      <div className="chat-message-meta">
+                        {message.isImportant ? <span className="chat-important-mark">重要</span> : null}
+                        <strong>{isSelf ? 'あなた' : message.authorName}</strong>
+                        <time>{formatChatTime(message.createdAt)}</time>
+                      </div>
+                    ) : null}
+                    <p className="chat-bubble">{message.body}</p>
+                    <div className="chat-message-footer">
+                      {isContinuation ? <time className="chat-continuation-time">{formatChatTime(message.createdAt)}</time> : <span />}
+                      {isSelf && readCount > 0 ? <span className="chat-read-count">既読 {readCount}</span> : null}
                     </div>
-                  ) : null}
-                  <p className="chat-bubble">{message.body}</p>
-                  {isContinuation ? <time className="chat-continuation-time">{formatChatTime(message.createdAt)}</time> : null}
-                </div>
-              </section>
+                  </div>
+                </section>
+              </div>
             );
           })}
           <div ref={endRef}/>

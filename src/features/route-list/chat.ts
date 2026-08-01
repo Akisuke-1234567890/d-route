@@ -10,6 +10,11 @@ export type RouteChatMessage = {
   createdAt: string;
 };
 
+export type RouteChatReadStatus = {
+  userId: string;
+  lastReadAt: string;
+};
+
 const columns = 'id,route_id,author_user_id,author_name,body,is_important,created_at';
 
 function requireSupabase() {
@@ -52,6 +57,33 @@ export async function getLatestRouteChatMessages(routeId: string, limit = 3): Pr
     .limit(limit);
   if (error) throw error;
   return (data ?? []).map(mapMessage).reverse();
+}
+
+export async function getRouteChatReadStatuses(routeId: string): Promise<RouteChatReadStatus[]> {
+  const supabase = requireSupabase();
+  const { data, error } = await supabase
+    .from('route_chat_read_status')
+    .select('user_id,last_read_at')
+    .eq('route_id', routeId);
+  if (error) throw error;
+  return (data ?? []).map((row: any) => ({ userId: row.user_id, lastReadAt: row.last_read_at }));
+}
+
+export async function markRouteChatRead(routeId: string, lastReadAt?: string): Promise<RouteChatReadStatus> {
+  const supabase = requireSupabase();
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError) throw authError;
+  const user = authData.user;
+  if (!user) throw new Error('ログイン情報を確認できませんでした。');
+
+  const readAt = lastReadAt ?? new Date().toISOString();
+  const { data, error } = await supabase
+    .from('route_chat_read_status')
+    .upsert({ route_id: routeId, user_id: user.id, last_read_at: readAt }, { onConflict: 'route_id,user_id' })
+    .select('user_id,last_read_at')
+    .single();
+  if (error) throw error;
+  return { userId: data.user_id, lastReadAt: data.last_read_at };
 }
 
 export async function sendRouteChatMessage(
@@ -101,6 +133,16 @@ export async function getCurrentUserId(): Promise<string | null> {
   const { data, error } = await supabase.auth.getUser();
   if (error) throw error;
   return data.user?.id ?? null;
+}
+
+export function subscribeRouteChat(routeId: string, onChange: () => void) {
+  const supabase = requireSupabase();
+  const channel = supabase
+    .channel(`route-chat-${routeId}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'route_chat_messages', filter: `route_id=eq.${routeId}` }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'route_chat_read_status', filter: `route_id=eq.${routeId}` }, onChange)
+    .subscribe();
+  return () => { void supabase.removeChannel(channel); };
 }
 
 export function formatChatTime(value: string): string {
