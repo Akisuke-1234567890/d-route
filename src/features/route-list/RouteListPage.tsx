@@ -5,7 +5,7 @@ import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { useBodyScrollLock } from '../../shared/hooks/useBodyScrollLock';
 import { signOut } from '../auth/auth';
-import { createRoute, deleteOwnedRoute, listRoutes, type RouteSummary } from './routes';
+import { createRoute, deleteOwnedRoute, listRoutes, setOwnedRouteArchived, type RouteSummary } from './routes';
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback;
@@ -35,6 +35,9 @@ export function RouteListPage({ onSignedOut }: { onSignedOut: () => void }) {
   const [deleteTarget, setDeleteTarget] = useState<RouteSummary | null>(null);
   const [isDeletingRoute, setIsDeletingRoute] = useState(false);
   const [isDeleteClosing, setIsDeleteClosing] = useState(false);
+  const [archiveActionTarget, setArchiveActionTarget] = useState<RouteSummary | null>(null);
+  const [archiveActionSaving, setArchiveActionSaving] = useState(false);
+  const [archiveActionError, setArchiveActionError] = useState('');
   const swipeStartXRef = useRef(0);
   const swipeStartOffsetRef = useRef(0);
   const activeSwipeRouteIdRef = useRef<string | null>(null);
@@ -71,7 +74,7 @@ export function RouteListPage({ onSignedOut }: { onSignedOut: () => void }) {
   }, [isCreateOpen]);
 
 
-const DELETE_REVEAL_WIDTH = 96;
+const DELETE_REVEAL_WIDTH = 188;
 
 function closeSwipe() {
   setSwipedRouteId(null);
@@ -120,6 +123,36 @@ function handleRoutePointerEnd(event: ReactPointerEvent<HTMLElement>, routeId: s
 
 function shouldSuppressRouteClick() {
   return Date.now() < suppressClickUntilRef.current || swipeOffset < 0;
+}
+
+function requestArchiveAction(route: RouteSummary) {
+  closeSwipe();
+  setArchiveActionError('');
+  setArchiveActionTarget(route);
+}
+
+function closeArchiveAction() {
+  if (archiveActionSaving) return;
+  setArchiveActionTarget(null);
+  setArchiveActionError('');
+}
+
+async function handleArchiveAction() {
+  if (!archiveActionTarget || archiveActionSaving) return;
+  setArchiveActionSaving(true);
+  setArchiveActionError('');
+  try {
+    const shouldArchive = archiveActionTarget.status !== 'archived';
+    await setOwnedRouteArchived(archiveActionTarget.id, shouldArchive);
+    setRoutes((current) => current.filter((route) => route.id !== archiveActionTarget.id));
+    setExpandedDescriptionId((current) => current === archiveActionTarget.id ? null : current);
+    setToast(shouldArchive ? `「${archiveActionTarget.name}」をアーカイブしました。` : `「${archiveActionTarget.name}」を一覧へ戻しました。`);
+    setArchiveActionTarget(null);
+  } catch (error) {
+    setArchiveActionError(getErrorMessage(error, archiveActionTarget.status === 'archived' ? 'Routeを復元できませんでした。' : 'Routeをアーカイブできませんでした。'));
+  } finally {
+    setArchiveActionSaving(false);
+  }
 }
 
 function requestDeleteRoute(route: RouteSummary) {
@@ -252,16 +285,28 @@ async function handleDeleteRoute() {
 
                 return (
                   <div className={`home-route-swipe-shell${swipeOpen ? ' is-open' : ''}`} key={route.id}>
-                    <button
-                      className="home-route-swipe-delete"
-                      type="button"
-                      onClick={() => requestDeleteRoute(route)}
-                      aria-label={`${route.name}を削除`}
-                      tabIndex={swipeOpen ? 0 : -1}
-                    >
-                      <span aria-hidden="true">⌫</span>
-                      <strong>削除</strong>
-                    </button>
+                    <div className="home-route-swipe-actions" aria-hidden={!swipeOpen}>
+                      <button
+                        className={`home-route-swipe-archive${showArchived ? ' is-restore' : ''}`}
+                        type="button"
+                        onClick={() => requestArchiveAction(route)}
+                        aria-label={showArchived ? `${route.name}を一覧へ戻す` : `${route.name}をアーカイブ`}
+                        tabIndex={swipeOpen ? 0 : -1}
+                      >
+                        <span aria-hidden="true">{showArchived ? '↩' : '▣'}</span>
+                        <strong>{showArchived ? '復元' : 'アーカイブ'}</strong>
+                      </button>
+                      <button
+                        className="home-route-swipe-delete"
+                        type="button"
+                        onClick={() => requestDeleteRoute(route)}
+                        aria-label={`${route.name}を削除`}
+                        tabIndex={swipeOpen ? 0 : -1}
+                      >
+                        <span aria-hidden="true">⌫</span>
+                        <strong>削除</strong>
+                      </button>
+                    </div>
 
                     <article
                       className={`home-route-card home-route-swipe-panel${descriptionOpen ? ' is-description-open' : ''}`}
@@ -336,6 +381,28 @@ async function handleDeleteRoute() {
           <button className="home-footer-action" type="button" onClick={handleSignOut}>サインアウト</button>
         </div>
       </footer>
+
+      {archiveActionTarget && (
+        <div className="modal-backdrop route-list-archive-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeArchiveAction(); }}>
+          <section className="route-modal route-list-archive-modal" role="dialog" aria-modal="true" aria-labelledby="route-list-archive-title">
+            <div className="route-list-archive-icon" aria-hidden="true">{archiveActionTarget.status === 'archived' ? '↩' : '▣'}</div>
+            <h2 id="route-list-archive-title">{archiveActionTarget.status === 'archived' ? '一覧へ戻しますか？' : 'アーカイブしますか？'}</h2>
+            <p className="route-list-delete-name">「{archiveActionTarget.name}」</p>
+            <p className="route-list-delete-copy">
+              {archiveActionTarget.status === 'archived'
+                ? '通常のRoute一覧へ戻します。内容や進行状態はそのまま維持されます。'
+                : '通常の一覧から隠します。削除ではないため、あとから復元できます。'}
+            </p>
+            {archiveActionError && <div className="route-inline-error" role="alert">{archiveActionError}</div>}
+            <div className="modal-actions">
+              <button className="secondary-button" type="button" onClick={closeArchiveAction} disabled={archiveActionSaving}>キャンセル</button>
+              <button className="primary-button" type="button" onClick={() => void handleArchiveAction()} disabled={archiveActionSaving}>
+                {archiveActionSaving ? '処理中…' : archiveActionTarget.status === 'archived' ? '一覧へ戻す' : 'アーカイブする'}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
 
       {deleteTarget && (
         <div
