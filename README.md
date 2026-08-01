@@ -1,4 +1,4 @@
-# D Route v2.1.0-p51
+# D Route v2.1.0-p52
 
 ## v2.1.0-p22.1 Planning Core DB Baseline recovery
 
@@ -575,4 +575,13 @@ Chat UI / 操作仕上げ。
 - 参加状況確認とログインID招待の既存機能へ導線を接続
 - Route設定はOwnerのみ、メンバー・招待画面はRoute memberが閲覧可能
 - テンプレート / 複製 / アーカイブは引き続き未実装
+- DB変更なし
+
+
+## v2.1.0-p52
+
+- Menu内の「メンバー・招待」を削除
+- 下部ナビのMembersと役割が重複するため導線を一本化
+- 招待・参加状況確認はMembersタブから行う
+- MenuはRoute設定、テンプレート、複製、アーカイブなど管理機能に限定
 - DB変更なし

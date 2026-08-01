@@ -11,7 +11,6 @@ import { useBodyScrollLock } from '../../shared/hooks/useBodyScrollLock';
 const items = [
   { key:'settings', icon:'⚙️', title:'Route設定', description:'名前・説明・基本情報を管理' },
   { key:'template', icon:'🧩', title:'テンプレート', description:'このRouteを再利用できる形で保存' },
-  { key:'share', icon:'🔗', title:'メンバー・招待', description:'参加状況の確認やログインID招待' },
   { key:'duplicate', icon:'📄', title:'Routeを複製', description:'内容を引き継いだ新しいRouteを作成' },
   { key:'archive', icon:'📦', title:'完了・アーカイブ', description:'終了したRouteを整理' },
 ] as const;
@@ -112,26 +111,16 @@ async function handleSaveSettings() {
 
       <div className="route-menu-list">{items.map((item) => {
         const isSettings = item.key === 'settings';
-        const isShare = item.key === 'share';
-        const isAvailable = isSettings || isShare;
-        const isDisabled = isSettings ? !isOwner : !isAvailable;
-
         return <button
           type="button"
           className="route-menu-item"
           key={item.key}
-          onClick={() => {
-            if (isSettings) {
-              openRouteSettings();
-              return;
-            }
-            if (isShare) navigate(`/routes/${routeId}/members`);
-          }}
-          disabled={isDisabled}
+          onClick={isSettings ? openRouteSettings : undefined}
+          disabled={isSettings ? !isOwner : true}
           title={
             isSettings && !isOwner
               ? 'Route設定はリーダーのみ変更できます。'
-              : !isAvailable
+              : !isSettings
                 ? 'この機能は今後追加予定です。'
                 : undefined
           }
