@@ -8,6 +8,10 @@ export type RouteChatMessage = {
   body: string;
   isImportant: boolean;
   createdAt: string;
+  latitude: number | null;
+  longitude: number | null;
+  locationAccuracyMeters: number | null;
+  locationCapturedAt: string | null;
 };
 
 export type RouteChatReadStatus = {
@@ -15,7 +19,7 @@ export type RouteChatReadStatus = {
   lastReadAt: string;
 };
 
-const columns = 'id,route_id,author_user_id,author_name,body,is_important,created_at';
+const columns = 'id,route_id,author_user_id,author_name,body,is_important,created_at,latitude,longitude,location_accuracy_meters,location_captured_at';
 
 function requireSupabase() {
   const supabase = getSupabaseClient();
@@ -32,6 +36,10 @@ function mapMessage(row: any): RouteChatMessage {
     body: row.body,
     isImportant: Boolean(row.is_important),
     createdAt: row.created_at,
+    latitude: row.latitude == null ? null : Number(row.latitude),
+    longitude: row.longitude == null ? null : Number(row.longitude),
+    locationAccuracyMeters: row.location_accuracy_meters == null ? null : Number(row.location_accuracy_meters),
+    locationCapturedAt: row.location_captured_at ?? null,
   };
 }
 
@@ -86,10 +94,18 @@ export async function markRouteChatRead(routeId: string, lastReadAt?: string): P
   return { userId: data.user_id, lastReadAt: data.last_read_at };
 }
 
+export type RouteChatLocationAttachment = {
+  latitude: number;
+  longitude: number;
+  accuracyMeters: number | null;
+  capturedAt: string;
+};
+
 export async function sendRouteChatMessage(
   routeId: string,
   body: string,
-  isImportant = false
+  isImportant = false,
+  location: RouteChatLocationAttachment | null = null
 ): Promise<RouteChatMessage> {
   const normalizedBody = body.trim();
   if (!normalizedBody) throw new Error('メッセージを入力してください。');
@@ -120,6 +136,10 @@ export async function sendRouteChatMessage(
       author_name: authorName,
       body: normalizedBody,
       is_important: isImportant,
+      latitude: location?.latitude ?? null,
+      longitude: location?.longitude ?? null,
+      location_accuracy_meters: location?.accuracyMeters ?? null,
+      location_captured_at: location?.capturedAt ?? null,
     })
     .select(columns)
     .single();

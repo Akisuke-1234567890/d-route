@@ -14,6 +14,7 @@ import {
   subscribeRouteChat,
   type RouteChatMessage,
   type RouteChatReadStatus,
+  type RouteChatLocationAttachment,
 } from './chat';
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -28,6 +29,8 @@ export function RouteChatPage() {
   const [initialLastReadAt, setInitialLastReadAt] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [important, setImportant] = useState(false);
+  const [locationAttachment, setLocationAttachment] = useState<RouteChatLocationAttachment | null>(null);
+  const [locating, setLocating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -113,6 +116,44 @@ export function RouteChatPage() {
     composer.style.height = `${Math.min(composer.scrollHeight, 120)}px`;
   }, [draft]);
 
+  async function attachCurrentLocation() {
+    if (locating) return;
+    if (!navigator.geolocation) {
+      setError('この端末では現在地を取得できません。');
+      return;
+    }
+
+    setLocating(true);
+    setError(null);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const accuracy = Number.isFinite(position.coords.accuracy) ? Math.round(position.coords.accuracy) : null;
+        if (accuracy !== null && accuracy > 100) {
+          const attach = window.confirm(`現在地の精度が約${accuracy}mです。\nおおよその位置として添付しますか？`);
+          if (!attach) {
+            setLocating(false);
+            return;
+          }
+        }
+        setLocationAttachment({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracyMeters: accuracy,
+          capturedAt: new Date(position.timestamp || Date.now()).toISOString(),
+        });
+        setLocating(false);
+      },
+      (geoError) => {
+        const message = geoError.code === geoError.PERMISSION_DENIED
+          ? '位置情報の利用が許可されていません。端末の設定を確認してください。'
+          : '現在地を取得できませんでした。文章だけならそのまま送信できます。';
+        setError(message);
+        setLocating(false);
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 30000 }
+    );
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const body = draft.trim();
@@ -121,11 +162,12 @@ export function RouteChatPage() {
     setSending(true);
     setError(null);
     try {
-      const saved = await sendRouteChatMessage(routeId, body, important);
+      const saved = await sendRouteChatMessage(routeId, body, important, locationAttachment);
       setMessages((current) => current.some((message) => message.id === saved.id) ? current : [...current, saved]);
       await markRouteChatRead(routeId, saved.createdAt);
       setDraft('');
       setImportant(false);
+      setLocationAttachment(null);
     } catch (nextError) {
       setError(getErrorMessage(nextError, 'メッセージを送信できませんでした。'));
     } finally {
@@ -185,7 +227,28 @@ export function RouteChatPage() {
                         <time>{formatChatTime(message.createdAt)}</time>
                       </div>
                     ) : null}
-                    <p className="chat-bubble">{message.body}</p>
+                    <div className="chat-bubble">
+                      <p>{message.body}</p>
+                      {message.latitude !== null && message.longitude !== null ? (
+                        <a
+                          className="chat-location-card"
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${message.latitude},${message.longitude}`)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label="送信時の位置を地図で開く"
+                        >
+                          <span className="chat-location-icon" aria-hidden="true">📍</span>
+                          <span>
+                            <strong>送信時の位置</strong>
+                            <small>
+                              {formatChatTime(message.locationCapturedAt ?? message.createdAt)}
+                              {message.locationAccuracyMeters !== null ? ` · 精度 約${Math.round(message.locationAccuracyMeters)}m` : ''}
+                            </small>
+                          </span>
+                          <b>地図で開く</b>
+                        </a>
+                      ) : null}
+                    </div>
                     <div className="chat-message-footer">
                       {isContinuation ? <time className="chat-continuation-time">{formatChatTime(message.createdAt)}</time> : <span />}
                       {isSelf && readCount > 0 ? <span className="chat-read-count">既読 {readCount}</span> : null}
@@ -200,7 +263,24 @@ export function RouteChatPage() {
 
         {error ? <p className="chat-page-error" role="alert">{error}</p> : null}
 
+        {locationAttachment ? (
+          <div className="chat-location-attachment" role="status">
+            <span>📍 送信時の位置を添付中{locationAttachment.accuracyMeters !== null ? `（精度 約${locationAttachment.accuracyMeters}m）` : ''}</span>
+            <button type="button" onClick={() => setLocationAttachment(null)} aria-label="位置情報の添付を外す">×</button>
+          </div>
+        ) : null}
+
         <form className="chat-page-composer" onSubmit={submit}>
+          <button
+            className={`chat-location-button${locationAttachment ? ' is-attached' : ''}`}
+            type="button"
+            onClick={() => void attachCurrentLocation()}
+            disabled={locating || sending}
+            aria-label={locationAttachment ? '添付する現在地を更新' : '現在地を添付'}
+            title={locationAttachment ? '現在地を更新' : '現在地を添付'}
+          >
+            {locating ? <span className="chat-location-spinner" aria-hidden="true" /> : '📍'}
+          </button>
           <textarea
             ref={composerRef}
             value={draft}
