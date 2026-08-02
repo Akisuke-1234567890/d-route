@@ -1,3 +1,11 @@
+## v2.1.0-p68
+
+- Branch作成と参加者割り振りの内部基盤を追加
+- 参加者は同時に1つのBranchへ所属
+- 管理者がMembers画面からBranch作成・割り振り・全体Route復帰を操作可能
+- Branchと割り振りはRoute参加者が閲覧可能
+- DB migration追加
+
 ## v2.1.0-p67.1
 
 - Route本体取得と参加者判定を分離

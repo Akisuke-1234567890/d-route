@@ -5,6 +5,7 @@ import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { RouteBottomNav } from './RouteBottomNav';
 import { getOwnRouteMember, inviteRouteMemberByLoginId, listRouteMembers, respondToRouteInvite, type RouteMember, type RouteMemberStatus } from './members';
+import { assignMemberToBranch, clearMemberBranch, createRouteBranch, listRouteBranchAssignments, listRouteBranches, type RouteBranch, type RouteBranchAssignment } from './branches';
 
 const labels: Record<RouteMemberStatus,string> = { participating:'参加', unanswered:'未回答', declined:'不参加' };
 
@@ -20,18 +21,49 @@ export function RouteMembersPage() {
   const [ownMember, setOwnMember] = useState<RouteMember | null>(null);
   const [responseSaving, setResponseSaving] = useState(false);
   const [responseError, setResponseError] = useState('');
+  const [branches, setBranches] = useState<RouteBranch[]>([]);
+  const [assignments, setAssignments] = useState<RouteBranchAssignment[]>([]);
+  const [branchName, setBranchName] = useState('');
+  const [branchSaving, setBranchSaving] = useState(false);
+  const [branchError, setBranchError] = useState('');
 
 
   useEffect(() => {
     let active = true;
     setLoading(true); setError('');
-    void Promise.all([listRouteMembers(routeId), getOwnRouteMember(routeId)])
-      .then(([data, own]) => { if (active) { setMembers(data); setOwnMember(own); } })
+    void Promise.all([listRouteMembers(routeId), getOwnRouteMember(routeId), listRouteBranches(routeId), listRouteBranchAssignments(routeId)])
+      .then(([data, own, branchData, assignmentData]) => { if (active) { setMembers(data); setOwnMember(own); setBranches(branchData); setAssignments(assignmentData); } })
       .catch((caught) => { if (active) setError(caught instanceof Error ? caught.message : 'Membersを読み込めませんでした。'); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [routeId]);
 
+
+
+async function addBranch(event: FormEvent<HTMLFormElement>) {
+  event.preventDefault();
+  if (!branchName.trim() || branchSaving) return;
+  setBranchSaving(true); setBranchError('');
+  try {
+    const created = await createRouteBranch(routeId, branchName);
+    setBranches((current) => [...current, created]);
+    setBranchName('');
+  } catch (caught) { setBranchError(caught instanceof Error ? caught.message : 'Branchを作成できませんでした。'); }
+  finally { setBranchSaving(false); }
+}
+
+async function changeMemberBranch(memberUserId: string, branchId: string) {
+  setBranchError('');
+  try {
+    if (!branchId) {
+      await clearMemberBranch(routeId, memberUserId);
+      setAssignments((current) => current.filter((item) => item.memberUserId !== memberUserId));
+      return;
+    }
+    const updated = await assignMemberToBranch(routeId, branchId, memberUserId);
+    setAssignments((current) => [...current.filter((item) => item.memberUserId !== memberUserId), updated]);
+  } catch (caught) { setBranchError(caught instanceof Error ? caught.message : 'Branchへ割り振れませんでした。'); }
+}
 
 async function submitInvite(event: FormEvent<HTMLFormElement>) {
   event.preventDefault();
@@ -113,7 +145,13 @@ async function answerInvite(status: 'participating' | 'declined') {
       {error ? <p className="route-tab-demo-note" role="alert">{error}</p> : null}
       {!loading && !error ? <>
         <div className="members-overview"><strong>{answered}/{members.length}</strong><span>回答済み</span><div><span>参加 {members.filter(m=>m.status==='participating').length}</span><span>未回答 {members.filter(m=>m.status==='unanswered').length}</span><span>不参加 {members.filter(m=>m.status==='declined').length}</span></div></div>
-        <div className="members-page-list">{members.map((member)=><article className="member-row member-page-row" key={member.id}><div className="member-avatar" aria-hidden="true">{member.displayName.slice(0,2).toUpperCase()}</div><div className="member-copy"><div className="member-name-line"><h2>{member.displayName}</h2><span className="member-role">{member.role === 'owner' ? 'リーダー' : 'メンバー'}</span></div><p className={`member-status member-status-${member.status}`}><span aria-hidden="true"/>{labels[member.status]}</p></div></article>)}</div>
+        {ownMember?.role === 'owner' ? <section className="branch-admin-panel">
+          <div><p className="eyebrow">BRANCH</p><h2>分岐グループ</h2><p>参加者を一時的な行動グループへ割り振ります。</p></div>
+          <form className="branch-create-form" onSubmit={addBranch}><input value={branchName} onChange={(event)=>setBranchName(event.target.value)} placeholder="例：ソアリン組" maxLength={40}/><button className="secondary-button" disabled={!branchName.trim() || branchSaving}>{branchSaving ? '追加中' : '＋ Branch追加'}</button></form>
+          {branchError ? <p className="member-invite-error" role="alert">{branchError}</p> : null}
+          {branches.length ? <div className="branch-chip-list">{branches.map((branch)=><span key={branch.id}>{branch.name}<small>{assignments.filter((item)=>item.branchId===branch.id).length}人</small></span>)}</div> : <p className="route-tab-demo-note">Branchはまだありません。</p>}
+        </section> : null}
+        <div className="members-page-list">{members.map((member)=>{ const assignment=assignments.find((item)=>item.memberUserId===member.userId); return <article className="member-row member-page-row" key={member.id}><div className="member-avatar" aria-hidden="true">{member.displayName.slice(0,2).toUpperCase()}</div><div className="member-copy"><div className="member-name-line"><h2>{member.displayName}</h2><span className="member-role">{member.role === 'owner' ? 'リーダー' : 'メンバー'}</span></div><p className={`member-status member-status-${member.status}`}><span aria-hidden="true"/>{labels[member.status]}</p>{ownMember?.role==='owner' && member.status==='participating' ? <label className="member-branch-select"><span>現在のBranch</span><select value={assignment?.branchId ?? ''} onChange={(event)=>void changeMemberBranch(member.userId,event.target.value)}><option value="">全体Route</option>{branches.map((branch)=><option key={branch.id} value={branch.id}>{branch.name}</option>)}</select></label> : assignment ? <p className="member-branch-label">{branches.find((branch)=>branch.id===assignment.branchId)?.name ?? 'Branch'}</p> : null}</div></article>})}</div>
         {members.length === 0 ? <p className="route-tab-demo-note">参加メンバーはいません。</p> : null}
       </> : null}
       <p className="route-tab-demo-note">Membersでは参加・未回答・不参加のみを扱います。移動状況や到着連絡はChatで共有します。</p>

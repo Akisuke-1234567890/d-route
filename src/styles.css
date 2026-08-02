@@ -3043,3 +3043,12 @@ a { color: inherit; }
   .v2-participant-route{padding:14px}
   .v2-participant-step{grid-template-columns:58px minmax(0,1fr);gap:9px;padding:11px}
 }
+
+/* v2.1.0-p68 Branch member assignment */
+.branch-admin-panel{margin:18px 0;padding:16px;border:1px solid rgba(146,132,255,.25);border-radius:18px;background:rgba(23,28,65,.72);display:grid;gap:12px}
+.branch-admin-panel h2{margin:2px 0 4px;font-size:1rem}.branch-admin-panel p{margin:0;color:var(--muted)}
+.branch-create-form{display:flex;gap:8px}.branch-create-form input{min-width:0;flex:1;border:1px solid rgba(196,203,255,.16);border-radius:12px;background:rgba(7,10,28,.5);color:#fff;padding:11px 12px;font:inherit}
+.branch-chip-list{display:flex;flex-wrap:wrap;gap:7px}.branch-chip-list>span{display:inline-flex;align-items:center;gap:7px;border-radius:999px;background:rgba(111,98,255,.14);border:1px solid rgba(143,126,255,.26);padding:7px 10px;font-size:.7rem;font-weight:800}.branch-chip-list small{color:var(--muted);font-size:.58rem}
+.member-branch-select{display:grid;gap:4px;margin-top:8px}.member-branch-select>span{font-size:.58rem;color:var(--muted);font-weight:800}.member-branch-select select{width:100%;border:1px solid rgba(196,203,255,.14);border-radius:10px;background:#111630;color:#fff;padding:8px 10px;font:inherit;font-size:.7rem}
+.member-branch-label{display:inline-flex;margin:8px 0 0!important;padding:5px 8px;border-radius:999px;background:rgba(111,98,255,.12);color:#d7d2ff!important;font-size:.62rem!important;font-weight:800}
+@media(max-width:420px){.branch-create-form{display:grid}.branch-create-form button{width:100%}}
