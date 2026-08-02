@@ -1,3 +1,12 @@
+## v2.1.0-p70
+
+- Placesへ別Routeの追加・編集UIを追加
+- 分岐して再合流、途中から合流、途中離脱の3接続形式を選択可能
+- 接続先は時刻付きDestinationから選択
+- Places上部に別Route要約カードを表示
+- 右スワイプ表示と別Route内Destination編集は後続Patch
+- DB変更なし（p69基盤を利用）
+
 ## v2.1.0-p69.1
 
 - VersionBadgeが存在しないVERSION_LABELをimportしてビルド失敗する問題を修正
