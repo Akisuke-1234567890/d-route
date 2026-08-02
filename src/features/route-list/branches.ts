@@ -114,6 +114,15 @@ export async function configureAlternateRoute(branchId: string, input: Alternate
   return mapBranch(row);
 }
 
+
+export async function deleteAlternateRoute(branchId: string, routeId: string): Promise<void> {
+  const { error } = await requireSupabase().rpc('delete_alternate_route', {
+    p_branch_id: branchId,
+    p_route_id: routeId,
+  });
+  if (error) throw error;
+}
+
 export async function assignMemberToBranch(routeId: string, branchId: string, memberUserId: string): Promise<RouteBranchAssignment> {
   const { data, error } = await requireSupabase().rpc('assign_route_member_to_branch', {
     p_route_id: routeId, p_branch_id: branchId, p_member_user_id: memberUserId,

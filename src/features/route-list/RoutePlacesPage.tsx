@@ -17,7 +17,7 @@ import {
   type DestinationTimeType,
 } from './destinations';
 import { createRoutePhase, deleteRoutePhase, getRoutePhases, updateRoutePhase, type PhaseSummary } from './phases';
-import { createAlternateRoute, configureAlternateRoute, listRouteBranches, type AlternateRouteConnectionType, type RouteBranch } from './branches';
+import { createAlternateRoute, configureAlternateRoute, deleteAlternateRoute, listRouteBranches, type AlternateRouteConnectionType, type RouteBranch } from './branches';
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error && error.message) return error.message;
@@ -151,6 +151,7 @@ export function RoutePlacesPage() {
   const [alternateRouteEndId, setAlternateRouteEndId] = useState('');
   const [alternateRouteSaving, setAlternateRouteSaving] = useState(false);
   const [alternateRouteError, setAlternateRouteError] = useState<string | null>(null);
+  const [alternateRouteDeleting, setAlternateRouteDeleting] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<DestinationSummary | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -270,12 +271,31 @@ export function RoutePlacesPage() {
   }
 
   function closeAlternateRouteModal() {
-    if (!alternateRouteSaving) setAlternateRouteOpen(false);
+    if (!alternateRouteSaving && !alternateRouteDeleting) setAlternateRouteOpen(false);
+  }
+
+  async function handleAlternateRouteDelete() {
+    if (!alternateRouteEditing || alternateRouteDeleting || alternateRouteSaving) return;
+    const confirmed = window.confirm(`「${alternateRouteEditing.name}」を削除しますか？\n割り振り情報も解除されます。`);
+    if (!confirmed) return;
+    setAlternateRouteDeleting(true);
+    setAlternateRouteError(null);
+    try {
+      await deleteAlternateRoute(alternateRouteEditing.id, routeId);
+      setAlternateRoutes((current) => current.filter((item) => item.id !== alternateRouteEditing.id));
+      setAlternateRouteOpen(false);
+      setAlternateRouteEditing(null);
+      setToast('別行動を削除しました。');
+    } catch (err) {
+      setAlternateRouteError(getErrorMessage(err, '別行動を削除できませんでした。'));
+    } finally {
+      setAlternateRouteDeleting(false);
+    }
   }
 
   async function handleAlternateRouteSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (alternateRouteSaving) return;
+    if (alternateRouteSaving || alternateRouteDeleting) return;
     if (!alternateRouteName.trim()) { setAlternateRouteError('別Route名を入力してください。'); return; }
     if (alternateRouteType === 'split_merge' && (!alternateRouteStartId || !alternateRouteEndId)) { setAlternateRouteError('分岐地点と合流地点を選択してください。'); return; }
     if (alternateRouteType === 'join' && !alternateRouteEndId) { setAlternateRouteError('合流地点を選択してください。'); return; }
@@ -1184,20 +1204,21 @@ function handlePhasePointerEnd(event: ReactPointerEvent<HTMLElement>, phaseId: s
       {alternateRouteOpen && (
         <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeAlternateRouteModal(); }}>
           <section className="route-modal alternate-route-modal" role="dialog" aria-modal="true" aria-labelledby="alternate-route-title">
-            <div className="modal-header"><div><p className="eyebrow">別行動の設定</p><h2 id="alternate-route-title">{alternateRouteEditing ? '別行動を編集' : '別行動を追加'}</h2></div><button className="modal-close-button" type="button" onClick={closeAlternateRouteModal} disabled={alternateRouteSaving}>×</button></div>
+            <div className="modal-header"><div><p className="eyebrow">別行動の設定</p><h2 id="alternate-route-title">{alternateRouteEditing ? '別行動を編集' : '別行動を追加'}</h2></div><button className="modal-close-button" type="button" onClick={closeAlternateRouteModal} disabled={alternateRouteSaving || alternateRouteDeleting}>×</button></div>
             <form className="route-create-form place-form" onSubmit={handleAlternateRouteSave}>
-              <div className="field-group"><label htmlFor="alternate-route-name">別行動の名前</label><input id="alternate-route-name" value={alternateRouteName} onChange={(event) => setAlternateRouteName(event.target.value)} placeholder="例：午後から合流組" maxLength={40} disabled={alternateRouteSaving} /></div>
+              <div className="field-group"><label htmlFor="alternate-route-name">別行動の名前</label><input id="alternate-route-name" value={alternateRouteName} onChange={(event) => setAlternateRouteName(event.target.value)} placeholder="例：午後から合流組" maxLength={40} disabled={alternateRouteSaving || alternateRouteDeleting} /></div>
               <fieldset className="alternate-route-type-field"><legend>接続方法</legend>
                 <label className={alternateRouteType === 'split_merge' ? 'is-selected' : ''}><input type="radio" name="alternate-route-type" value="split_merge" checked={alternateRouteType === 'split_merge'} onChange={() => { setAlternateRouteType('split_merge'); setAlternateRouteError(null); }} /><strong>途中で別れて、あとで合流</strong><small>メインの予定から別行動を始め、あとで戻ります</small></label>
                 <label className={alternateRouteType === 'join' ? 'is-selected' : ''}><input type="radio" name="alternate-route-type" value="join" checked={alternateRouteType === 'join'} onChange={() => { setAlternateRouteType('join'); setAlternateRouteStartId(''); setAlternateRouteError(null); }} /><strong>別行動から途中で合流</strong><small>別の場所から行動を始め、途中で合流します</small></label>
                 <label className={alternateRouteType === 'leave' ? 'is-selected' : ''}><input type="radio" name="alternate-route-type" value="leave" checked={alternateRouteType === 'leave'} onChange={() => { setAlternateRouteType('leave'); setAlternateRouteEndId(''); setAlternateRouteError(null); }} /><strong>途中で別れて、そのまま終了</strong><small>メインの予定から離れ、その後は合流しません</small></label>
               </fieldset>
-              {alternateRouteType !== 'join' ? <div className="field-group"><label htmlFor="alternate-route-start">{alternateRouteType === 'leave' ? '途中で離れる場所' : '別行動を始める場所'}</label><select id="alternate-route-start" value={alternateRouteStartId} onChange={(event) => setAlternateRouteStartId(event.target.value)} disabled={alternateRouteSaving}><option value="">メインの予定から選択</option>{timedDestinations.map((destination) => <option key={destination.id} value={destination.id}>{destinationLabel(destination.id)}</option>)}</select></div> : null}
-              {alternateRouteType !== 'leave' ? <div className="field-group"><label htmlFor="alternate-route-end">合流する場所</label><select id="alternate-route-end" value={alternateRouteEndId} onChange={(event) => setAlternateRouteEndId(event.target.value)} disabled={alternateRouteSaving}><option value="">メインの予定から選択</option>{timedDestinations.map((destination) => <option key={destination.id} value={destination.id}>{destinationLabel(destination.id)}</option>)}</select></div> : null}
+              {alternateRouteType !== 'join' ? <div className="field-group"><label htmlFor="alternate-route-start">{alternateRouteType === 'leave' ? '途中で離れる場所' : '別行動を始める場所'}</label><select id="alternate-route-start" value={alternateRouteStartId} onChange={(event) => setAlternateRouteStartId(event.target.value)} disabled={alternateRouteSaving || alternateRouteDeleting}><option value="">メインの予定から選択</option>{timedDestinations.map((destination) => <option key={destination.id} value={destination.id}>{destinationLabel(destination.id)}</option>)}</select></div> : null}
+              {alternateRouteType !== 'leave' ? <div className="field-group"><label htmlFor="alternate-route-end">合流する場所</label><select id="alternate-route-end" value={alternateRouteEndId} onChange={(event) => setAlternateRouteEndId(event.target.value)} disabled={alternateRouteSaving || alternateRouteDeleting}><option value="">メインの予定から選択</option>{timedDestinations.map((destination) => <option key={destination.id} value={destination.id}>{destinationLabel(destination.id)}</option>)}</select></div> : null}
               {timedDestinations.length === 0 ? <p className="form-error">接続先に使える予定がありません。先にメインの予定へ時間を設定してください。</p> : null}
-              <div className="field-group"><label htmlFor="alternate-route-description">説明 <span className="field-optional">任意</span></label><textarea id="alternate-route-description" value={alternateRouteDescription} onChange={(event) => setAlternateRouteDescription(event.target.value)} maxLength={200} rows={3} disabled={alternateRouteSaving} /></div>
+              <div className="field-group"><label htmlFor="alternate-route-description">説明 <span className="field-optional">任意</span></label><textarea id="alternate-route-description" value={alternateRouteDescription} onChange={(event) => setAlternateRouteDescription(event.target.value)} maxLength={200} rows={3} disabled={alternateRouteSaving || alternateRouteDeleting} /></div>
               {alternateRouteError ? <p className="form-error" role="alert">{alternateRouteError}</p> : null}
-              <div className="modal-actions"><button className="secondary-button" type="button" onClick={closeAlternateRouteModal} disabled={alternateRouteSaving}>キャンセル</button><button className="primary-button" type="submit" disabled={alternateRouteSaving || !alternateRouteName.trim() || timedDestinations.length === 0}>{alternateRouteSaving ? '保存中…' : alternateRouteEditing ? '保存' : '追加'}</button></div>
+              <div className="modal-actions"><button className="secondary-button" type="button" onClick={closeAlternateRouteModal} disabled={alternateRouteSaving || alternateRouteDeleting}>キャンセル</button><button className="primary-button" type="submit" disabled={alternateRouteSaving || alternateRouteDeleting || !alternateRouteName.trim() || timedDestinations.length === 0}>{alternateRouteSaving ? '保存中…' : alternateRouteEditing ? '保存' : '追加'}</button></div>
+              {alternateRouteEditing ? <button className="alternate-route-delete-button" type="button" onClick={() => void handleAlternateRouteDelete()} disabled={alternateRouteSaving || alternateRouteDeleting}>{alternateRouteDeleting ? '削除中…' : 'この別行動を削除'}</button> : null}
             </form>
           </section>
         </div>
