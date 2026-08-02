@@ -1,4 +1,4 @@
-import { VERSION_LABEL } from '../../app/version';
+import { APP_VERSION } from '../../app/version';
 export function VersionBadge() {
-  return <span className="version-badge" aria-label={`アプリバージョン ${VERSION_LABEL}`}>{VERSION_LABEL}</span>;
+  return <span className="version-badge" aria-label={`アプリバージョン ${APP_VERSION}`}>{APP_VERSION}</span>;
 }

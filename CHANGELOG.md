@@ -1,3 +1,9 @@
+## v2.1.0-p69.1
+
+- VersionBadgeが存在しないVERSION_LABELをimportしてビルド失敗する問題を修正
+- APP_VERSIONへ統一
+- DB変更なし
+
 ## v2.1.0-p69
 
 - 分岐・途中合流・途中離脱を共通の「別Route」内部モデルへ統合
