@@ -3052,3 +3052,23 @@ a { color: inherit; }
 .member-branch-select{display:grid;gap:4px;margin-top:8px}.member-branch-select>span{font-size:.58rem;color:var(--muted);font-weight:800}.member-branch-select select{width:100%;border:1px solid rgba(196,203,255,.14);border-radius:10px;background:#111630;color:#fff;padding:8px 10px;font:inherit;font-size:.7rem}
 .member-branch-label{display:inline-flex;margin:8px 0 0!important;padding:5px 8px;border-radius:999px;background:rgba(111,98,255,.12);color:#d7d2ff!important;font-size:.62rem!important;font-weight:800}
 @media(max-width:420px){.branch-create-form{display:grid}.branch-create-form button{width:100%}}
+
+
+/* v2.1.0-p68.3 Route create outer scroll */
+.route-create-backdrop{
+  align-items:start;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-y;
+  padding-top:max(18px, env(safe-area-inset-top));
+}
+.route-create-backdrop .route-create-modal{
+  flex:0 0 auto;
+  margin:0 auto max(18px, env(safe-area-inset-bottom));
+}
+/* The template list keeps its own scroll; dragging outside it scrolls the full modal. */
+.route-create-backdrop .route-create-template-list{
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+}

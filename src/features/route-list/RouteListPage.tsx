@@ -477,8 +477,8 @@ async function handleDeleteRoute() {
       )}
 
       {isCreateOpen && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeCreateModal(); }}>
-          <section className="route-modal" role="dialog" aria-modal="true" aria-labelledby="create-route-title">
+        <div className="modal-backdrop route-create-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeCreateModal(); }}>
+          <section className="route-modal route-create-modal" role="dialog" aria-modal="true" aria-labelledby="create-route-title">
             <div className="modal-header">
               <div>
                 <p className="eyebrow">NEW ROUTE</p>
