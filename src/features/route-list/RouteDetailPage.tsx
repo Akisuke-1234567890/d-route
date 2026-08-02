@@ -9,6 +9,7 @@ import { getRouteDestinations, setRouteDestinationCompleted, type DestinationSum
 import { getSupabaseClient } from '../../shared/api/supabase';
 import { RouteBottomNav } from './RouteBottomNav';
 import { formatChatTime, getLatestRouteChatMessages, type RouteChatMessage } from './chat';
+import { getOwnRouteMember, type RouteMember } from './members';
 
 function timeToMinutes(value: string | null | undefined): number | null {
   if (!value) return null;
@@ -79,7 +80,7 @@ function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback;
 }
 
-function PhaseDashboard({ routeId }: { routeId: string }) {
+function PhaseDashboard({ routeId, participantView }: { routeId: string; participantView: boolean }) {
   const [phases, setPhases] = useState<PhaseSummary[]>([]);
   const [destinations, setDestinations] = useState<DestinationSummary[]>([]);
   const [planningLoading, setPlanningLoading] = useState(true);
@@ -229,6 +230,26 @@ const completedCount = useMemo(
     return { incomplete, nextTimed, exceptionTasks, overdueTasks };
   }, [currentDestinations, currentMinutes, destinations, phases]);
 
+  const participantSteps = useMemo(() => {
+    const phaseOrder = new Map(phases.map((phase, index) => [phase.id, index]));
+    const ordered = destinations
+      .filter((destination) => !destination.completedAt)
+      .slice()
+      .sort((a, b) => {
+        const phaseDiff = (phaseOrder.get(a.phaseId) ?? Number.MAX_SAFE_INTEGER) - (phaseOrder.get(b.phaseId) ?? Number.MAX_SAFE_INTEGER);
+        if (phaseDiff !== 0) return phaseDiff;
+        const aTime = timeToMinutes(a.startTime) ?? Number.MAX_SAFE_INTEGER;
+        const bTime = timeToMinutes(b.startTime) ?? Number.MAX_SAFE_INTEGER;
+        return aTime - bTime || a.orderValue - b.orderValue;
+      });
+
+    const currentIndex = priorityDestination ? Math.max(0, ordered.findIndex((item) => item.id === priorityDestination.id)) : 0;
+    const startIndex = currentIndex >= 0 ? currentIndex : 0;
+    return ordered.slice(startIndex, startIndex + 3);
+  }, [destinations, phases, priorityDestination]);
+
+  const participantStepLabels = ['現在', '次', 'その次'] as const;
+
 const toggleDestinationCompleted = async (destination: DestinationSummary) => {
   if (progressSavingId) return;
 
@@ -321,6 +342,68 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
         <p>{planningError}</p>
         <Link className="v2-text-link" to={`/routes/${routeId}/places`}>Placesを確認 ›</Link>
       </article>
+    );
+  }
+
+  if (participantView) {
+    return (
+      <>
+        <article className="v2-participant-route" aria-labelledby="participant-route-title">
+          <div className="v2-section-heading">
+            <div>
+              <p className="eyebrow">YOUR ROUTE</p>
+              <h2 id="participant-route-title">いま必要な流れ</h2>
+            </div>
+            <span className="v2-participant-view-badge">参加者表示</span>
+          </div>
+
+          {participantSteps.length ? (
+            <div className="v2-participant-step-list">
+              {participantSteps.map((destination, index) => {
+                const phase = phases.find((item) => item.id === destination.phaseId);
+                const timeLabel = formatDestinationTime(destination);
+                return (
+                  <article className={`v2-participant-step is-${index === 0 ? 'current' : index === 1 ? 'next' : 'later'}`} key={destination.id}>
+                    <div className="v2-participant-step-label">
+                      <span>{participantStepLabels[index]}</span>
+                      {phase?.name ? <small>{phase.name}</small> : null}
+                    </div>
+                    <div className="v2-participant-step-content">
+                      {timeLabel ? <time>{timeLabel}</time> : null}
+                      <h3>{destination.name}</h3>
+                      {getDestinationNote(destination) ? <p>{getDestinationNote(destination)}</p> : null}
+                      {getDestinationDirectionsUrl(destination, 'walking') ? (
+                        <a href={getDestinationDirectionsUrl(destination, 'walking') ?? undefined} target="_blank" rel="noreferrer">地図で確認 ›</a>
+                      ) : null}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="v2-phase-empty"><p>現在案内する予定はありません。</p></div>
+          )}
+
+          <p className="v2-participant-route-note">分岐構造は内部で管理し、参加者には必要な順番だけを表示します。</p>
+        </article>
+
+        <article className="v2-chat-summary">
+          <div className="v2-section-heading">
+            <div><p className="eyebrow">CHAT</p><h2>連絡</h2></div>
+            <Link className="v2-text-link" to={`/routes/${routeId}/chat`}>Chatを見る ›</Link>
+          </div>
+          {latestChats.length ? (
+            <div className="v2-route-chat-preview">
+              {latestChats.map((message) => (
+                <div className={`v2-route-chat-line${message.isImportant ? ' is-priority' : ''}`} key={message.id}>
+                  <div className="v2-route-chat-meta">{message.isImportant ? <span className="v2-route-chat-important">重要</span> : null}<strong>{message.authorName}</strong><time>{formatChatTime(message.createdAt)}</time></div>
+                  <p>{message.body}</p>
+                </div>
+              ))}
+            </div>
+          ) : <div className="v2-latest-message is-empty"><div className="v2-empty-message-copy"><strong>まだ連絡はありません。</strong><p>必要な連絡があればChatで共有できます。</p></div></div>}
+        </article>
+      </>
     );
   }
 
@@ -515,6 +598,7 @@ export function RouteDetailPage() {
   const [route, setRoute] = useState<RouteSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [ownMember, setOwnMember] = useState<RouteMember | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -525,9 +609,11 @@ export function RouteDetailPage() {
       return () => { active = false; };
     }
 
-    void getRoute(routeId)
-      .then((nextRoute) => {
-        if (active) setRoute(nextRoute);
+    void Promise.all([getRoute(routeId), getOwnRouteMember(routeId)])
+      .then(([nextRoute, member]) => {
+        if (!active) return;
+        setRoute(nextRoute);
+        setOwnMember(member);
       })
       .catch((nextError) => {
         if (active) setError(getErrorMessage(nextError, 'Routeを読み込めませんでした。'));
@@ -567,13 +653,13 @@ export function RouteDetailPage() {
               </div>
             </section>
 
-            <PhaseDashboard routeId={routeId ?? route.id} />
+            <PhaseDashboard routeId={routeId ?? route.id} participantView={ownMember?.role === 'member'} />
 
-            <section className="v2-admin-zone" aria-label="Route管理">
+            {ownMember?.role !== 'member' ? <section className="v2-admin-zone" aria-label="Route管理">
               <p>Routeの管理</p>
               <button type="button" className="v2-complete-button">Routeを完了する</button>
               <small>プロトタイプのため、このボタンはまだ動作しません。</small>
-            </section>
+            </section> : null}
           </>
         )}
       </section>
