@@ -609,17 +609,25 @@ export function RouteDetailPage() {
       return () => { active = false; };
     }
 
-    void Promise.all([getRoute(routeId), getOwnRouteMember(routeId)])
-      .then(([nextRoute, member]) => {
+    void getRoute(routeId)
+      .then((nextRoute) => {
         if (!active) return;
         setRoute(nextRoute);
-        setOwnMember(member);
       })
       .catch((nextError) => {
         if (active) setError(getErrorMessage(nextError, 'Routeを読み込めませんでした。'));
       })
       .finally(() => {
         if (active) setLoading(false);
+      });
+
+    void getOwnRouteMember(routeId)
+      .then((member) => {
+        if (active) setOwnMember(member);
+      })
+      .catch(() => {
+        // 参加者判定に失敗してもRoute本体の表示は継続する。
+        if (active) setOwnMember(null);
       });
 
     return () => { active = false; };
