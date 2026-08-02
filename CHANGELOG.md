@@ -1,3 +1,9 @@
+## v2.1.0-p70.2
+
+- Default Phase削除時に一意制約エラーとなる問題を修正
+- Phase削除とDefault Phase切替をDB関数内の1トランザクションで実行
+- 削除Phase内のDestinationは残存Phaseへ移動
+
 ## v2.1.0-p70.1
 
 - 別行動設定画面の選択マークが大きく崩れる問題を修正
