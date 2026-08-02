@@ -30,11 +30,50 @@ export function RouteMembersPage() {
 
   useEffect(() => {
     let active = true;
-    setLoading(true); setError('');
-    void Promise.all([listRouteMembers(routeId), getOwnRouteMember(routeId), listRouteBranches(routeId), listRouteBranchAssignments(routeId)])
-      .then(([data, own, branchData, assignmentData]) => { if (active) { setMembers(data); setOwnMember(own); setBranches(branchData); setAssignments(assignmentData); } })
-      .catch((caught) => { if (active) setError(caught instanceof Error ? caught.message : 'Membersを読み込めませんでした。'); })
+    setLoading(true);
+    setError('');
+    setBranchError('');
+
+    // Members本体と自分の権限判定は、Branch情報とは独立して読み込む。
+    // BranchテーブルやRLSの取得に失敗しても、Members画面全体を閉じない。
+    void Promise.allSettled([listRouteMembers(routeId), getOwnRouteMember(routeId)])
+      .then(([membersResult, ownResult]) => {
+        if (!active) return;
+
+        if (membersResult.status === 'fulfilled') {
+          setMembers(membersResult.value);
+        } else {
+          setError(membersResult.reason instanceof Error ? membersResult.reason.message : 'Membersを読み込めませんでした。');
+        }
+
+        if (ownResult.status === 'fulfilled') {
+          setOwnMember(ownResult.value);
+        } else {
+          setOwnMember(null);
+          setBranchError('管理権限を確認できませんでした。画面を更新してください。');
+        }
+      })
       .finally(() => { if (active) setLoading(false); });
+
+    void Promise.allSettled([listRouteBranches(routeId), listRouteBranchAssignments(routeId)])
+      .then(([branchesResult, assignmentsResult]) => {
+        if (!active) return;
+
+        if (branchesResult.status === 'fulfilled') {
+          setBranches(branchesResult.value);
+        } else {
+          setBranches([]);
+          setBranchError(branchesResult.reason instanceof Error ? branchesResult.reason.message : 'Branchを読み込めませんでした。');
+        }
+
+        if (assignmentsResult.status === 'fulfilled') {
+          setAssignments(assignmentsResult.value);
+        } else {
+          setAssignments([]);
+          setBranchError((current) => current || (assignmentsResult.reason instanceof Error ? assignmentsResult.reason.message : 'Branchの割り振りを読み込めませんでした。'));
+        }
+      });
+
     return () => { active = false; };
   }, [routeId]);
 
