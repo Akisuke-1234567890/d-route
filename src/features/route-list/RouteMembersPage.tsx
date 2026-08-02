@@ -4,6 +4,8 @@ import { BrandMark } from '../../shared/ui/BrandMark';
 import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { RouteBottomNav } from './RouteBottomNav';
+import { getSupabaseClient } from '../../shared/api/supabase';
+import { getRoute } from './routes';
 import { getOwnRouteMember, inviteRouteMemberByLoginId, listRouteMembers, respondToRouteInvite, type RouteMember, type RouteMemberStatus } from './members';
 import { assignMemberToBranch, clearMemberBranch, createRouteBranch, listRouteBranchAssignments, listRouteBranches, type RouteBranch, type RouteBranchAssignment } from './branches';
 
@@ -19,6 +21,7 @@ export function RouteMembersPage() {
   const [inviteSaving, setInviteSaving] = useState(false);
   const [inviteError, setInviteError] = useState('');
   const [ownMember, setOwnMember] = useState<RouteMember | null>(null);
+  const [isRouteOwner, setIsRouteOwner] = useState(false);
   const [responseSaving, setResponseSaving] = useState(false);
   const [responseError, setResponseError] = useState('');
   const [branches, setBranches] = useState<RouteBranch[]>([]);
@@ -36,20 +39,32 @@ export function RouteMembersPage() {
 
     // Members本体と自分の権限判定は、Branch情報とは独立して読み込む。
     // BranchテーブルやRLSの取得に失敗しても、Members画面全体を閉じない。
-    void Promise.allSettled([listRouteMembers(routeId), getOwnRouteMember(routeId)])
-      .then(([membersResult, ownResult]) => {
+    const supabase = getSupabaseClient();
+    const ownerCheck = supabase
+      ? Promise.all([getRoute(routeId), supabase.auth.getUser()]).then(([route, authResult]) => {
+          if (authResult.error) throw authResult.error;
+          return Boolean(authResult.data.user && route.owner_user_id === authResult.data.user.id);
+        })
+      : Promise.reject(new Error('Supabaseの環境変数が設定されていません。'));
+
+    // Members行が欠けている既存Routeでも、routes.owner_user_idから作成者を判定する。
+    void Promise.allSettled([listRouteMembers(routeId), getOwnRouteMember(routeId), ownerCheck])
+      .then(([membersResult, ownResult, ownerResult]) => {
         if (!active) return;
 
         if (membersResult.status === 'fulfilled') {
           setMembers(membersResult.value);
         } else {
+          setMembers([]);
           setError(membersResult.reason instanceof Error ? membersResult.reason.message : 'Membersを読み込めませんでした。');
         }
 
-        if (ownResult.status === 'fulfilled') {
-          setOwnMember(ownResult.value);
-        } else {
-          setOwnMember(null);
+        const own = ownResult.status === 'fulfilled' ? ownResult.value : null;
+        const ownerByRoute = ownerResult.status === 'fulfilled' && ownerResult.value;
+        setOwnMember(own);
+        setIsRouteOwner(own?.role === 'owner' || ownerByRoute);
+
+        if (ownResult.status === 'rejected' && !ownerByRoute) {
           setBranchError('管理権限を確認できませんでした。画面を更新してください。');
         }
       })
@@ -143,7 +158,7 @@ async function answerInvite(status: 'participating' | 'declined') {
     <section className="page-content route-tab-content" aria-labelledby="members-title">
       <div className="route-tab-heading">
         <div><p className="eyebrow">MEMBERS</p><h1 id="members-title">参加メンバー</h1><p>このRouteへの参加可否を確認します。</p></div>
-        <button className="primary-button route-tab-action" type="button" onClick={() => { setInviteError(''); setInviteOpen(true); }}>＋ 招待</button>
+        {isRouteOwner ? <button className="primary-button route-tab-action" type="button" onClick={() => { setInviteError(''); setInviteOpen(true); }}>＋ 招待</button> : null}
       </div>
       {inviteOpen ? (
         <div className="member-invite-panel">
@@ -182,15 +197,21 @@ async function answerInvite(status: 'participating' | 'declined') {
       ) : null}
       {loading ? <p className="route-tab-demo-note">Membersを読み込んでいます。</p> : null}
       {error ? <p className="route-tab-demo-note" role="alert">{error}</p> : null}
+      {!loading && error && isRouteOwner ? <section className="branch-admin-panel">
+        <div><p className="eyebrow">BRANCH</p><h2>分岐グループ</h2><p>Members一覧を取得できない場合でも、Route作成者は分岐を先に作成できます。</p></div>
+        <form className="branch-create-form" onSubmit={addBranch}><input value={branchName} onChange={(event)=>setBranchName(event.target.value)} placeholder="例：ソアリン組" maxLength={40}/><button className="secondary-button" disabled={!branchName.trim() || branchSaving}>{branchSaving ? '追加中' : '＋ Branch追加'}</button></form>
+        {branchError ? <p className="member-invite-error" role="alert">{branchError}</p> : null}
+        {branches.length ? <div className="branch-chip-list">{branches.map((branch)=><span key={branch.id}>{branch.name}<small>{assignments.filter((item)=>item.branchId===branch.id).length}人</small></span>)}</div> : <p className="route-tab-demo-note">Branchはまだありません。</p>}
+      </section> : null}
       {!loading && !error ? <>
         <div className="members-overview"><strong>{answered}/{members.length}</strong><span>回答済み</span><div><span>参加 {members.filter(m=>m.status==='participating').length}</span><span>未回答 {members.filter(m=>m.status==='unanswered').length}</span><span>不参加 {members.filter(m=>m.status==='declined').length}</span></div></div>
-        {ownMember?.role === 'owner' ? <section className="branch-admin-panel">
+        {isRouteOwner ? <section className="branch-admin-panel">
           <div><p className="eyebrow">BRANCH</p><h2>分岐グループ</h2><p>参加者を一時的な行動グループへ割り振ります。</p></div>
           <form className="branch-create-form" onSubmit={addBranch}><input value={branchName} onChange={(event)=>setBranchName(event.target.value)} placeholder="例：ソアリン組" maxLength={40}/><button className="secondary-button" disabled={!branchName.trim() || branchSaving}>{branchSaving ? '追加中' : '＋ Branch追加'}</button></form>
           {branchError ? <p className="member-invite-error" role="alert">{branchError}</p> : null}
           {branches.length ? <div className="branch-chip-list">{branches.map((branch)=><span key={branch.id}>{branch.name}<small>{assignments.filter((item)=>item.branchId===branch.id).length}人</small></span>)}</div> : <p className="route-tab-demo-note">Branchはまだありません。</p>}
         </section> : null}
-        <div className="members-page-list">{members.map((member)=>{ const assignment=assignments.find((item)=>item.memberUserId===member.userId); return <article className="member-row member-page-row" key={member.id}><div className="member-avatar" aria-hidden="true">{member.displayName.slice(0,2).toUpperCase()}</div><div className="member-copy"><div className="member-name-line"><h2>{member.displayName}</h2><span className="member-role">{member.role === 'owner' ? 'リーダー' : 'メンバー'}</span></div><p className={`member-status member-status-${member.status}`}><span aria-hidden="true"/>{labels[member.status]}</p>{ownMember?.role==='owner' && member.status==='participating' ? <label className="member-branch-select"><span>現在のBranch</span><select value={assignment?.branchId ?? ''} onChange={(event)=>void changeMemberBranch(member.userId,event.target.value)}><option value="">全体Route</option>{branches.map((branch)=><option key={branch.id} value={branch.id}>{branch.name}</option>)}</select></label> : assignment ? <p className="member-branch-label">{branches.find((branch)=>branch.id===assignment.branchId)?.name ?? 'Branch'}</p> : null}</div></article>})}</div>
+        <div className="members-page-list">{members.map((member)=>{ const assignment=assignments.find((item)=>item.memberUserId===member.userId); return <article className="member-row member-page-row" key={member.id}><div className="member-avatar" aria-hidden="true">{member.displayName.slice(0,2).toUpperCase()}</div><div className="member-copy"><div className="member-name-line"><h2>{member.displayName}</h2><span className="member-role">{member.role === 'owner' ? 'リーダー' : 'メンバー'}</span></div><p className={`member-status member-status-${member.status}`}><span aria-hidden="true"/>{labels[member.status]}</p>{isRouteOwner && member.status==='participating' ? <label className="member-branch-select"><span>現在のBranch</span><select value={assignment?.branchId ?? ''} onChange={(event)=>void changeMemberBranch(member.userId,event.target.value)}><option value="">全体Route</option>{branches.map((branch)=><option key={branch.id} value={branch.id}>{branch.name}</option>)}</select></label> : assignment ? <p className="member-branch-label">{branches.find((branch)=>branch.id===assignment.branchId)?.name ?? 'Branch'}</p> : null}</div></article>})}</div>
         {members.length === 0 ? <p className="route-tab-demo-note">参加メンバーはいません。</p> : null}
       </> : null}
       <p className="route-tab-demo-note">Membersでは参加・未回答・不参加のみを扱います。移動状況や到着連絡はChatで共有します。</p>

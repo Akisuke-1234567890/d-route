@@ -1,3 +1,11 @@
+## v2.1.0-p68.2
+
+- route_membersの自己参照RLSをSecurity Definer helperへ置換し、再帰エラーを修正
+- 既存RouteのOwner member行を安全に補完
+- Members取得に失敗してもroutes.owner_user_idからRoute作成者を判定
+- Route作成者はMembers一覧の状態にかかわらずBranchを先に作成可能
+- 招待ボタンをRoute作成者のみに限定
+
 ## v2.1.0-p68.1
 
 - Members本体とBranch情報の読み込みを分離
