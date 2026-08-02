@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type TouchEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
 import { RefreshButton } from '../../shared/ui/RefreshButton';
@@ -10,6 +10,12 @@ import { getSupabaseClient } from '../../shared/api/supabase';
 import { RouteBottomNav } from './RouteBottomNav';
 import { formatChatTime, getLatestRouteChatMessages, type RouteChatMessage } from './chat';
 import { getOwnRouteMember, type RouteMember } from './members';
+import {
+  listRouteBranches,
+  listAlternateRouteDestinations,
+  type RouteBranch,
+  type AlternateRouteDestination,
+} from './branches';
 
 function timeToMinutes(value: string | null | undefined): number | null {
   if (!value) return null;
@@ -96,6 +102,12 @@ function PhaseDashboard({ routeId, participantView }: { routeId: string; partici
   const [viewPhaseId, setViewPhaseId] = useState<string | null>(null);
   const [latestChats, setLatestChats] = useState<RouteChatMessage[]>([]);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const [alternateRoutes, setAlternateRoutes] = useState<RouteBranch[]>([]);
+  const [alternateDestinations, setAlternateDestinations] = useState<Record<string, AlternateRouteDestination[]>>({});
+  const [alternateLoading, setAlternateLoading] = useState(true);
+  const [alternateError, setAlternateError] = useState<string | null>(null);
+  const [routePageIndex, setRoutePageIndex] = useState(0);
+  const routeSwipeStartX = useRef<number | null>(null);
 
   useEffect(() => {
     const supabase = getSupabaseClient();
@@ -145,6 +157,34 @@ function PhaseDashboard({ routeId, participantView }: { routeId: string; partici
     void getLatestRouteChatMessages(routeId, 3)
       .then((messages) => { if (active) setLatestChats(messages); })
       .catch(() => { if (active) setLatestChats([]); });
+    return () => { active = false; };
+  }, [routeId]);
+
+  useEffect(() => {
+    let active = true;
+    setAlternateLoading(true);
+    setAlternateError(null);
+    void listRouteBranches(routeId)
+      .then(async (routes) => {
+        const configured = routes.filter((item) => item.connectionType);
+        const pairs = await Promise.all(configured.map(async (item) => [
+          item.id,
+          await listAlternateRouteDestinations(item.id),
+        ] as const));
+        if (!active) return;
+        setAlternateRoutes(configured);
+        setAlternateDestinations(Object.fromEntries(pairs));
+        setRoutePageIndex((current) => Math.min(current, configured.length));
+      })
+      .catch((error) => {
+        if (!active) return;
+        setAlternateRoutes([]);
+        setAlternateDestinations({});
+        setAlternateError(getErrorMessage(error, '別行動を読み込めませんでした。'));
+      })
+      .finally(() => {
+        if (active) setAlternateLoading(false);
+      });
     return () => { active = false; };
   }, [routeId]);
 
@@ -345,9 +385,128 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
     );
   }
 
+  const routePageCount = alternateRoutes.length + 1;
+  const activeAlternateRoute = routePageIndex > 0 ? alternateRoutes[routePageIndex - 1] ?? null : null;
+  const activeAlternateDestinations = activeAlternateRoute
+    ? alternateDestinations[activeAlternateRoute.id] ?? []
+    : [];
+
+  const destinationLabelById = (destinationId: string | null) => {
+    if (!destinationId) return null;
+    const destination = destinations.find((item) => item.id === destinationId);
+    if (!destination) return null;
+    const time = destination.startTime?.slice(0, 5);
+    return `${time ? `${time} ` : ''}${destination.name}`;
+  };
+
+  const alternateTypeLabel = (type: RouteBranch['connectionType']) => {
+    if (type === 'split_merge') return '途中で別れて、あとで合流';
+    if (type === 'join') return '別行動から途中で合流';
+    if (type === 'leave') return '途中で別れて、そのまま終了';
+    return '別行動';
+  };
+
+  const showNextRoutePage = () => {
+    if (routePageIndex < routePageCount - 1) setRoutePageIndex((current) => current + 1);
+  };
+  const showPreviousRoutePage = () => {
+    if (routePageIndex > 0) setRoutePageIndex((current) => current - 1);
+  };
+  const onRouteSwipeStart = (event: TouchEvent<HTMLElement>) => {
+    routeSwipeStartX.current = event.touches[0]?.clientX ?? null;
+  };
+  const onRouteSwipeEnd = (event: TouchEvent<HTMLElement>) => {
+    const startX = routeSwipeStartX.current;
+    routeSwipeStartX.current = null;
+    const endX = event.changedTouches[0]?.clientX;
+    if (startX === null || endX === undefined) return;
+    const delta = endX - startX;
+    if (Math.abs(delta) < 55) return;
+    if (delta > 0) showNextRoutePage();
+    else showPreviousRoutePage();
+  };
+
+  const routeSwitcher = routePageCount > 1 ? (
+    <section
+      className="v2-route-page-switcher"
+      aria-label="メインRouteと別行動の切り替え"
+      onTouchStart={onRouteSwipeStart}
+      onTouchEnd={onRouteSwipeEnd}
+    >
+      <button type="button" onClick={showPreviousRoutePage} disabled={routePageIndex === 0} aria-label="前のRouteを見る">‹</button>
+      <div>
+        <strong>{routePageIndex === 0 ? 'メインRoute' : activeAlternateRoute?.name ?? '別行動'}</strong>
+        <span>{routePageIndex + 1} / {routePageCount}</span>
+      </div>
+      <button type="button" onClick={showNextRoutePage} disabled={routePageIndex >= routePageCount - 1} aria-label="次のRouteを見る">›</button>
+      <p>{routePageIndex === 0 ? '右へスワイプして別行動を見る' : '左へスワイプしてメインRouteへ戻る'}</p>
+      <div className="v2-route-page-dots">
+        {Array.from({ length: routePageCount }, (_, index) => (
+          <button key={index} type="button" className={index === routePageIndex ? 'is-active' : ''} onClick={() => setRoutePageIndex(index)} aria-label={`${index + 1}ページ目を見る`} />
+        ))}
+      </div>
+    </section>
+  ) : null;
+
+  if (activeAlternateRoute) {
+    const startLabel = destinationLabelById(activeAlternateRoute.startDestinationId);
+    const endLabel = destinationLabelById(activeAlternateRoute.endDestinationId);
+    return (
+      <>
+        {routeSwitcher}
+        <article className="v2-alternate-route-panel" onTouchStart={onRouteSwipeStart} onTouchEnd={onRouteSwipeEnd}>
+          <div className="v2-section-heading">
+            <div>
+              <p className="eyebrow">別行動</p>
+              <h2>{activeAlternateRoute.name}</h2>
+            </div>
+            <span className="v2-alternate-route-badge">{alternateTypeLabel(activeAlternateRoute.connectionType)}</span>
+          </div>
+
+          {(startLabel || endLabel) ? (
+            <div className="v2-alternate-connection-summary">
+              {startLabel ? <div><span>{activeAlternateRoute.connectionType === 'leave' ? '途中で離れる場所' : '別行動を始める場所'}</span><strong>{startLabel}</strong></div> : null}
+              {endLabel ? <div><span>合流する場所</span><strong>{endLabel}</strong></div> : null}
+            </div>
+          ) : null}
+
+          {activeAlternateRoute.description ? <p className="v2-alternate-route-description">{activeAlternateRoute.description}</p> : null}
+
+          {activeAlternateDestinations.length ? (
+            <div className="v2-alternate-route-timeline">
+              {activeAlternateDestinations.map((item, index) => (
+                <article key={item.id} className="v2-alternate-route-step">
+                  <span className="v2-alternate-route-step-index">{index + 1}</span>
+                  <div>
+                    {item.startTime ? <time>{item.timeType === 'approx' ? '目安 ' : ''}{item.startTime.slice(0, 5)}{item.endTime ? `〜${item.endTime.slice(0, 5)}` : ''}</time> : null}
+                    <h3>{item.name}</h3>
+                    {item.locationName ? <p>{item.locationName}</p> : item.description ? <p>{item.description}</p> : null}
+                    {item.locationName ? <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.locationName)}`} target="_blank" rel="noreferrer">地図で確認 ›</a> : null}
+                  </div>
+                </article>
+              ))}
+              {endLabel ? <article className="v2-alternate-route-step is-connection"><span className="v2-alternate-route-step-index">✓</span><div><small>{activeAlternateRoute.connectionType === 'leave' ? '別行動終了' : 'メインRouteへ合流'}</small><h3>{endLabel}</h3></div></article> : null}
+            </div>
+          ) : (
+            <div className="v2-phase-empty"><p>この別行動には予定がまだありません。</p>{!participantView ? <Link className="v2-text-link" to={`/routes/${routeId}/places`}>Placesで追加する ›</Link> : null}</div>
+          )}
+
+          {alternateLoading ? <p className="v2-alternate-route-error">別行動を読み込んでいます。</p> : null}
+          {alternateError ? <p className="v2-alternate-route-error" role="alert">{alternateError}</p> : null}
+        </article>
+
+        <article className="v2-chat-summary">
+          <div className="v2-section-heading"><div><p className="eyebrow">CHAT</p><h2>連絡</h2></div><Link className="v2-text-link" to={`/routes/${routeId}/chat`}>Chatを見る ›</Link></div>
+          {latestChats.length ? <div className="v2-route-chat-preview">{latestChats.map((message) => <div className={`v2-route-chat-line${message.isImportant ? ' is-priority' : ''}`} key={message.id}><div className="v2-route-chat-meta">{message.isImportant ? <span className="v2-route-chat-important">重要</span> : null}<strong>{message.authorName}</strong><time>{formatChatTime(message.createdAt)}</time></div><p>{message.body}</p></div>)}</div> : <div className="v2-latest-message is-empty"><div className="v2-empty-message-copy"><strong>まだ連絡はありません。</strong><p>必要な連絡があればChatで共有できます。</p></div></div>}
+        </article>
+      </>
+    );
+  }
+
   if (participantView) {
     return (
       <>
+        {routeSwitcher}
         <article className="v2-participant-route" aria-labelledby="participant-route-title">
           <div className="v2-section-heading">
             <div>
@@ -409,6 +568,7 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
 
   return (
     <>
+      {routeSwitcher}
       <article className="v2-phase-panel" aria-labelledby="v2-phase-title">
         <div className="v2-phase-heading">
           <div>
