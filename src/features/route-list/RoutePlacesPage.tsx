@@ -292,7 +292,7 @@ export function RoutePlacesPage() {
         ? current.map((item) => item.id === saved.id ? saved : item)
         : [...current, saved].sort((a, b) => a.orderValue - b.orderValue));
       setAlternateRouteOpen(false);
-      setToast(alternateRouteEditing ? '別Routeを更新しました。' : '別Routeを追加しました。');
+      setToast(alternateRouteEditing ? '別行動を更新しました。' : '別行動を追加しました。');
     } catch (err) {
       setAlternateRouteError(getErrorMessage(err, '別Routeを保存できませんでした。'));
     } finally {
@@ -739,7 +739,7 @@ async function handlePhaseDelete() {
               ＋ Phaseを追加
             </button>
             <button className="secondary-button route-tab-action alternate-route-add-button" type="button" onClick={openAlternateRouteCreate}>
-              ⇄ 別Routeを追加
+              ⇄ 別行動を追加
             </button>
           </div>
         </div>
@@ -752,7 +752,7 @@ async function handlePhaseDelete() {
           <div className="phase-planning-list">
             {alternateRoutes.length > 0 ? (
               <section className="alternate-route-section">
-                <header className="alternate-route-section-header"><div><p className="eyebrow">ALTERNATE ROUTES</p><h2>別Route</h2><p>メインRouteへ接続する別行動を管理します。</p></div><span>{alternateRoutes.length}件</span></header>
+                <header className="alternate-route-section-header"><div><p className="eyebrow">別行動</p><h2>別行動</h2><p>メインRouteにつながる別の動きを管理します。</p></div><span>{alternateRoutes.length}件</span></header>
                 <div className="alternate-route-list">{alternateRoutes.map((route) => (
                   <button className="alternate-route-card" type="button" key={route.id} onClick={() => openAlternateRouteEdit(route)}>
                     <span className="alternate-route-card-icon" aria-hidden="true">⇄</span>
@@ -1134,17 +1134,17 @@ async function handlePhaseDelete() {
       {alternateRouteOpen && (
         <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeAlternateRouteModal(); }}>
           <section className="route-modal alternate-route-modal" role="dialog" aria-modal="true" aria-labelledby="alternate-route-title">
-            <div className="modal-header"><div><p className="eyebrow">ALTERNATE ROUTE</p><h2 id="alternate-route-title">{alternateRouteEditing ? '別Routeを編集' : '別Routeを追加'}</h2></div><button className="modal-close-button" type="button" onClick={closeAlternateRouteModal} disabled={alternateRouteSaving}>×</button></div>
+            <div className="modal-header"><div><p className="eyebrow">別行動の設定</p><h2 id="alternate-route-title">{alternateRouteEditing ? '別行動を編集' : '別行動を追加'}</h2></div><button className="modal-close-button" type="button" onClick={closeAlternateRouteModal} disabled={alternateRouteSaving}>×</button></div>
             <form className="route-create-form place-form" onSubmit={handleAlternateRouteSave}>
-              <div className="field-group"><label htmlFor="alternate-route-name">別Route名</label><input id="alternate-route-name" value={alternateRouteName} onChange={(event) => setAlternateRouteName(event.target.value)} placeholder="例：午後から合流組" maxLength={40} disabled={alternateRouteSaving} /></div>
+              <div className="field-group"><label htmlFor="alternate-route-name">別行動の名前</label><input id="alternate-route-name" value={alternateRouteName} onChange={(event) => setAlternateRouteName(event.target.value)} placeholder="例：午後から合流組" maxLength={40} disabled={alternateRouteSaving} /></div>
               <fieldset className="alternate-route-type-field"><legend>接続方法</legend>
-                <label className={alternateRouteType === 'split_merge' ? 'is-selected' : ''}><input type="radio" name="alternate-route-type" value="split_merge" checked={alternateRouteType === 'split_merge'} onChange={() => { setAlternateRouteType('split_merge'); setAlternateRouteError(null); }} /><strong>分岐して再合流</strong><small>途中で分かれ、後でメインRouteへ戻る</small></label>
-                <label className={alternateRouteType === 'join' ? 'is-selected' : ''}><input type="radio" name="alternate-route-type" value="join" checked={alternateRouteType === 'join'} onChange={() => { setAlternateRouteType('join'); setAlternateRouteStartId(''); setAlternateRouteError(null); }} /><strong>途中から合流</strong><small>別の場所から始まり、途中で合流する</small></label>
-                <label className={alternateRouteType === 'leave' ? 'is-selected' : ''}><input type="radio" name="alternate-route-type" value="leave" checked={alternateRouteType === 'leave'} onChange={() => { setAlternateRouteType('leave'); setAlternateRouteEndId(''); setAlternateRouteError(null); }} /><strong>途中離脱</strong><small>途中で離れ、そのまま別Routeで終了する</small></label>
+                <label className={alternateRouteType === 'split_merge' ? 'is-selected' : ''}><input type="radio" name="alternate-route-type" value="split_merge" checked={alternateRouteType === 'split_merge'} onChange={() => { setAlternateRouteType('split_merge'); setAlternateRouteError(null); }} /><strong>途中で別れて、あとで合流</strong><small>メインの予定から別行動を始め、あとで戻ります</small></label>
+                <label className={alternateRouteType === 'join' ? 'is-selected' : ''}><input type="radio" name="alternate-route-type" value="join" checked={alternateRouteType === 'join'} onChange={() => { setAlternateRouteType('join'); setAlternateRouteStartId(''); setAlternateRouteError(null); }} /><strong>別行動から途中で合流</strong><small>別の場所から行動を始め、途中で合流します</small></label>
+                <label className={alternateRouteType === 'leave' ? 'is-selected' : ''}><input type="radio" name="alternate-route-type" value="leave" checked={alternateRouteType === 'leave'} onChange={() => { setAlternateRouteType('leave'); setAlternateRouteEndId(''); setAlternateRouteError(null); }} /><strong>途中で別れて、そのまま終了</strong><small>メインの予定から離れ、その後は合流しません</small></label>
               </fieldset>
-              {alternateRouteType !== 'join' ? <div className="field-group"><label htmlFor="alternate-route-start">{alternateRouteType === 'leave' ? '離脱地点' : '分岐地点'}</label><select id="alternate-route-start" value={alternateRouteStartId} onChange={(event) => setAlternateRouteStartId(event.target.value)} disabled={alternateRouteSaving}><option value="">時刻付きDestinationを選択</option>{timedDestinations.map((destination) => <option key={destination.id} value={destination.id}>{destinationLabel(destination.id)}</option>)}</select></div> : null}
-              {alternateRouteType !== 'leave' ? <div className="field-group"><label htmlFor="alternate-route-end">合流地点</label><select id="alternate-route-end" value={alternateRouteEndId} onChange={(event) => setAlternateRouteEndId(event.target.value)} disabled={alternateRouteSaving}><option value="">時刻付きDestinationを選択</option>{timedDestinations.map((destination) => <option key={destination.id} value={destination.id}>{destinationLabel(destination.id)}</option>)}</select></div> : null}
-              {timedDestinations.length === 0 ? <p className="form-error">別Routeを接続するには、メインRouteに時刻付きDestinationを作成してください。</p> : null}
+              {alternateRouteType !== 'join' ? <div className="field-group"><label htmlFor="alternate-route-start">{alternateRouteType === 'leave' ? '途中で離れる場所' : '別行動を始める場所'}</label><select id="alternate-route-start" value={alternateRouteStartId} onChange={(event) => setAlternateRouteStartId(event.target.value)} disabled={alternateRouteSaving}><option value="">メインの予定から選択</option>{timedDestinations.map((destination) => <option key={destination.id} value={destination.id}>{destinationLabel(destination.id)}</option>)}</select></div> : null}
+              {alternateRouteType !== 'leave' ? <div className="field-group"><label htmlFor="alternate-route-end">合流する場所</label><select id="alternate-route-end" value={alternateRouteEndId} onChange={(event) => setAlternateRouteEndId(event.target.value)} disabled={alternateRouteSaving}><option value="">メインの予定から選択</option>{timedDestinations.map((destination) => <option key={destination.id} value={destination.id}>{destinationLabel(destination.id)}</option>)}</select></div> : null}
+              {timedDestinations.length === 0 ? <p className="form-error">接続先に使える予定がありません。先にメインの予定へ時間を設定してください。</p> : null}
               <div className="field-group"><label htmlFor="alternate-route-description">説明 <span className="field-optional">任意</span></label><textarea id="alternate-route-description" value={alternateRouteDescription} onChange={(event) => setAlternateRouteDescription(event.target.value)} maxLength={200} rows={3} disabled={alternateRouteSaving} /></div>
               {alternateRouteError ? <p className="form-error" role="alert">{alternateRouteError}</p> : null}
               <div className="modal-actions"><button className="secondary-button" type="button" onClick={closeAlternateRouteModal} disabled={alternateRouteSaving}>キャンセル</button><button className="primary-button" type="submit" disabled={alternateRouteSaving || !alternateRouteName.trim() || timedDestinations.length === 0}>{alternateRouteSaving ? '保存中…' : alternateRouteEditing ? '保存' : '追加'}</button></div>
