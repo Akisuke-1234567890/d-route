@@ -3072,3 +3072,11 @@ a { color: inherit; }
   overscroll-behavior:contain;
   -webkit-overflow-scrolling:touch;
 }
+
+
+/* v2.1.0-p70.3 Phase swipe delete */
+.places-phase-swipe-shell{position:relative;overflow:hidden;border-radius:24px;touch-action:pan-y}
+.places-phase-swipe-delete{position:absolute;inset:0 0 0 auto;width:92px;border:0;border-radius:0 24px 24px 0;background:linear-gradient(160deg,#ff514b,#d91f28);color:#fff;font:inherit;font-weight:850;display:grid;place-items:center;z-index:0}
+.places-phase-swipe-delete:disabled{background:rgba(130,136,166,.32);color:rgba(255,255,255,.55)}
+.places-phase-swipe-panel{position:relative;z-index:1;margin:0;transition:transform .18s ease;will-change:transform;touch-action:pan-y}
+.places-phase-swipe-shell.is-open .places-phase-swipe-panel{box-shadow:0 10px 26px rgba(0,0,0,.25)}

@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { FormEvent, PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
 import { RefreshButton } from '../../shared/ui/RefreshButton';
@@ -112,6 +112,12 @@ export function RoutePlacesPage() {
   const [phaseSaving, setPhaseSaving] = useState(false);
   const [phaseDeleting, setPhaseDeleting] = useState(false);
   const [phaseError, setPhaseError] = useState<string | null>(null);
+  const [swipedPhaseId, setSwipedPhaseId] = useState<string | null>(null);
+  const [phaseSwipeOffset, setPhaseSwipeOffset] = useState(0);
+  const phaseSwipeStartXRef = useRef(0);
+  const phaseSwipeStartOffsetRef = useRef(0);
+  const activePhaseSwipeIdRef = useRef<string | null>(null);
+  const phaseSwipeMovedRef = useRef(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -428,26 +434,27 @@ export function RoutePlacesPage() {
   }
 
 
-async function handlePhaseDelete() {
-  if (!phaseEditing || phaseSaving || phaseDeleting) return;
+async function handlePhaseDelete(targetPhase: PhaseSummary) {
+  if (phaseSaving || phaseDeleting) return;
   if (phases.length <= 1) {
-    setPhaseError('最後のPhaseは削除できません。');
+    setToast('最後のPhaseは削除できません。');
+    closePhaseSwipe();
     return;
   }
-  const count = destinations.filter((destination) => destination.phaseId === phaseEditing.id).length;
-  const remaining = phases.filter((phase) => phase.id !== phaseEditing.id).slice().sort((a,b)=>a.orderValue-b.orderValue);
+  const count = destinations.filter((destination) => destination.phaseId === targetPhase.id).length;
+  const remaining = phases.filter((phase) => phase.id !== targetPhase.id).slice().sort((a,b)=>a.orderValue-b.orderValue);
   const fallback = remaining.find((phase)=>phase.isDefault) ?? remaining[0];
-  const phaseLabel = phaseEditing.name.trim() || '名前未設定のPhase';
+  const phaseLabel = targetPhase.name.trim() || '名前未設定のPhase';
   const fallbackLabel = fallback?.name.trim() || '名前未設定のPhase';
   const message = count > 0
     ? `「${phaseLabel}」を削除しますか？\n\nこのPhaseの目的地 ${count}件は「${fallbackLabel}」へ移動します。`
     : `「${phaseLabel}」を削除しますか？`;
-  if (!window.confirm(message)) return;
+  if (!window.confirm(message)) { closePhaseSwipe(); return; }
 
   setPhaseDeleting(true);
   setPhaseError(null);
   try {
-    await deleteRoutePhase(routeId, phaseEditing.id);
+    await deleteRoutePhase(routeId, targetPhase.id);
     const [nextPhases, nextDestinations] = await Promise.all([
       getRoutePhases(routeId),
       getRouteDestinations(routeId),
@@ -456,11 +463,49 @@ async function handlePhaseDelete() {
     setDestinations(nextDestinations);
     setPhaseEditing(null);
     setPhaseCreateOpen(false);
+    setToast('Phaseを削除しました。');
   } catch (err) {
-    setPhaseError(getErrorMessage(err, 'Phaseを削除できませんでした。'));
+    setToast(getErrorMessage(err, 'Phaseを削除できませんでした。'));
   } finally {
     setPhaseDeleting(false);
+    closePhaseSwipe();
   }
+}
+
+const PHASE_DELETE_REVEAL_WIDTH = 92;
+
+function closePhaseSwipe() {
+  setSwipedPhaseId(null);
+  setPhaseSwipeOffset(0);
+  activePhaseSwipeIdRef.current = null;
+}
+
+function handlePhasePointerDown(event: ReactPointerEvent<HTMLElement>, phaseId: string) {
+  if (event.pointerType === 'mouse' && event.button !== 0) return;
+  if (swipedPhaseId && swipedPhaseId !== phaseId) closePhaseSwipe();
+  activePhaseSwipeIdRef.current = phaseId;
+  phaseSwipeStartXRef.current = event.clientX;
+  phaseSwipeStartOffsetRef.current = swipedPhaseId === phaseId ? phaseSwipeOffset : 0;
+  phaseSwipeMovedRef.current = false;
+  event.currentTarget.setPointerCapture(event.pointerId);
+}
+
+function handlePhasePointerMove(event: ReactPointerEvent<HTMLElement>, phaseId: string) {
+  if (activePhaseSwipeIdRef.current !== phaseId) return;
+  const deltaX = event.clientX - phaseSwipeStartXRef.current;
+  if (Math.abs(deltaX) > 6) phaseSwipeMovedRef.current = true;
+  const nextOffset = Math.max(-PHASE_DELETE_REVEAL_WIDTH, Math.min(0, phaseSwipeStartOffsetRef.current + deltaX));
+  setSwipedPhaseId(phaseId);
+  setPhaseSwipeOffset(nextOffset);
+}
+
+function handlePhasePointerEnd(event: ReactPointerEvent<HTMLElement>, phaseId: string) {
+  if (activePhaseSwipeIdRef.current !== phaseId) return;
+  try { event.currentTarget.releasePointerCapture(event.pointerId); } catch { /* already released */ }
+  const shouldOpen = phaseSwipeOffset <= -(PHASE_DELETE_REVEAL_WIDTH * 0.52);
+  setSwipedPhaseId(shouldOpen ? phaseId : null);
+  setPhaseSwipeOffset(shouldOpen ? -PHASE_DELETE_REVEAL_WIDTH : 0);
+  activePhaseSwipeIdRef.current = null;
 }
 
   async function handlePhaseEdit(event: FormEvent<HTMLFormElement>) {
@@ -764,17 +809,21 @@ async function handlePhaseDelete() {
             ) : null}
             {phases.map((phase) => {
               const phaseDestinations = destinationsByPhase.get(phase.id) ?? [];
+              const phaseSwipeOpen = swipedPhaseId === phase.id;
+              const phaseOffset = phaseSwipeOpen ? phaseSwipeOffset : 0;
               return (
-                <section className="places-phase-section" key={phase.id}>
+                <div className={`places-phase-swipe-shell${phaseSwipeOpen ? ' is-open' : ''}`} key={phase.id}>
+                  <button className="places-phase-swipe-delete" type="button" disabled={phases.length <= 1 || phaseDeleting} onClick={() => void handlePhaseDelete(phase)}>{phaseDeleting && phaseSwipeOpen ? '削除中…' : phases.length <= 1 ? '削除不可' : '削除'}</button>
+                  <section className="places-phase-section places-phase-swipe-panel" style={{ transform: `translateX(${phaseOffset}px)` }} onPointerDown={(event) => handlePhasePointerDown(event, phase.id)} onPointerMove={(event) => handlePhasePointerMove(event, phase.id)} onPointerUp={(event) => handlePhasePointerEnd(event, phase.id)} onPointerCancel={(event) => handlePhasePointerEnd(event, phase.id)}>
                   <header className="places-phase-header">
                     <div className="places-phase-copy">
                       <div className="places-phase-titleline"><h2>{phase.name || 'Phase'}</h2>{!phase.name && <span className="phase-unnamed-badge">名前未設定</span>}{phase.startTime && <span className="phase-start-badge">{phase.startTime.slice(0, 5)}〜</span>}</div>
                       {phase.description && <p>{phase.description}</p>}
                     </div>
-                    <div className="places-phase-actions"><button className="phase-edit-button" type="button" onClick={() => openPhaseEdit(phase)}>編集</button><button className="phase-add-place-button" type="button" onClick={() => openCreateModal(phase.id)}>＋ 目的地</button></div>
+                    <div className="places-phase-actions"><button className="phase-edit-button" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closePhaseSwipe(); openPhaseEdit(phase); }}>編集</button><button className="phase-add-place-button" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closePhaseSwipe(); openCreateModal(phase.id); }}>＋ 目的地</button></div>
                   </header>
                   {phaseDestinations.length === 0 ? (
-                    <button className="phase-empty-add" type="button" onClick={() => openCreateModal(phase.id)}>このPhaseに最初の目的地を追加</button>
+                    <button className="phase-empty-add" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closePhaseSwipe(); openCreateModal(phase.id); }}>このPhaseに最初の目的地を追加</button>
                   ) : (
                     <div className="places-list">
                       {phaseDestinations.map((destination, index) => { const dragShift = getDestinationDragShift(index); return (
@@ -794,7 +843,8 @@ async function handlePhaseDelete() {
                       ); })}
                     </div>
                   )}
-                </section>
+                  </section>
+                </div>
               );
             })}
             {exceptionDestinations.length > 0 ? (
@@ -1183,11 +1233,6 @@ async function handlePhaseDelete() {
               <div className="field-group"><label htmlFor="phase-description">メモ <span className="field-optional">任意</span></label><textarea id="phase-description" value={phaseDescription} onChange={(event) => setPhaseDescription(event.target.value)} maxLength={200} rows={3} disabled={phaseSaving} /></div>
               {phaseError && <p className="form-error" role="alert">{phaseError}</p>}
               <div className="modal-actions"><button className="secondary-button" type="button" disabled={phaseSaving || phaseDeleting} onClick={() => { setPhaseCreateOpen(false); setPhaseEditing(null); }}>キャンセル</button><button className="primary-button" type="submit" disabled={phaseSaving || phaseDeleting || (!phaseEditing?.isDefault && !phaseName.trim())}>{phaseSaving ? '保存中…' : phaseEditing ? '保存' : '追加'}</button></div>
-              {phaseEditing ? (
-                <button className="phase-delete-button" type="button" onClick={() => void handlePhaseDelete()} disabled={phaseSaving || phaseDeleting || phases.length <= 1}>
-                  {phaseDeleting ? '削除中…' : phases.length <= 1 ? '最後のPhaseは削除できません' : 'このPhaseを削除'}
-                </button>
-              ) : null}
             </form>
           </section>
         </div>
