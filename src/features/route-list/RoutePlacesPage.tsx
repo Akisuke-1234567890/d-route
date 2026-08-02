@@ -17,7 +17,7 @@ import {
   type DestinationTimeType,
 } from './destinations';
 import { createRoutePhase, deleteRoutePhase, getRoutePhases, updateRoutePhase, type PhaseSummary } from './phases';
-import { createAlternateRoute, configureAlternateRoute, deleteAlternateRoute, listRouteBranches, type AlternateRouteConnectionType, type RouteBranch } from './branches';
+import { createAlternateRoute, configureAlternateRoute, deleteAlternateRoute, listRouteBranches, listAlternateRouteDestinations, saveAlternateRouteDestination, deleteAlternateRouteDestination, type AlternateRouteConnectionType, type RouteBranch, type AlternateRouteDestination } from './branches';
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error && error.message) return error.message;
@@ -152,6 +152,15 @@ export function RoutePlacesPage() {
   const [alternateRouteSaving, setAlternateRouteSaving] = useState(false);
   const [alternateRouteError, setAlternateRouteError] = useState<string | null>(null);
   const [alternateRouteDeleting, setAlternateRouteDeleting] = useState(false);
+  const [alternateRouteDestinations, setAlternateRouteDestinations] = useState<AlternateRouteDestination[]>([]);
+  const [alternateDestinationEditing, setAlternateDestinationEditing] = useState<AlternateRouteDestination | null>(null);
+  const [alternateDestinationName, setAlternateDestinationName] = useState('');
+  const [alternateDestinationLocation, setAlternateDestinationLocation] = useState('');
+  const [alternateDestinationDescription, setAlternateDestinationDescription] = useState('');
+  const [alternateDestinationTimeType, setAlternateDestinationTimeType] = useState<'none'|'fixed'|'approx'>('none');
+  const [alternateDestinationStart, setAlternateDestinationStart] = useState('');
+  const [alternateDestinationEnd, setAlternateDestinationEnd] = useState('');
+  const [alternateDestinationSaving, setAlternateDestinationSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<DestinationSummary | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -261,6 +270,8 @@ export function RoutePlacesPage() {
 
   function openAlternateRouteEdit(route: RouteBranch) {
     setAlternateRouteEditing(route);
+    setAlternateRouteDestinations([]);
+    void listAlternateRouteDestinations(route.id).then(setAlternateRouteDestinations).catch((err)=>setAlternateRouteError(getErrorMessage(err,'別行動の予定を読み込めませんでした。')));
     setAlternateRouteName(route.name);
     setAlternateRouteDescription(route.description);
     setAlternateRouteType(route.connectionType ?? 'split_merge');
@@ -272,6 +283,33 @@ export function RoutePlacesPage() {
 
   function closeAlternateRouteModal() {
     if (!alternateRouteSaving && !alternateRouteDeleting) setAlternateRouteOpen(false);
+  }
+
+  function startAlternateDestinationCreate() {
+    setAlternateDestinationEditing(null); setAlternateDestinationName(''); setAlternateDestinationLocation('');
+    setAlternateDestinationDescription(''); setAlternateDestinationTimeType('none'); setAlternateDestinationStart(''); setAlternateDestinationEnd('');
+  }
+  function startAlternateDestinationEdit(item: AlternateRouteDestination) {
+    setAlternateDestinationEditing(item); setAlternateDestinationName(item.name); setAlternateDestinationLocation(item.locationName);
+    setAlternateDestinationDescription(item.description); setAlternateDestinationTimeType(item.timeType);
+    setAlternateDestinationStart(item.startTime ?? ''); setAlternateDestinationEnd(item.endTime ?? '');
+  }
+  async function handleAlternateDestinationSave() {
+    if(!alternateRouteEditing || alternateDestinationSaving || !alternateDestinationName.trim()) return;
+    setAlternateDestinationSaving(true); setAlternateRouteError(null);
+    try {
+      const saved=await saveAlternateRouteDestination({routeId,branchId:alternateRouteEditing.id,destinationId:alternateDestinationEditing?.id,
+        name:alternateDestinationName,locationName:alternateDestinationLocation,description:alternateDestinationDescription,
+        timeType:alternateDestinationTimeType,startTime:alternateDestinationStart,endTime:alternateDestinationEnd});
+      setAlternateRouteDestinations(current=>alternateDestinationEditing?current.map(i=>i.id===saved.id?saved:i):[...current,saved].sort((a,b)=>a.orderValue-b.orderValue));
+      startAlternateDestinationCreate();
+    } catch(err) { setAlternateRouteError(getErrorMessage(err,'別行動の予定を保存できませんでした。')); }
+    finally { setAlternateDestinationSaving(false); }
+  }
+  async function handleAlternateDestinationDelete(item: AlternateRouteDestination) {
+    if(!alternateRouteEditing || !window.confirm(`「${item.name}」を削除しますか？`)) return;
+    try { await deleteAlternateRouteDestination(routeId,alternateRouteEditing.id,item.id); setAlternateRouteDestinations(c=>c.filter(i=>i.id!==item.id)); }
+    catch(err){ setAlternateRouteError(getErrorMessage(err,'別行動の予定を削除できませんでした。')); }
   }
 
   async function handleAlternateRouteDelete() {
@@ -1216,6 +1254,10 @@ function handlePhasePointerEnd(event: ReactPointerEvent<HTMLElement>, phaseId: s
               {alternateRouteType !== 'leave' ? <div className="field-group"><label htmlFor="alternate-route-end">合流する場所</label><select id="alternate-route-end" value={alternateRouteEndId} onChange={(event) => setAlternateRouteEndId(event.target.value)} disabled={alternateRouteSaving || alternateRouteDeleting}><option value="">メインの予定から選択</option>{timedDestinations.map((destination) => <option key={destination.id} value={destination.id}>{destinationLabel(destination.id)}</option>)}</select></div> : null}
               {timedDestinations.length === 0 ? <p className="form-error">接続先に使える予定がありません。先にメインの予定へ時間を設定してください。</p> : null}
               <div className="field-group"><label htmlFor="alternate-route-description">説明 <span className="field-optional">任意</span></label><textarea id="alternate-route-description" value={alternateRouteDescription} onChange={(event) => setAlternateRouteDescription(event.target.value)} maxLength={200} rows={3} disabled={alternateRouteSaving || alternateRouteDeleting} /></div>
+              {alternateRouteEditing ? <section className="alternate-destination-editor"><div className="alternate-destination-heading"><div><strong>この別行動の予定</strong><small>{alternateRouteDestinations.length}件</small></div><button type="button" className="secondary-button" onClick={startAlternateDestinationCreate}>＋予定</button></div>
+                <div className="alternate-destination-list">{alternateRouteDestinations.map(item=><div className="alternate-destination-row" key={item.id}><button type="button" onClick={()=>startAlternateDestinationEdit(item)}><strong>{item.startTime ? `${item.startTime} ` : ''}{item.name}</strong><small>{item.locationName || '場所未設定'}</small></button><button type="button" className="alternate-destination-delete" onClick={()=>void handleAlternateDestinationDelete(item)}>削除</button></div>)}</div>
+                <div className="alternate-destination-form"><input value={alternateDestinationName} onChange={e=>setAlternateDestinationName(e.target.value)} placeholder="予定名" maxLength={40}/><input value={alternateDestinationLocation} onChange={e=>setAlternateDestinationLocation(e.target.value)} placeholder="場所（任意）" maxLength={80}/><select value={alternateDestinationTimeType} onChange={e=>setAlternateDestinationTimeType(e.target.value as 'none'|'fixed'|'approx')}><option value="none">時間なし</option><option value="fixed">時間を指定</option><option value="approx">目安時間</option></select>{alternateDestinationTimeType!=='none'?<div className="alternate-destination-times"><input type="time" step="300" value={alternateDestinationStart} onChange={e=>setAlternateDestinationStart(e.target.value)}/><input type="time" step="300" value={alternateDestinationEnd} onChange={e=>setAlternateDestinationEnd(e.target.value)}/></div>:null}<textarea value={alternateDestinationDescription} onChange={e=>setAlternateDestinationDescription(e.target.value)} placeholder="メモ（任意）" maxLength={200} rows={2}/><button type="button" className="primary-button" disabled={!alternateDestinationName.trim()||alternateDestinationSaving} onClick={()=>void handleAlternateDestinationSave()}>{alternateDestinationSaving?'保存中…':alternateDestinationEditing?'予定を更新':'予定を追加'}</button></div>
+              </section> : <p className="route-tab-demo-note">別行動を一度保存すると、その中の予定を追加できます。</p>}
               {alternateRouteError ? <p className="form-error" role="alert">{alternateRouteError}</p> : null}
               <div className="modal-actions"><button className="secondary-button" type="button" onClick={closeAlternateRouteModal} disabled={alternateRouteSaving || alternateRouteDeleting}>キャンセル</button><button className="primary-button" type="submit" disabled={alternateRouteSaving || alternateRouteDeleting || !alternateRouteName.trim() || timedDestinations.length === 0}>{alternateRouteSaving ? '保存中…' : alternateRouteEditing ? '保存' : '追加'}</button></div>
               {alternateRouteEditing ? <button className="alternate-route-delete-button" type="button" onClick={() => void handleAlternateRouteDelete()} disabled={alternateRouteSaving || alternateRouteDeleting}>{alternateRouteDeleting ? '削除中…' : 'この別行動を削除'}</button> : null}

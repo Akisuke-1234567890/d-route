@@ -15,6 +15,25 @@ export type RouteBranch = {
   description: string;
 };
 
+export type AlternateRouteDestination = {
+  id: string;
+  routeId: string;
+  branchId: string;
+  name: string;
+  locationName: string;
+  description: string;
+  timeType: 'none' | 'fixed' | 'approx';
+  startTime: string | null;
+  endTime: string | null;
+  orderValue: number;
+};
+
+export type AlternateRouteDestinationInput = {
+  routeId: string; branchId: string; destinationId?: string | null; name: string;
+  locationName?: string; description?: string; timeType?: 'none' | 'fixed' | 'approx';
+  startTime?: string | null; endTime?: string | null;
+};
+
 export type RouteBranchAssignment = {
   routeId: string;
   branchId: string;
@@ -136,4 +155,32 @@ export async function assignMemberToBranch(routeId: string, branchId: string, me
 export async function clearMemberBranch(routeId: string, memberUserId: string): Promise<void> {
   const { error } = await requireSupabase().rpc('clear_route_member_branch', { p_route_id: routeId, p_member_user_id: memberUserId });
   if (error) throw error;
+}
+
+
+const alternateDestinationColumns = 'id,route_id,branch_id,name,location_name,description,time_type,start_time,end_time,order_value';
+function mapAlternateDestination(row: any): AlternateRouteDestination {
+  return { id:row.id, routeId:row.route_id, branchId:row.branch_id, name:row.name,
+    locationName:row.location_name ?? '', description:row.description ?? '', timeType:row.time_type ?? 'none',
+    startTime:row.start_time ? String(row.start_time).slice(0,5) : null,
+    endTime:row.end_time ? String(row.end_time).slice(0,5) : null, orderValue:Number(row.order_value) };
+}
+export async function listAlternateRouteDestinations(branchId: string): Promise<AlternateRouteDestination[]> {
+  const {data,error}=await requireSupabase().from('route_branch_destinations').select(alternateDestinationColumns)
+    .eq('branch_id',branchId).order('order_value',{ascending:true}).order('created_at',{ascending:true});
+  if(error) throw error; return (data ?? []).map(mapAlternateDestination);
+}
+export async function saveAlternateRouteDestination(input: AlternateRouteDestinationInput): Promise<AlternateRouteDestination> {
+  const {data,error}=await requireSupabase().rpc('save_alternate_route_destination',{
+    p_route_id:input.routeId,p_branch_id:input.branchId,p_destination_id:input.destinationId ?? null,
+    p_name:input.name.trim(),p_location_name:input.locationName?.trim() || null,p_description:input.description?.trim() || null,
+    p_time_type:input.timeType ?? 'none',p_start_time:input.timeType==='none'?null:(input.startTime || null),
+    p_end_time:input.timeType==='none'?null:(input.endTime || null),
+  });
+  if(error) throw error; const row=Array.isArray(data)?data[0]:data;
+  if(!row) throw new Error('別行動の予定を保存できませんでした。'); return mapAlternateDestination(row);
+}
+export async function deleteAlternateRouteDestination(routeId:string, branchId:string, destinationId:string): Promise<void> {
+  const {error}=await requireSupabase().rpc('delete_alternate_route_destination',{p_route_id:routeId,p_branch_id:branchId,p_destination_id:destinationId});
+  if(error) throw error;
 }
