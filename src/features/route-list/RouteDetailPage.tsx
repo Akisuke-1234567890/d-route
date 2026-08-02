@@ -107,6 +107,8 @@ function PhaseDashboard({ routeId, participantView }: { routeId: string; partici
   const [alternateLoading, setAlternateLoading] = useState(true);
   const [alternateError, setAlternateError] = useState<string | null>(null);
   const [routePageIndex, setRoutePageIndex] = useState(0);
+  const [routePageDirection, setRoutePageDirection] = useState<'next' | 'previous'>('next');
+  const [routePageAnimationId, setRoutePageAnimationId] = useState(0);
   const routeSwipeStartX = useRef<number | null>(null);
 
   useEffect(() => {
@@ -405,13 +407,22 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
     if (type === 'leave') return '途中で別れて、そのまま終了';
     return '別行動';
   };
+  const alternateRouteCategory = (type: RouteBranch['connectionType']) => {
+    if (type === 'split_merge') return '分岐Route';
+    if (type === 'join') return '合流Route';
+    if (type === 'leave') return '離脱Route';
+    return '別行動Route';
+  };
 
-  const showNextRoutePage = () => {
-    if (routePageIndex < routePageCount - 1) setRoutePageIndex((current) => current + 1);
+  const moveToRoutePage = (nextIndex: number) => {
+    const boundedIndex = Math.max(0, Math.min(routePageCount - 1, nextIndex));
+    if (boundedIndex === routePageIndex) return;
+    setRoutePageDirection(boundedIndex > routePageIndex ? 'next' : 'previous');
+    setRoutePageIndex(boundedIndex);
+    setRoutePageAnimationId((current) => current + 1);
   };
-  const showPreviousRoutePage = () => {
-    if (routePageIndex > 0) setRoutePageIndex((current) => current - 1);
-  };
+  const showNextRoutePage = () => moveToRoutePage(routePageIndex + 1);
+  const showPreviousRoutePage = () => moveToRoutePage(routePageIndex - 1);
   const onRouteSwipeStart = (event: TouchEvent<HTMLElement>) => {
     routeSwipeStartX.current = event.touches[0]?.clientX ?? null;
   };
@@ -422,27 +433,28 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
     if (startX === null || endX === undefined) return;
     const delta = endX - startX;
     if (Math.abs(delta) < 55) return;
-    if (delta > 0) showNextRoutePage();
+    if (delta < 0) showNextRoutePage();
     else showPreviousRoutePage();
   };
 
   const routeSwitcher = routePageCount > 1 ? (
     <section
-      className="v2-route-page-switcher"
+      className={`v2-route-page-switcher v2-route-page-motion is-${routePageDirection}`} key={`switcher-${routePageAnimationId}`}
       aria-label="メインRouteと別行動の切り替え"
       onTouchStart={onRouteSwipeStart}
       onTouchEnd={onRouteSwipeEnd}
     >
       <button type="button" onClick={showPreviousRoutePage} disabled={routePageIndex === 0} aria-label="前のRouteを見る">‹</button>
-      <div>
-        <strong>{routePageIndex === 0 ? 'メインRoute' : activeAlternateRoute?.name ?? '別行動'}</strong>
+      <div className="v2-route-page-title">
+        <small>{routePageIndex === 0 ? 'メインRoute' : activeAlternateRoute ? alternateRouteCategory(activeAlternateRoute.connectionType) : '別行動Route'}</small>
+        <strong>{routePageIndex === 0 ? 'メインの予定' : activeAlternateRoute?.name ?? '別行動'}</strong>
         <span>{routePageIndex + 1} / {routePageCount}</span>
       </div>
       <button type="button" onClick={showNextRoutePage} disabled={routePageIndex >= routePageCount - 1} aria-label="次のRouteを見る">›</button>
-      <p>{routePageIndex === 0 ? '右へスワイプして別行動を見る' : '左へスワイプしてメインRouteへ戻る'}</p>
+      <p>{routePageIndex === 0 ? '左へスワイプして別Routeを見る' : routePageIndex >= routePageCount - 1 ? '右へスワイプして前のRouteへ戻る' : '左右にスワイプしてRouteを切り替える'}</p>
       <div className="v2-route-page-dots">
         {Array.from({ length: routePageCount }, (_, index) => (
-          <button key={index} type="button" className={index === routePageIndex ? 'is-active' : ''} onClick={() => setRoutePageIndex(index)} aria-label={`${index + 1}ページ目を見る`} />
+          <button key={index} type="button" className={index === routePageIndex ? 'is-active' : ''} onClick={() => moveToRoutePage(index)} aria-label={`${index + 1}ページ目を見る`} />
         ))}
       </div>
     </section>
@@ -454,10 +466,10 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
     return (
       <>
         {routeSwitcher}
-        <article className="v2-alternate-route-panel" onTouchStart={onRouteSwipeStart} onTouchEnd={onRouteSwipeEnd}>
+        <article className={`v2-alternate-route-panel v2-route-page-motion is-${routePageDirection}`} key={`alternate-${routePageAnimationId}`} onTouchStart={onRouteSwipeStart} onTouchEnd={onRouteSwipeEnd}>
           <div className="v2-section-heading">
             <div>
-              <p className="eyebrow">別行動</p>
+              <p className="eyebrow">{alternateRouteCategory(activeAlternateRoute.connectionType)}</p>
               <h2>{activeAlternateRoute.name}</h2>
             </div>
             <span className="v2-alternate-route-badge">{alternateTypeLabel(activeAlternateRoute.connectionType)}</span>
@@ -507,7 +519,7 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
     return (
       <>
         {routeSwitcher}
-        <article className="v2-participant-route" aria-labelledby="participant-route-title">
+        <article className={`v2-participant-route v2-route-page-motion is-${routePageDirection}`} key={`participant-${routePageAnimationId}`} aria-labelledby="participant-route-title">
           <div className="v2-section-heading">
             <div>
               <p className="eyebrow">YOUR ROUTE</p>
@@ -569,7 +581,7 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
   return (
     <>
       {routeSwitcher}
-      <article className="v2-phase-panel" aria-labelledby="v2-phase-title">
+      <article className={`v2-phase-panel v2-route-page-motion is-${routePageDirection}`} key={`main-${routePageAnimationId}`} aria-labelledby="v2-phase-title">
         <div className="v2-phase-heading">
           <div>
             <p className="eyebrow">{isManualPhase ? 'VIEWING PHASE' : 'CURRENT PHASE'}</p>
