@@ -1,3 +1,11 @@
+## v2.1.0-p77
+
+- メインRouteの時刻付きDestinationカードへ分岐・再合流・途中合流・途中離脱の接続表示を追加
+- 接続表示から該当サブRouteへ直接切替可能
+- サブRouteの予定はメインと同じPhase / Destination表示を維持
+- Places上部の重複した別行動一覧を簡略化
+- DB変更なし
+
 ## v2.1.0-p76
 
 - サブRouteをメインRouteと同じPhase / Destination構造へ統合する基盤を追加

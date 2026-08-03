@@ -67,6 +67,17 @@ function formatDestinationTime(destination: DestinationSummary): string | null {
   return destination.timeType === 'approx' ? `目安 ${range}` : range;
 }
 
+type MainRouteConnection = { route: RouteBranch; kind: 'start' | 'end'; label: string; detail: string };
+
+function mainRouteConnectionLabel(route: RouteBranch, kind: 'start' | 'end'): { label: string; detail: string } {
+  if (kind === 'start') {
+    if (route.connectionType === 'leave') return { label: 'ここから離脱', detail: `${route.name}がメインRouteを離れます` };
+    return { label: 'ここから分岐', detail: `${route.name}の予定が始まります` };
+  }
+  if (route.connectionType === 'join') return { label: 'ここで合流', detail: `${route.name}がメインRouteへ合流します` };
+  return { label: 'ここで再合流', detail: `${route.name}がメインRouteへ戻ります` };
+}
+
 
 function normalizeFiveMinuteTime(value: string): string {
   if (!value) return '';
@@ -236,6 +247,23 @@ export function RoutePlacesPage() {
     }
     return map;
   }, [phases, destinations, exceptionDestinationIds]);
+
+  const mainConnectionsByDestination = useMemo(() => {
+    const map = new Map<string, MainRouteConnection[]>();
+    if (activeBranchId) return map;
+    const push = (destinationId: string | null, route: RouteBranch, kind: 'start' | 'end') => {
+      if (!destinationId) return;
+      const text = mainRouteConnectionLabel(route, kind);
+      const current = map.get(destinationId) ?? [];
+      current.push({ route, kind, ...text });
+      map.set(destinationId, current);
+    };
+    alternateRoutes.forEach((route) => {
+      push(route.startDestinationId, route, 'start');
+      push(route.endDestinationId, route, 'end');
+    });
+    return map;
+  }, [activeBranchId, alternateRoutes]);
 
   const exceptionDestinations = useMemo(() => destinations
     .filter((destination) => exceptionDestinationIds.has(destination.id))
@@ -931,16 +959,7 @@ function handlePhasePointerEnd(event: ReactPointerEvent<HTMLElement>, phaseId: s
         ) : (
           <div className="phase-planning-list">
             {!activeBranchId && alternateRoutes.length > 0 ? (
-              <section className="alternate-route-section">
-                <header className="alternate-route-section-header"><div><p className="eyebrow">別行動</p><h2>別行動</h2><p>メインRouteにつながる別の動きを管理します。</p></div><span>{alternateRoutes.length}件</span></header>
-                <div className="alternate-route-list">{alternateRoutes.map((route) => (
-                  <button className="alternate-route-card" type="button" key={route.id} onClick={() => setActiveBranchId(route.id)}>
-                    <span className="alternate-route-card-icon" aria-hidden="true">⇄</span>
-                    <span className="alternate-route-card-copy"><strong>{route.name}</strong><small>{alternateRouteTypeLabel(route.connectionType)}</small><em>{route.startDestinationId ? `開始：${destinationLabel(route.startDestinationId)}` : '独立して開始'}{route.endDestinationId ? ` / 合流：${destinationLabel(route.endDestinationId)}` : ' / そのまま終了'}</em></span>
-                    <span aria-hidden="true">›</span>
-                  </button>
-                ))}</div>
-              </section>
+              <p className="places-connection-guide">時刻のある目的地に分岐・合流・離脱を表示します。接続表示を押すと該当のサブRouteへ切り替わります。</p>
             ) : null}
             {phases.map((phase) => {
               const phaseDestinations = destinationsByPhase.get(phase.id) ?? [];
@@ -972,6 +991,17 @@ function handlePhasePointerEnd(event: ReactPointerEvent<HTMLElement>, phaseId: s
                             {destination.locationName ? <div className="place-location-line">{destination.locationName}</div> : null}
                             <h2>{destination.name}</h2>
                             <p>{destination.description ?? '説明はまだありません。'}</p>
+                            {!activeBranchId && (mainConnectionsByDestination.get(destination.id)?.length ?? 0) > 0 ? (
+                              <div className="place-route-connections">
+                                {mainConnectionsByDestination.get(destination.id)?.map((connection) => (
+                                  <button className={`place-route-connection is-${connection.kind}`} type="button" key={`${connection.route.id}-${connection.kind}`} onClick={() => setActiveBranchId(connection.route.id)}>
+                                    <span className="place-route-connection-mark" aria-hidden="true">{connection.kind === 'start' ? '↗' : '↘'}</span>
+                                    <span><strong>{connection.label}</strong><small>{connection.detail}</small></span>
+                                    <em>左へスワイプ／タップで表示</em>
+                                  </button>
+                                ))}
+                              </div>
+                            ) : null}
                           </div>
                           <div className={`place-card-actions ${destination.timeType !== 'none' ? 'is-timed' : ''}`}><button className="place-edit-button" type="button" onClick={() => openEditModal(destination)} disabled={Boolean(reorderingId) || reorderSaving}>編集</button>{destination.timeType === 'none' ? <button className="place-drag-handle" type="button" aria-label={`${destination.name}を長押しして並び替え`} disabled={reorderSaving || (Boolean(reorderingId) && reorderingId !== destination.id)} onPointerDown={(event) => beginDestinationDrag(event, destination.id, phase.id)} onPointerMove={moveDraggedDestination} onPointerUp={(event) => void finishDestinationDrag(event)} onPointerCancel={cancelDestinationDrag} onLostPointerCapture={handleLostDestinationPointerCapture}><span className="drag-dot-grid" aria-hidden="true"><i /><i /><i /><i /><i /><i /></span></button> : null}</div>
                         </article>
