@@ -1241,52 +1241,77 @@
 .places-route-switcher{display:flex;gap:7px;overflow-x:auto;padding:2px 1px 10px;overscroll-behavior-inline:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}.places-route-switcher::-webkit-scrollbar{display:none}.places-route-switcher button{flex:0 0 auto;min-height:34px;padding:7px 12px;border:1px solid rgba(196,203,255,.13);border-radius:999px;background:rgba(196,203,255,.025);color:rgba(226,230,252,.68);font:inherit;font-size:.64rem;font-weight:800}.places-route-switcher button.is-active{border-color:rgba(124,111,255,.55);background:rgba(124,111,255,.16);color:#fff;box-shadow:0 0 0 1px rgba(124,111,255,.08) inset}
 
 
-/* v2.1.0-p77 main Route connection markers */
-.places-connection-guide{
-  margin:0 0 12px;
-  padding:10px 12px;
-  border:1px solid rgba(102,221,255,.16);
-  border-radius:13px;
-  background:rgba(69,124,255,.055);
-  color:rgba(218,226,255,.70);
-  font-size:.66rem;
-  line-height:1.55;
-}
+/* v2.1.0-p78.1 compact main Route connection markers */
+.places-connection-guide{display:none}
 .place-route-connections{
-  display:grid;
-  gap:6px;
-  margin-top:9px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  margin-top:7px;
 }
 .place-route-connection{
-  width:100%;
-  border:1px solid rgba(147,126,255,.24);
-  border-radius:12px;
-  padding:8px 9px;
-  background:linear-gradient(135deg,rgba(119,93,255,.12),rgba(46,180,221,.06));
+  width:auto;
+  max-width:100%;
+  min-height:34px;
+  border:1px solid rgba(147,126,255,.22);
+  border-radius:11px;
+  padding:5px 7px;
+  background:rgba(119,93,255,.08);
   color:inherit;
   display:grid;
-  grid-template-columns:24px minmax(0,1fr);
-  gap:7px;
+  grid-template-columns:20px minmax(0,1fr) 12px;
+  gap:6px;
   align-items:center;
   text-align:left;
   font:inherit;
 }
 .place-route-connection.is-end{
-  border-color:rgba(65,213,167,.24);
-  background:linear-gradient(135deg,rgba(50,191,151,.11),rgba(46,180,221,.05));
+  border-color:rgba(65,213,167,.22);
+  background:rgba(50,191,151,.08);
 }
 .place-route-connection-mark{
-  width:24px;height:24px;border-radius:8px;display:grid;place-items:center;
-  background:rgba(139,119,255,.16);color:#d8d0ff;font-weight:900;
+  width:20px;
+  height:20px;
+  border-radius:7px;
+  display:grid;
+  place-items:center;
+  background:rgba(139,119,255,.14);
+  color:#d8d0ff;
+  font-size:.65rem;
+  font-weight:900;
 }
-.place-route-connection.is-end .place-route-connection-mark{background:rgba(50,191,151,.15);color:#a8f1d8}
-.place-route-connection>span:nth-child(2){min-width:0;display:grid;gap:1px}
-.place-route-connection strong{font-size:.68rem}
-.place-route-connection small{color:rgba(218,226,255,.66);font-size:.58rem;line-height:1.35}
-.place-route-connection em{grid-column:2;color:rgba(174,164,255,.76);font-size:.54rem;font-style:normal;font-weight:700}
+.place-route-connection.is-end .place-route-connection-mark{
+  background:rgba(50,191,151,.13);
+  color:#a8f1d8;
+}
+.place-route-connection>span:nth-child(2){
+  min-width:0;
+  display:flex;
+  align-items:baseline;
+  gap:5px;
+  overflow:hidden;
+}
+.place-route-connection strong{
+  flex:0 0 auto;
+  font-size:.61rem;
+  white-space:nowrap;
+}
+.place-route-connection small{
+  min-width:0;
+  color:rgba(218,226,255,.70);
+  font-size:.59rem;
+  line-height:1.2;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.place-route-connection-arrow{
+  color:rgba(218,226,255,.52);
+  font-size:.82rem;
+  line-height:1;
+}
 @media(max-width:420px){
-  .place-route-connection{padding:7px 8px}
-  .place-route-connection em{font-size:.52rem}
+  .place-route-connection{max-width:100%;padding:5px 6px}
 }
 
 /* v2.1.0-p78 Places / Route shared carousel language */

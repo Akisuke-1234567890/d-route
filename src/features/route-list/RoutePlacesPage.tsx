@@ -71,11 +71,11 @@ type MainRouteConnection = { route: RouteBranch; kind: 'start' | 'end'; label: s
 
 function mainRouteConnectionLabel(route: RouteBranch, kind: 'start' | 'end'): { label: string; detail: string } {
   if (kind === 'start') {
-    if (route.connectionType === 'leave') return { label: 'ここから離脱', detail: `${route.name}がメインRouteを離れます` };
-    return { label: 'ここから分岐', detail: `${route.name}の予定が始まります` };
+    if (route.connectionType === 'leave') return { label: '離脱', detail: route.name };
+    return { label: '分岐', detail: route.name };
   }
-  if (route.connectionType === 'join') return { label: 'ここで合流', detail: `${route.name}がメインRouteへ合流します` };
-  return { label: 'ここで再合流', detail: `${route.name}がメインRouteへ戻ります` };
+  if (route.connectionType === 'join') return { label: '合流', detail: route.name };
+  return { label: '再合流', detail: route.name };
 }
 
 
@@ -1003,9 +1003,6 @@ function handlePhasePointerEnd(event: ReactPointerEvent<HTMLElement>, phaseId: s
           <section className="empty-state" role="alert"><div className="empty-orbit" aria-hidden="true"><BrandMark size={58} /></div><h2>Placesを読み込めませんでした</h2><p>{error}</p><button className="secondary-button" type="button" onClick={() => void loadPlanning()}>再読み込み</button></section>
         ) : (
           <div className="phase-planning-list">
-            {!activeBranchId && alternateRoutes.length > 0 ? (
-              <p className="places-connection-guide">時刻のある目的地に分岐・合流・離脱を表示します。接続表示を押すと該当のサブRouteへ切り替わります。</p>
-            ) : null}
             {phases.map((phase) => {
               const phaseDestinations = destinationsByPhase.get(phase.id) ?? [];
               const phaseSwipeOpen = swipedPhaseId === phase.id;
@@ -1042,7 +1039,7 @@ function handlePhasePointerEnd(event: ReactPointerEvent<HTMLElement>, phaseId: s
                                   <button className={`place-route-connection is-${connection.kind}`} type="button" key={`${connection.route.id}-${connection.kind}`} onClick={() => setActiveBranchId(connection.route.id)}>
                                     <span className="place-route-connection-mark" aria-hidden="true">{connection.kind === 'start' ? '↗' : '↘'}</span>
                                     <span><strong>{connection.label}</strong><small>{connection.detail}</small></span>
-                                    <em>左へスワイプ／タップで表示</em>
+                                    <span className="place-route-connection-arrow" aria-hidden="true">›</span>
                                   </button>
                                 ))}
                               </div>
