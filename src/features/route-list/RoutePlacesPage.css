@@ -1392,3 +1392,26 @@
 .places-route-carousel{will-change:transform;backface-visibility:hidden;-webkit-backface-visibility:hidden}
 .places-route-motion{transform:none!important;transition:none!important;contain:layout paint style}
 @media(prefers-reduced-motion:reduce){.places-route-content-buffer{transition:none!important;transform:none!important}.places-route-carousel{transition:none!important}}
+
+
+/* v2.1.0-p79.8 centered Places add menu */
+.places-add-sheet-backdrop{
+  display:grid!important;
+  place-items:center!important;
+  align-items:center!important;
+  justify-items:center!important;
+  padding:24px!important;
+}
+.places-add-sheet{
+  width:min(86vw,520px);
+  max-height:min(78dvh,640px);
+  margin:0!important;
+  padding:12px;
+  border-radius:24px;
+  overflow:auto;
+}
+.places-add-sheet-handle{margin-bottom:5px}
+@media(max-width:420px){
+  .places-add-sheet-backdrop{padding:18px!important}
+  .places-add-sheet{width:100%;max-width:390px}
+}
