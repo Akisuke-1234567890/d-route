@@ -1235,3 +1235,7 @@
 .alternate-route-member-option>span:nth-of-type(2) small{color:rgba(211,216,241,.52);font-size:.58rem}
 .alternate-route-member-check{width:21px;height:21px;border-radius:50%;display:grid;place-items:center;border:1px solid rgba(196,203,255,.2);color:#fff;font-size:.7rem;font-weight:900}
 .alternate-route-member-option.is-selected .alternate-route-member-check{border-color:#7c6fff;background:#7c6fff}
+
+
+/* v2.1.0-p76 shared main/sub Route editor */
+.places-route-switcher{display:flex;gap:7px;overflow-x:auto;padding:2px 1px 10px;overscroll-behavior-inline:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}.places-route-switcher::-webkit-scrollbar{display:none}.places-route-switcher button{flex:0 0 auto;min-height:34px;padding:7px 12px;border:1px solid rgba(196,203,255,.13);border-radius:999px;background:rgba(196,203,255,.025);color:rgba(226,230,252,.68);font:inherit;font-size:.64rem;font-weight:800}.places-route-switcher button.is-active{border-color:rgba(124,111,255,.55);background:rgba(124,111,255,.16);color:#fff;box-shadow:0 0 0 1px rgba(124,111,255,.08) inset}

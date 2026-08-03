@@ -102,6 +102,7 @@ function updateTimePart(current: string, part: 'hour' | 'minute', nextPart: stri
 export function RoutePlacesPage() {
   const { routeId = '' } = useParams<{ routeId: string }>();
   const [destinations, setDestinations] = useState<DestinationSummary[]>([]);
+  const [activeBranchId, setActiveBranchId] = useState<string | null>(null);
   const [phases, setPhases] = useState<PhaseSummary[]>([]);
   const [selectedPhaseId, setSelectedPhaseId] = useState('');
   const [editPhaseId, setEditPhaseId] = useState('');
@@ -198,7 +199,7 @@ export function RoutePlacesPage() {
     setLoading(true);
     setError(null);
     try {
-      const [nextPhases, nextDestinations, nextAlternateRoutes] = await Promise.all([getRoutePhases(routeId), getRouteDestinations(routeId), listRouteBranches(routeId)]);
+      const [nextPhases, nextDestinations, nextAlternateRoutes] = await Promise.all([getRoutePhases(routeId, activeBranchId), getRouteDestinations(routeId, activeBranchId), listRouteBranches(routeId)]);
       setPhases(nextPhases);
       setDestinations(nextDestinations);
       setAlternateRoutes(nextAlternateRoutes);
@@ -209,7 +210,7 @@ export function RoutePlacesPage() {
     }
   }
 
-  useEffect(() => { void loadPlanning(); }, [routeId]);
+  useEffect(() => { void loadPlanning(); }, [routeId, activeBranchId]);
 
   const exceptionDestinationIds = useMemo(() => {
     const ids = new Set<string>();
@@ -478,7 +479,7 @@ export function RoutePlacesPage() {
       const autoPhase = timeType === 'none' ? null : resolvePhaseForTime(phases, startTime);
       const fallbackPhaseId = selectedPhaseId || phases[0]?.id || '';
       const created = await createRouteDestination(routeId, {
-        phaseId: timeType === 'none' ? fallbackPhaseId : (autoPhase?.id ?? fallbackPhaseId), name, locationName, description, importance,
+        phaseId: timeType === 'none' ? fallbackPhaseId : (autoPhase?.id ?? fallbackPhaseId), branchId: activeBranchId, name, locationName, description, importance,
         timeType, startTime: timeType === 'none' ? null : startTime, endTime: timeType === 'none' ? null : (endTime || null),
       });
       setDestinations((current) => [...current, created].sort((a, b) => a.orderValue - b.orderValue));
@@ -516,7 +517,7 @@ export function RoutePlacesPage() {
       const autoPhase = editTimeType === 'none' ? null : resolvePhaseForTime(phases, editStartTime);
       const fallbackPhaseId = editPhaseId || editing.phaseId || phases[0]?.id || '';
       const updated = await updateRouteDestination(routeId, editing.id, {
-        phaseId: editTimeType === 'none' ? fallbackPhaseId : (autoPhase?.id ?? fallbackPhaseId), name: editName, locationName: editLocationName, description: editDescription, importance: editImportance,
+        phaseId: editTimeType === 'none' ? fallbackPhaseId : (autoPhase?.id ?? fallbackPhaseId), branchId: activeBranchId, name: editName, locationName: editLocationName, description: editDescription, importance: editImportance,
         timeType: editTimeType, startTime: editTimeType === 'none' ? null : editStartTime, endTime: editTimeType === 'none' ? null : (editEndTime || null),
       });
       setDestinations((current) =>
@@ -553,7 +554,7 @@ export function RoutePlacesPage() {
     setPhaseSaving(true);
     setPhaseError(null);
     try {
-      const created = await createRoutePhase(routeId, { name: phaseName, description: phaseDescription, startTime: phaseStartTime || null });
+      const created = await createRoutePhase(routeId, { name: phaseName, description: phaseDescription, startTime: phaseStartTime || null }, activeBranchId);
       setPhases((current) => [...current, created].sort((a, b) => a.orderValue - b.orderValue));
       setPhaseCreateOpen(false);
     } catch (err) {
@@ -582,10 +583,10 @@ async function handlePhaseDelete(targetPhase: PhaseSummary) {
   setPhaseDeleting(true);
   setPhaseError(null);
   try {
-    await deleteRoutePhase(routeId, targetPhase.id);
+    await deleteRoutePhase(routeId, targetPhase.id, activeBranchId);
     const [nextPhases, nextDestinations] = await Promise.all([
-      getRoutePhases(routeId),
-      getRouteDestinations(routeId),
+      getRoutePhases(routeId, activeBranchId),
+      getRouteDestinations(routeId, activeBranchId),
     ]);
     setPhases(nextPhases);
     setDestinations(nextDestinations);
@@ -642,7 +643,7 @@ function handlePhasePointerEnd(event: ReactPointerEvent<HTMLElement>, phaseId: s
     setPhaseSaving(true);
     setPhaseError(null);
     try {
-      const updated = await updateRoutePhase(routeId, phaseEditing.id, { name: phaseName, description: phaseDescription, startTime: phaseStartTime || null });
+      const updated = await updateRoutePhase(routeId, phaseEditing.id, { name: phaseName, description: phaseDescription, startTime: phaseStartTime || null }, activeBranchId);
       setPhases((current) => current.map((phase) => phase.id === updated.id ? updated : phase));
       setPhaseEditing(null);
     } catch (err) {
@@ -898,11 +899,15 @@ function handlePhasePointerEnd(event: ReactPointerEvent<HTMLElement>, phaseId: s
       </header>
 
       <section className="page-content route-tab-content" aria-labelledby="places-title">
+        <div className="places-route-switcher" aria-label="編集するRouteを選択">
+          <button className={!activeBranchId ? 'is-active' : ''} type="button" onClick={() => setActiveBranchId(null)}>メインRoute</button>
+          {alternateRoutes.map((route) => <button className={activeBranchId === route.id ? 'is-active' : ''} type="button" key={route.id} onClick={() => setActiveBranchId(route.id)}>{route.name}</button>)}
+        </div>
         <div className="route-tab-heading">
           <div>
-            <p className="eyebrow">PLACES</p>
-            <h1 id="places-title">目的地</h1>
-            <p>このRouteで共有する目的地を、使う順番に並べて確認します。</p>
+            <p className="eyebrow">{activeBranchId ? 'SUB ROUTE' : 'PLACES'}</p>
+            <h1 id="places-title">{activeBranchId ? (alternateRoutes.find((route) => route.id === activeBranchId)?.name ?? 'サブRoute') : '目的地'}</h1>
+            <p>{activeBranchId ? 'サブRouteもメインRouteと同じ方法で予定を作成・編集します。' : 'このRouteで共有する目的地を、使う順番に並べて確認します。'}</p>
           </div>
           <div className="places-main-actions">
             <button className="primary-button route-tab-action" type="button" onClick={() => openCreateModal()}>
@@ -911,9 +916,11 @@ function handlePhasePointerEnd(event: ReactPointerEvent<HTMLElement>, phaseId: s
             <button className="primary-button route-tab-action" type="button" onClick={openPhaseCreate}>
               ＋ Phaseを追加
             </button>
-            <button className="secondary-button route-tab-action alternate-route-add-button" type="button" onClick={openAlternateRouteCreate}>
+            {!activeBranchId ? <button className="secondary-button route-tab-action alternate-route-add-button" type="button" onClick={openAlternateRouteCreate}>
               ⇄ 別行動を追加
-            </button>
+            </button> : <button className="secondary-button route-tab-action alternate-route-add-button" type="button" onClick={() => { const route=alternateRoutes.find((item)=>item.id===activeBranchId); if(route) openAlternateRouteEdit(route); }}>
+              接続設定
+            </button>}
           </div>
         </div>
 
@@ -923,11 +930,11 @@ function handlePhasePointerEnd(event: ReactPointerEvent<HTMLElement>, phaseId: s
           <section className="empty-state" role="alert"><div className="empty-orbit" aria-hidden="true"><BrandMark size={58} /></div><h2>Placesを読み込めませんでした</h2><p>{error}</p><button className="secondary-button" type="button" onClick={() => void loadPlanning()}>再読み込み</button></section>
         ) : (
           <div className="phase-planning-list">
-            {alternateRoutes.length > 0 ? (
+            {!activeBranchId && alternateRoutes.length > 0 ? (
               <section className="alternate-route-section">
                 <header className="alternate-route-section-header"><div><p className="eyebrow">別行動</p><h2>別行動</h2><p>メインRouteにつながる別の動きを管理します。</p></div><span>{alternateRoutes.length}件</span></header>
                 <div className="alternate-route-list">{alternateRoutes.map((route) => (
-                  <button className="alternate-route-card" type="button" key={route.id} onClick={() => openAlternateRouteEdit(route)}>
+                  <button className="alternate-route-card" type="button" key={route.id} onClick={() => setActiveBranchId(route.id)}>
                     <span className="alternate-route-card-icon" aria-hidden="true">⇄</span>
                     <span className="alternate-route-card-copy"><strong>{route.name}</strong><small>{alternateRouteTypeLabel(route.connectionType)}</small><em>{route.startDestinationId ? `開始：${destinationLabel(route.startDestinationId)}` : '独立して開始'}{route.endDestinationId ? ` / 合流：${destinationLabel(route.endDestinationId)}` : ' / そのまま終了'}</em></span>
                     <span aria-hidden="true">›</span>

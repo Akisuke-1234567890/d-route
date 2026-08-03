@@ -1,3 +1,11 @@
+## v2.1.0-p76
+
+- サブRouteをメインRouteと同じPhase / Destination構造へ統合する基盤を追加
+- Places上部でメインRouteと各サブRouteを切替可能
+- サブRouteでもPhase追加、目的地追加・編集・並び替えを共通UIで利用
+- 既存の別行動予定を新しい共通Destinationへ移行
+- 開始・合流・離脱アンカーは従来どおりメインRouteの時刻付きDestinationを参照
+
 ## v2.1.0-p75
 
 - 参加者の別Route割り振りをRoute表示へ反映
