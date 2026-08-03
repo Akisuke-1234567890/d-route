@@ -1022,7 +1022,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
       </header>
 
       <section className="page-content route-tab-content" aria-labelledby="places-title">
-        <section className="places-route-carousel" aria-label="編集するRouteを選択">
+        <section className="places-route-carousel" aria-label="編集するRouteを選択" onTouchStart={handlePlacesRouteTouchStart} onTouchEnd={handlePlacesRouteTouchEnd}>
           <button type="button" className="places-route-arrow" onClick={() => movePlacesRoute(activePlacesRouteIndex - 1)} disabled={activePlacesRouteIndex === 0} aria-label="前のRouteを見る">‹</button>
           <div className="places-route-carousel-title">
             <small>{placesRouteCategory}</small>
@@ -1033,7 +1033,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
           <p>{placesRouteIds.length > 1 ? '左へスワイプで次のRoute、右へスワイプで戻る' : 'サブRouteを追加するとここで切り替えられます'}</p>
           <div className="places-route-dots">{placesRouteIds.map((id,index)=><button type="button" key={id ?? 'main'} className={index===activePlacesRouteIndex?'is-active':''} onClick={()=>movePlacesRoute(index)} aria-label={`${index+1}ページ目を見る`}/>)}</div>
         </section>
-        <div className={`places-route-motion is-${placesRouteDirection}`} key={`places-route-${placesRouteMotionId}`} onTouchStart={handlePlacesRouteTouchStart} onTouchEnd={handlePlacesRouteTouchEnd}>
+        <div className={`places-route-motion is-${placesRouteDirection}`} key={`places-route-${placesRouteMotionId}`}>
         <div className="route-tab-heading">
           <div>
             <p className="eyebrow">{activeBranchId ? 'SUB ROUTE' : 'PLACES'}</p>

@@ -560,7 +560,7 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
     return (
       <>
         {routeSwitcher}
-        <article className={`v2-alternate-route-panel v2-route-page-motion is-${routePageDirection}`} key={`alternate-${routePageAnimationId}`} onTouchStart={onRouteSwipeStart} onTouchMove={onRouteSwipeMove} onTouchEnd={onRouteSwipeEnd} onTouchCancel={onRouteSwipeEnd} style={routeDragStyle}>
+        <article className={`v2-alternate-route-panel v2-route-page-motion is-${routePageDirection}`} key={`alternate-${routePageAnimationId}`}>
           <div className="v2-section-heading">
             <div>
               <p className="eyebrow">{alternateRouteCategory(activeAlternateRoute.connectionType)}</p>
@@ -613,7 +613,7 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
     return (
       <>
         {routeSwitcher}
-        <article className={`v2-participant-route v2-route-page-motion is-${routePageDirection}`} key={`participant-${routePageAnimationId}`} aria-labelledby="participant-route-title" onTouchStart={onRouteSwipeStart} onTouchMove={onRouteSwipeMove} onTouchEnd={onRouteSwipeEnd} onTouchCancel={onRouteSwipeEnd} style={routeDragStyle}>
+        <article className={`v2-participant-route v2-route-page-motion is-${routePageDirection}`} key={`participant-${routePageAnimationId}`} aria-labelledby="participant-route-title">
           <div className="v2-section-heading">
             <div>
               <p className="eyebrow">YOUR ROUTE</p>
@@ -675,7 +675,7 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
   return (
     <>
       {routeSwitcher}
-      <article className={`v2-phase-panel v2-route-page-motion is-${routePageDirection}`} key={`main-${routePageAnimationId}`} aria-labelledby="v2-phase-title" onTouchStart={onRouteSwipeStart} onTouchMove={onRouteSwipeMove} onTouchEnd={onRouteSwipeEnd} onTouchCancel={onRouteSwipeEnd} style={routeDragStyle}>
+      <article className={`v2-phase-panel v2-route-page-motion is-${routePageDirection}`} key={`main-${routePageAnimationId}`} aria-labelledby="v2-phase-title">
         <div className="v2-phase-heading">
           <div>
             <p className="eyebrow">{isManualPhase ? 'VIEWING PHASE' : 'CURRENT PHASE'}</p>
