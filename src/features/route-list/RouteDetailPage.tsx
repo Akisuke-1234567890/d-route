@@ -545,7 +545,6 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
         <span>{routePageIndex + 1} / {routePageCount}</span>
       </div>
       <button type="button" onClick={showNextRoutePage} disabled={routePageIndex >= routePageCount - 1} aria-label="次のRouteを見る">›</button>
-      <p>{routePageIndex === 0 ? '左へスワイプして別Routeを見る' : routePageIndex >= routePageCount - 1 ? '右へスワイプして前のRouteへ戻る' : '左右にスワイプしてRouteを切り替える'}</p>
       <div className="v2-route-page-dots">
         {Array.from({ length: routePageCount }, (_, index) => (
           <button key={index} type="button" className={index === routePageIndex ? 'is-active' : ''} onClick={() => moveToRoutePage(index)} aria-label={`${index + 1}ページ目を見る`} />

@@ -116,6 +116,11 @@ export function RoutePlacesPage() {
   const [activeBranchId, setActiveBranchId] = useState<string | null>(null);
   const [placesRouteDirection, setPlacesRouteDirection] = useState<'next' | 'previous'>('next');
   const [placesRouteMotionId, setPlacesRouteMotionId] = useState(0);
+  const [placesRouteDragX, setPlacesRouteDragX] = useState(0);
+  const [placesRouteDragging, setPlacesRouteDragging] = useState(false);
+  const [placesRouteSettling, setPlacesRouteSettling] = useState(false);
+  const placesRouteSwipeStartTimeRef = useRef(0);
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
   const placesSwipeStartXRef = useRef<number | null>(null);
   const placesSwipeStartYRef = useRef<number | null>(null);
   const placesSwipeBlockedRef = useRef(false);
@@ -210,7 +215,7 @@ export function RoutePlacesPage() {
   const nameInputRef = useRef<HTMLInputElement>(null);
   const editNameInputRef = useRef<HTMLInputElement>(null);
 
-  useBodyScrollLock(createOpen || Boolean(editing) || Boolean(deleteTarget) || phaseCreateOpen || Boolean(phaseEditing) || alternateRouteOpen);
+  useBodyScrollLock(createOpen || Boolean(editing) || Boolean(deleteTarget) || phaseCreateOpen || Boolean(phaseEditing) || alternateRouteOpen || addMenuOpen);
 
   async function loadPlanning() {
     setLoading(true);
@@ -941,38 +946,51 @@ function requestDestinationDelete(destination: DestinationSummary) {
   }
 
   function handlePlacesRouteTouchStart(event: React.TouchEvent<HTMLElement>) {
-    const target = event.target instanceof Element ? event.target : null;
-    const startedInsideDestination = Boolean(target?.closest('[data-destination-interaction="true"]'));
-    placesSwipeBlockedRef.current = startedInsideDestination || placesRouteGestureLockRef.current;
-    if (placesSwipeBlockedRef.current || dragSessionRef.current || reorderingId) {
-      placesSwipeStartXRef.current = null;
-      placesSwipeStartYRef.current = null;
-      return;
-    }
     if (alternateRouteOpen || createOpen || editing || phaseCreateOpen || phaseEditing) return;
     placesSwipeStartXRef.current = event.touches[0]?.clientX ?? null;
     placesSwipeStartYRef.current = event.touches[0]?.clientY ?? null;
+    placesRouteSwipeStartTimeRef.current = performance.now();
+    setPlacesRouteSettling(false);
+    setPlacesRouteDragging(true);
   }
 
-  function handlePlacesRouteTouchEnd(event: React.TouchEvent<HTMLElement>) {
-    if (placesSwipeBlockedRef.current || placesRouteGestureLockRef.current || dragSessionRef.current || reorderingId) {
-      placesSwipeBlockedRef.current = false;
-      placesSwipeStartXRef.current = null;
-      placesSwipeStartYRef.current = null;
-      return;
-    }
+  function handlePlacesRouteTouchMove(event: React.TouchEvent<HTMLElement>) {
     const startX = placesSwipeStartXRef.current;
     const startY = placesSwipeStartYRef.current;
-    placesSwipeStartXRef.current = null;
-    placesSwipeStartYRef.current = null;
-    const touch = event.changedTouches[0];
+    const touch = event.touches[0];
     if (startX === null || startY === null || !touch) return;
     const deltaX = touch.clientX - startX;
     const deltaY = touch.clientY - startY;
-    if (Math.abs(deltaX) < 64 || Math.abs(deltaX) <= Math.abs(deltaY) * 1.15) return;
-    if (deltaX < 0) movePlacesRoute(activePlacesRouteIndex + 1);
-    else movePlacesRoute(activePlacesRouteIndex - 1);
+    if (Math.abs(deltaY) > Math.abs(deltaX) * 1.2) return;
+    const atStart = activePlacesRouteIndex === 0 && deltaX > 0;
+    const atEnd = activePlacesRouteIndex >= placesRouteIds.length - 1 && deltaX < 0;
+    setPlacesRouteDragX((atStart || atEnd) ? deltaX * .24 : deltaX);
   }
+
+  function handlePlacesRouteTouchEnd(event: React.TouchEvent<HTMLElement>) {
+    const startX = placesSwipeStartXRef.current;
+    const touch = event.changedTouches[0];
+    placesSwipeStartXRef.current = null;
+    placesSwipeStartYRef.current = null;
+    if (startX === null || !touch) { setPlacesRouteDragging(false); setPlacesRouteDragX(0); return; }
+    const deltaX = touch.clientX - startX;
+    const elapsed = Math.max(1, performance.now() - placesRouteSwipeStartTimeRef.current);
+    const velocity = deltaX / elapsed;
+    const next = deltaX < 0 && activePlacesRouteIndex < placesRouteIds.length - 1;
+    const previous = deltaX > 0 && activePlacesRouteIndex > 0;
+    const change = Math.abs(deltaX) >= 58 || Math.abs(velocity) >= .42;
+    setPlacesRouteDragging(false);
+    setPlacesRouteSettling(true);
+    setPlacesRouteDragX(0);
+    if (change && next) movePlacesRoute(activePlacesRouteIndex + 1);
+    else if (change && previous) movePlacesRoute(activePlacesRouteIndex - 1);
+    window.setTimeout(() => setPlacesRouteSettling(false), 300);
+  }
+
+  const placesRouteDragStyle = {
+    transform: `translate3d(${placesRouteDragX}px,0,0)`,
+    transition: placesRouteDragging ? 'none' : 'transform 300ms cubic-bezier(.22,.72,.22,1)',
+  };
 
   function getDestinationDragShift(index: number) {
     const session = dragSessionRef.current;
@@ -1022,7 +1040,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
       </header>
 
       <section className="page-content route-tab-content" aria-labelledby="places-title">
-        <section className="places-route-carousel" aria-label="編集するRouteを選択" onTouchStart={handlePlacesRouteTouchStart} onTouchEnd={handlePlacesRouteTouchEnd}>
+        <section className="places-route-carousel" aria-label="編集するRouteを選択" onTouchStart={handlePlacesRouteTouchStart} onTouchMove={handlePlacesRouteTouchMove} onTouchEnd={handlePlacesRouteTouchEnd} onTouchCancel={handlePlacesRouteTouchEnd} style={placesRouteDragStyle}>
           <button type="button" className="places-route-arrow" onClick={() => movePlacesRoute(activePlacesRouteIndex - 1)} disabled={activePlacesRouteIndex === 0} aria-label="前のRouteを見る">‹</button>
           <div className="places-route-carousel-title">
             <small>{placesRouteCategory}</small>
@@ -1030,29 +1048,15 @@ function requestDestinationDelete(destination: DestinationSummary) {
             <span>{activePlacesRouteIndex + 1} / {placesRouteIds.length}</span>
           </div>
           <button type="button" className="places-route-arrow" onClick={() => movePlacesRoute(activePlacesRouteIndex + 1)} disabled={activePlacesRouteIndex >= placesRouteIds.length - 1} aria-label="次のRouteを見る">›</button>
-          <p>{placesRouteIds.length > 1 ? '左へスワイプで次のRoute、右へスワイプで戻る' : 'サブRouteを追加するとここで切り替えられます'}</p>
           <div className="places-route-dots">{placesRouteIds.map((id,index)=><button type="button" key={id ?? 'main'} className={index===activePlacesRouteIndex?'is-active':''} onClick={()=>movePlacesRoute(index)} aria-label={`${index+1}ページ目を見る`}/>)}</div>
         </section>
         <div className={`places-route-motion is-${placesRouteDirection}`} key={`places-route-${placesRouteMotionId}`}>
-        <div className="route-tab-heading">
+        <div className="route-tab-heading places-compact-heading">
           <div>
             <p className="eyebrow">{activeBranchId ? 'SUB ROUTE' : 'PLACES'}</p>
             <h1 id="places-title">{activeBranchId ? (alternateRoutes.find((route) => route.id === activeBranchId)?.name ?? 'サブRoute') : '目的地'}</h1>
-            <p>{activeBranchId ? 'サブRouteもメインRouteと同じ方法で予定を作成・編集します。' : 'このRouteで共有する目的地を、使う順番に並べて確認します。'}</p>
           </div>
-          <div className="places-main-actions">
-            <button className="primary-button route-tab-action" type="button" onClick={() => openCreateModal()}>
-              ＋ 目的地を追加
-            </button>
-            <button className="primary-button route-tab-action" type="button" onClick={openPhaseCreate}>
-              ＋ Phaseを追加
-            </button>
-            {!activeBranchId ? <button className="secondary-button route-tab-action alternate-route-add-button" type="button" onClick={openAlternateRouteCreate}>
-              ⇄ 別行動を追加
-            </button> : <button className="secondary-button route-tab-action alternate-route-add-button" type="button" onClick={() => { const route=alternateRoutes.find((item)=>item.id===activeBranchId); if(route) openAlternateRouteEdit(route); }}>
-              接続設定
-            </button>}
-          </div>
+          <button className="primary-button places-add-menu-button" type="button" onClick={() => setAddMenuOpen(true)}>＋ 追加</button>
         </div>
 
         {loading ? (

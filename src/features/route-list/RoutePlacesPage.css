@@ -1336,3 +1336,18 @@
 @keyframes places-route-enter-next{from{opacity:.36;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
 @keyframes places-route-enter-previous{from{opacity:.36;transform:translateX(-30px)}to{opacity:1;transform:translateX(0)}}
 @media(prefers-reduced-motion:reduce){.places-route-motion.is-next,.places-route-motion.is-previous{animation:none}}
+
+
+/* v2.1.0-p78.7 compact Places header and smooth route switcher */
+.places-route-carousel{grid-template-columns:34px minmax(0,1fr) 34px;margin-bottom:8px;padding:7px 10px;border-radius:15px;touch-action:pan-y;will-change:transform}
+.places-route-arrow{width:34px;height:34px;border-radius:11px;font-size:1.18rem}
+.places-route-carousel-title small{font-size:.49rem}.places-route-carousel-title strong{font-size:.72rem}.places-route-carousel-title span{font-size:.57rem}
+.places-route-dots{margin-top:1px}.places-route-dots button{height:5px;width:5px}.places-route-dots button.is-active{width:16px}
+.places-compact-heading{align-items:center!important;margin-bottom:12px!important;flex-direction:row!important}
+.places-compact-heading h1{margin:2px 0 0!important;font-size:1.55rem}.places-compact-heading .eyebrow{font-size:.56rem}
+.places-add-menu-button{width:auto!important;min-width:96px!important;padding:11px 17px!important}
+.places-add-sheet-backdrop{align-items:end!important;padding:14px!important}
+.places-add-sheet{width:min(100%,520px);margin:0 auto;display:grid;gap:8px;padding:10px 12px max(12px,env(safe-area-inset-bottom));border:1px solid rgba(196,203,255,.2);border-radius:24px;background:linear-gradient(160deg,rgba(30,39,82,.99),rgba(10,15,39,.99));box-shadow:0 24px 70px rgba(0,0,0,.55)}
+.places-add-sheet-handle{width:42px;height:4px;margin:0 auto 3px;border-radius:999px;background:rgba(211,216,241,.28)}
+.places-add-sheet button{min-height:48px;border:1px solid rgba(196,203,255,.12);border-radius:14px;background:rgba(196,203,255,.045);color:#fff;font:inherit;font-weight:800;text-align:left;padding:0 16px}
+.places-add-sheet button.is-cancel{text-align:center;margin-top:3px;background:rgba(7,10,28,.55);color:rgba(226,230,252,.76)}

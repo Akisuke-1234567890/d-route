@@ -3197,3 +3197,10 @@ a { color: inherit; }
 /* v2.1.0-p75 participant alternate route priority */
 .v2-route-page-title strong{display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap}
 .v2-route-page-own{padding:3px 7px;border-radius:999px;background:rgba(74,222,190,.14);border:1px solid rgba(74,222,190,.28);color:#a9fff0;font-size:.52rem;font-style:normal;font-weight:800;white-space:nowrap}
+
+
+/* v2.1.0-p78.7 compact shared Route switcher */
+.v2-route-page-switcher{grid-template-columns:34px minmax(0,1fr) 34px;padding:7px 10px;border-radius:15px;gap:7px;will-change:transform}
+.v2-route-page-switcher>button{width:34px;height:34px;border-radius:11px;font-size:1.18rem}
+.v2-route-page-title small{font-size:.49rem}.v2-route-page-title strong{font-size:.72rem}.v2-route-page-title span{font-size:.57rem}
+.v2-route-page-dots{margin-top:1px}.v2-route-page-dots button{height:5px!important;width:5px!important}.v2-route-page-dots button.is-active{width:16px!important}
