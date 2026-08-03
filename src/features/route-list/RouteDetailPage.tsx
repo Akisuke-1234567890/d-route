@@ -13,6 +13,7 @@ import { getOwnRouteMember, type RouteMember } from './members';
 import {
   listRouteBranches,
   listAlternateRouteDestinations,
+  listRouteBranchAssignments,
   type RouteBranch,
   type AlternateRouteDestination,
 } from './branches';
@@ -86,7 +87,7 @@ function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback;
 }
 
-function PhaseDashboard({ routeId, participantView }: { routeId: string; participantView: boolean }) {
+function PhaseDashboard({ routeId, participantView, memberUserId }: { routeId: string; participantView: boolean; memberUserId?: string | null }) {
   const [phases, setPhases] = useState<PhaseSummary[]>([]);
   const [destinations, setDestinations] = useState<DestinationSummary[]>([]);
   const [planningLoading, setPlanningLoading] = useState(true);
@@ -106,6 +107,7 @@ function PhaseDashboard({ routeId, participantView }: { routeId: string; partici
   const [alternateDestinations, setAlternateDestinations] = useState<Record<string, AlternateRouteDestination[]>>({});
   const [alternateLoading, setAlternateLoading] = useState(true);
   const [alternateError, setAlternateError] = useState<string | null>(null);
+  const [assignedAlternateRouteId, setAssignedAlternateRouteId] = useState<string | null>(null);
   const [routePageIndex, setRoutePageIndex] = useState(0);
   const [routePageDirection, setRoutePageDirection] = useState<'next' | 'previous'>('next');
   const [routePageAnimationId, setRoutePageAnimationId] = useState(0);
@@ -172,17 +174,30 @@ function PhaseDashboard({ routeId, participantView }: { routeId: string; partici
     let active = true;
     setAlternateLoading(true);
     setAlternateError(null);
-    void listRouteBranches(routeId)
-      .then(async (routes) => {
+    void Promise.all([
+      listRouteBranches(routeId),
+      memberUserId ? listRouteBranchAssignments(routeId) : Promise.resolve([]),
+    ])
+      .then(async ([routes, assignments]) => {
         const configured = routes.filter((item) => item.connectionType);
-        const pairs = await Promise.all(configured.map(async (item) => [
+        const assignedId = memberUserId
+          ? assignments.find((item) => item.memberUserId === memberUserId)?.branchId ?? null
+          : null;
+        const ordered = assignedId
+          ? configured.slice().sort((a, b) => Number(b.id === assignedId) - Number(a.id === assignedId))
+          : configured;
+        const pairs = await Promise.all(ordered.map(async (item) => [
           item.id,
           await listAlternateRouteDestinations(item.id),
         ] as const));
         if (!active) return;
-        setAlternateRoutes(configured);
+        setAssignedAlternateRouteId(assignedId);
+        setAlternateRoutes(ordered);
         setAlternateDestinations(Object.fromEntries(pairs));
-        setRoutePageIndex((current) => Math.min(current, configured.length));
+        setRoutePageIndex((current) => {
+          if (participantView && assignedId) return 1;
+          return Math.min(current, ordered.length);
+        });
       })
       .catch((error) => {
         if (!active) return;
@@ -194,7 +209,7 @@ function PhaseDashboard({ routeId, participantView }: { routeId: string; partici
         if (active) setAlternateLoading(false);
       });
     return () => { active = false; };
-  }, [routeId]);
+  }, [routeId, memberUserId, participantView]);
 
   useEffect(() => {
     const updateClock = () => {
@@ -526,7 +541,7 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
       <button type="button" onClick={showPreviousRoutePage} disabled={routePageIndex === 0} aria-label="前のRouteを見る">‹</button>
       <div className="v2-route-page-title">
         <small>{routePageIndex === 0 ? 'メインRoute' : activeAlternateRoute ? alternateRouteCategory(activeAlternateRoute.connectionType) : '別行動Route'}</small>
-        <strong>{routePageIndex === 0 ? 'メインの予定' : activeAlternateRoute?.name ?? '別行動'}</strong>
+        <strong>{routePageIndex === 0 ? 'メインの予定' : activeAlternateRoute?.name ?? '別行動'}{activeAlternateRoute?.id === assignedAlternateRouteId ? <em className="v2-route-page-own">あなたのRoute</em> : null}</strong>
         <span>{routePageIndex + 1} / {routePageCount}</span>
       </div>
       <button type="button" onClick={showNextRoutePage} disabled={routePageIndex >= routePageCount - 1} aria-label="次のRouteを見る">›</button>
@@ -551,7 +566,7 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
               <p className="eyebrow">{alternateRouteCategory(activeAlternateRoute.connectionType)}</p>
               <h2>{activeAlternateRoute.name}</h2>
             </div>
-            <span className="v2-alternate-route-badge">{alternateTypeLabel(activeAlternateRoute.connectionType)}</span>
+            <span className="v2-alternate-route-badge">{activeAlternateRoute.id === assignedAlternateRouteId ? 'あなたの別行動' : alternateTypeLabel(activeAlternateRoute.connectionType)}</span>
           </div>
 
           {(startLabel || endLabel) ? (
@@ -912,7 +927,7 @@ export function RouteDetailPage() {
               </div>
             </section>
 
-            <PhaseDashboard routeId={routeId ?? route.id} participantView={ownMember?.role === 'member'} />
+            <PhaseDashboard routeId={routeId ?? route.id} participantView={ownMember?.role === 'member'} memberUserId={ownMember?.userId ?? null} />
 
             {ownMember?.role !== 'member' ? <section className="v2-admin-zone" aria-label="Route管理">
               <p>Routeの管理</p>

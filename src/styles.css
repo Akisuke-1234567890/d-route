@@ -3189,3 +3189,8 @@ a { color: inherit; }
   .v2-route-page-switcher,
   .v2-route-page-motion{transition:none!important}
 }
+
+
+/* v2.1.0-p75 participant alternate route priority */
+.v2-route-page-title strong{display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap}
+.v2-route-page-own{padding:3px 7px;border-radius:999px;background:rgba(74,222,190,.14);border:1px solid rgba(74,222,190,.28);color:#a9fff0;font-size:.52rem;font-style:normal;font-weight:800;white-space:nowrap}
