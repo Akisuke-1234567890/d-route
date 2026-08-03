@@ -1288,3 +1288,26 @@
   .place-route-connection{padding:7px 8px}
   .place-route-connection em{font-size:.52rem}
 }
+
+/* v2.1.0-p78 Places / Route shared carousel language */
+.places-route-carousel{
+  display:grid;grid-template-columns:38px minmax(0,1fr) 38px;align-items:center;gap:8px;
+  margin-bottom:12px;padding:10px 12px;border:1px solid rgba(116,231,219,.18);border-radius:17px;
+  background:linear-gradient(145deg,rgba(29,56,82,.55),rgba(24,29,67,.52));
+}
+.places-route-arrow{width:38px;height:38px;border:1px solid rgba(196,203,255,.14);border-radius:12px;background:rgba(6,12,34,.42);color:#fff;font-size:1.35rem}
+.places-route-arrow:disabled{opacity:.25}
+.places-route-carousel-title{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:'category count' 'name count';gap:1px 8px;text-align:center;min-width:0}
+.places-route-carousel-title small{grid-area:category;color:#9b8cff;font-size:.54rem;font-weight:900;letter-spacing:.08em}
+.places-route-carousel-title strong{grid-area:name;font-size:.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.places-route-carousel-title span{grid-area:count;align-self:center;color:#8fe9df;font-size:.62rem;font-weight:800}
+.places-route-carousel>p{grid-column:1/-1;margin:0;text-align:center;color:var(--muted);font-size:.58rem}
+.places-route-dots{grid-column:1/-1;display:flex;justify-content:center;gap:5px}
+.places-route-dots button{width:6px;height:6px;min-width:0;padding:0;border:0;border-radius:999px;background:rgba(211,216,241,.25)}
+.places-route-dots button.is-active{width:18px;background:#70e1d6}
+.places-route-motion{touch-action:pan-y pinch-zoom;will-change:transform,opacity}
+.places-route-motion.is-next{animation:places-route-enter-next .3s cubic-bezier(.22,.75,.28,1) both}
+.places-route-motion.is-previous{animation:places-route-enter-previous .3s cubic-bezier(.22,.75,.28,1) both}
+@keyframes places-route-enter-next{from{opacity:.36;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+@keyframes places-route-enter-previous{from{opacity:.36;transform:translateX(-30px)}to{opacity:1;transform:translateX(0)}}
+@media(prefers-reduced-motion:reduce){.places-route-motion.is-next,.places-route-motion.is-previous{animation:none}}

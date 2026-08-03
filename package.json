@@ -1,7 +1,7 @@
 {
   "name": "d-route",
   "private": true,
-  "version": "2.1.0-p77",
+  "version": "2.1.0-p78",
   "type": "module",
   "scripts": {
     "dev": "vite",

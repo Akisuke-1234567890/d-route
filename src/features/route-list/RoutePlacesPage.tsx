@@ -114,6 +114,10 @@ export function RoutePlacesPage() {
   const { routeId = '' } = useParams<{ routeId: string }>();
   const [destinations, setDestinations] = useState<DestinationSummary[]>([]);
   const [activeBranchId, setActiveBranchId] = useState<string | null>(null);
+  const [placesRouteDirection, setPlacesRouteDirection] = useState<'next' | 'previous'>('next');
+  const [placesRouteMotionId, setPlacesRouteMotionId] = useState(0);
+  const placesSwipeStartXRef = useRef<number | null>(null);
+  const placesSwipeStartYRef = useRef<number | null>(null);
   const [phases, setPhases] = useState<PhaseSummary[]>([]);
   const [selectedPhaseId, setSelectedPhaseId] = useState('');
   const [editPhaseId, setEditPhaseId] = useState('');
@@ -879,6 +883,39 @@ function handlePhasePointerEnd(event: ReactPointerEvent<HTMLElement>, phaseId: s
     resetDestinationDrag({ restoreOrder: session.active, releasePointer: false });
   }
 
+  const placesRouteIds = [null, ...alternateRoutes.map((route) => route.id)] as Array<string | null>;
+  const activePlacesRouteIndex = Math.max(0, placesRouteIds.findIndex((id) => id === activeBranchId));
+  const activePlacesRoute = activeBranchId ? alternateRoutes.find((route) => route.id === activeBranchId) ?? null : null;
+  const placesRouteCategory = !activePlacesRoute ? 'メインRoute' : activePlacesRoute.connectionType === 'split_merge' ? '分岐Route' : activePlacesRoute.connectionType === 'join' ? '合流Route' : activePlacesRoute.connectionType === 'leave' ? '離脱Route' : '別行動Route';
+
+  function movePlacesRoute(nextIndex: number) {
+    const bounded = Math.max(0, Math.min(placesRouteIds.length - 1, nextIndex));
+    if (bounded === activePlacesRouteIndex) return;
+    setPlacesRouteDirection(bounded > activePlacesRouteIndex ? 'next' : 'previous');
+    setPlacesRouteMotionId((current) => current + 1);
+    setActiveBranchId(placesRouteIds[bounded]);
+  }
+
+  function handlePlacesRouteTouchStart(event: React.TouchEvent<HTMLElement>) {
+    if (alternateRouteOpen || createOpen || editing || phaseCreateOpen || phaseEditing) return;
+    placesSwipeStartXRef.current = event.touches[0]?.clientX ?? null;
+    placesSwipeStartYRef.current = event.touches[0]?.clientY ?? null;
+  }
+
+  function handlePlacesRouteTouchEnd(event: React.TouchEvent<HTMLElement>) {
+    const startX = placesSwipeStartXRef.current;
+    const startY = placesSwipeStartYRef.current;
+    placesSwipeStartXRef.current = null;
+    placesSwipeStartYRef.current = null;
+    const touch = event.changedTouches[0];
+    if (startX === null || startY === null || !touch) return;
+    const deltaX = touch.clientX - startX;
+    const deltaY = touch.clientY - startY;
+    if (Math.abs(deltaX) < 64 || Math.abs(deltaX) <= Math.abs(deltaY) * 1.15) return;
+    if (deltaX < 0) movePlacesRoute(activePlacesRouteIndex + 1);
+    else movePlacesRoute(activePlacesRouteIndex - 1);
+  }
+
   function getDestinationDragShift(index: number) {
     const session = dragSessionRef.current;
     if (!session?.active || dragTargetIndex === null || !dragOverlay) return 0;
@@ -927,10 +964,18 @@ function handlePhasePointerEnd(event: ReactPointerEvent<HTMLElement>, phaseId: s
       </header>
 
       <section className="page-content route-tab-content" aria-labelledby="places-title">
-        <div className="places-route-switcher" aria-label="編集するRouteを選択">
-          <button className={!activeBranchId ? 'is-active' : ''} type="button" onClick={() => setActiveBranchId(null)}>メインRoute</button>
-          {alternateRoutes.map((route) => <button className={activeBranchId === route.id ? 'is-active' : ''} type="button" key={route.id} onClick={() => setActiveBranchId(route.id)}>{route.name}</button>)}
-        </div>
+        <section className="places-route-carousel" aria-label="編集するRouteを選択">
+          <button type="button" className="places-route-arrow" onClick={() => movePlacesRoute(activePlacesRouteIndex - 1)} disabled={activePlacesRouteIndex === 0} aria-label="前のRouteを見る">‹</button>
+          <div className="places-route-carousel-title">
+            <small>{placesRouteCategory}</small>
+            <strong>{activePlacesRoute?.name ?? 'メインの予定'}</strong>
+            <span>{activePlacesRouteIndex + 1} / {placesRouteIds.length}</span>
+          </div>
+          <button type="button" className="places-route-arrow" onClick={() => movePlacesRoute(activePlacesRouteIndex + 1)} disabled={activePlacesRouteIndex >= placesRouteIds.length - 1} aria-label="次のRouteを見る">›</button>
+          <p>{placesRouteIds.length > 1 ? '左へスワイプで次のRoute、右へスワイプで戻る' : 'サブRouteを追加するとここで切り替えられます'}</p>
+          <div className="places-route-dots">{placesRouteIds.map((id,index)=><button type="button" key={id ?? 'main'} className={index===activePlacesRouteIndex?'is-active':''} onClick={()=>movePlacesRoute(index)} aria-label={`${index+1}ページ目を見る`}/>)}</div>
+        </section>
+        <div className={`places-route-motion is-${placesRouteDirection}`} key={`places-route-${placesRouteMotionId}`} onTouchStart={handlePlacesRouteTouchStart} onTouchEnd={handlePlacesRouteTouchEnd}>
         <div className="route-tab-heading">
           <div>
             <p className="eyebrow">{activeBranchId ? 'SUB ROUTE' : 'PLACES'}</p>
@@ -1033,6 +1078,7 @@ function handlePhasePointerEnd(event: ReactPointerEvent<HTMLElement>, phaseId: s
             ) : null}
           </div>
         )}
+        </div>
       </section>
 
       {dragOverlay && (() => {
