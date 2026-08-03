@@ -1385,3 +1385,10 @@
 .places-route-carousel{touch-action:pan-y pinch-zoom;overscroll-behavior-x:contain}
 .places-route-motion{transition:none;contain:layout paint style}
 @media(prefers-reduced-motion:reduce){.places-route-carousel,.places-route-motion{transition:none!important}}
+
+
+/* v2.1.0-p79.5 prepared Places content reveal */
+.places-route-content-buffer{opacity:1;transform:translate3d(0,0,0);will-change:opacity,transform;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.places-route-carousel{will-change:transform;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.places-route-motion{transform:none!important;transition:none!important;contain:layout paint style}
+@media(prefers-reduced-motion:reduce){.places-route-content-buffer{transition:none!important;transform:none!important}.places-route-carousel{transition:none!important}}

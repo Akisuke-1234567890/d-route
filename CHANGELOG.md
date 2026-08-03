@@ -816,3 +816,12 @@ Known issues: Supabase ProjectとRedirect URLは配布先で設定が必要。Ro
 - Fixed top-to-bottom Destination drag being cancelled on iPhone by keeping the captured DOM node stationary until pointer release.
 - Reorder target is now calculated from pointer Y position instead of moving the live list during the gesture.
 - Increased floating-card depth with stronger shadow, scale, lift and surface contrast.
+
+## v2.1.0-p79.5 Places prepared Route reveal
+
+- PlacesのメインRoute / サブRoute切替は上部のRoute切替枠だけを指追従させる
+- Phase / Destination本文はスワイプ中に横移動させない
+- 切替先のPlanningデータを先に取得し、準備完了後に本文を短くフェード＋微小スライド表示
+- 画面構成が生成される途中を見せない
+- Destination削除・並び替え・縦スクロール、下部ナビ固定には変更なし
+- DB変更なし

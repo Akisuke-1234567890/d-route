@@ -120,6 +120,8 @@ export function RoutePlacesPage() {
   const placesRouteSwipeStartTimeRef = useRef(0);
   const placesRouteCarouselRef = useRef<HTMLElement | null>(null);
   const placesRouteMotionRef = useRef<HTMLDivElement | null>(null);
+  const placesRouteContentRef = useRef<HTMLDivElement | null>(null);
+  const placesRouteSwitchTokenRef = useRef(0);
   const placesRouteRafRef = useRef<number | null>(null);
   const placesRouteVisualXRef = useRef(0);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
@@ -235,7 +237,7 @@ export function RoutePlacesPage() {
     }
   }
 
-  useEffect(() => { void loadPlanning(); }, [routeId, activeBranchId]);
+  useEffect(() => { void loadPlanning(); }, [routeId]);
 
   const exceptionDestinationIds = useMemo(() => {
     const ids = new Set<string>();
@@ -951,41 +953,88 @@ function requestDestinationDelete(destination: DestinationSummary) {
     placesRouteVisualXRef.current = nextX;
     if (placesRouteRafRef.current !== null) window.cancelAnimationFrame(placesRouteRafRef.current);
     placesRouteRafRef.current = window.requestAnimationFrame(() => {
-      const transition = animate ? 'transform 280ms cubic-bezier(.22,.82,.22,1)' : 'none';
-      for (const element of [placesRouteCarouselRef.current, placesRouteMotionRef.current]) {
-        if (!element) continue;
-        element.style.transition = transition;
+      const element = placesRouteCarouselRef.current;
+      if (element) {
+        element.style.transition = animate ? 'transform 280ms cubic-bezier(.22,.82,.22,1)' : 'none';
         element.style.transform = `translate3d(${nextX}px,0,0)`;
       }
       placesRouteRafRef.current = null;
     });
   }
 
-  function commitPlacesRoute(nextIndex: number, direction: 'next' | 'previous') {
-    const bounded = Math.max(0, Math.min(placesRouteIds.length - 1, nextIndex));
-    if (bounded === activePlacesRouteIndex) return;
-    setPlacesRouteDirection(direction);
-    setPlacesRouteMotionId((current) => current + 1);
-    setActiveBranchId(placesRouteIds[bounded]);
+  function revealPreparedPlacesContent(direction: 'next' | 'previous') {
+    const element = placesRouteContentRef.current;
+    if (!element) return;
+    const enterX = direction === 'next' ? 14 : -14;
+    element.style.transition = 'none';
+    element.style.opacity = '0';
+    element.style.transform = `translate3d(${enterX}px,0,0)`;
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        element.style.transition = 'opacity 190ms ease-out, transform 240ms cubic-bezier(.22,.82,.22,1)';
+        element.style.opacity = '1';
+        element.style.transform = 'translate3d(0,0,0)';
+      });
+    });
   }
 
-  function movePlacesRoute(nextIndex: number) {
+  async function movePlacesRoute(nextIndex: number) {
     const bounded = Math.max(0, Math.min(placesRouteIds.length - 1, nextIndex));
     if (bounded === activePlacesRouteIndex || placesRouteSettling) return;
-    const direction = bounded > activePlacesRouteIndex ? 'next' : 'previous';
+    const direction: 'next' | 'previous' = bounded > activePlacesRouteIndex ? 'next' : 'previous';
+    const targetBranchId = placesRouteIds[bounded];
+    const token = ++placesRouteSwitchTokenRef.current;
+
     clearPlacesRouteSettleTimer();
     setPlacesRouteDragging(false);
     setPlacesRouteSettling(true);
-    applyPlacesRouteVisualOffset(direction === 'next' ? -54 : 54, true);
-    placesRouteSettleTimerRef.current = window.setTimeout(() => {
-      commitPlacesRoute(bounded, direction);
-      applyPlacesRouteVisualOffset(direction === 'next' ? 24 : -24, false);
-      requestAnimationFrame(() => applyPlacesRouteVisualOffset(0, true));
-      placesRouteSettleTimerRef.current = window.setTimeout(() => {
-        setPlacesRouteSettling(false);
-        placesRouteSettleTimerRef.current = null;
-      }, 290);
-    }, 170);
+    applyPlacesRouteVisualOffset(direction === 'next' ? -46 : 46, true);
+
+    try {
+      const [nextPhases, nextDestinations, nextAlternateRoutes] = await Promise.all([
+        getRoutePhases(routeId, targetBranchId),
+        getRouteDestinations(routeId, targetBranchId),
+        listRouteBranches(routeId),
+      ]);
+      if (token !== placesRouteSwitchTokenRef.current) return;
+
+      const content = placesRouteContentRef.current;
+      if (content) {
+        content.style.transition = 'opacity 90ms ease-out';
+        content.style.opacity = '0';
+      }
+
+      window.requestAnimationFrame(() => {
+        if (token !== placesRouteSwitchTokenRef.current) return;
+        setPlacesRouteDirection(direction);
+        setPlacesRouteMotionId((current) => current + 1);
+        setActiveBranchId(targetBranchId);
+        setPhases(nextPhases);
+        setDestinations(nextDestinations);
+        setAlternateRoutes(nextAlternateRoutes);
+        setError(null);
+        setLoading(false);
+        applyPlacesRouteVisualOffset(direction === 'next' ? 18 : -18, false);
+        window.requestAnimationFrame(() => {
+          applyPlacesRouteVisualOffset(0, true);
+          revealPreparedPlacesContent(direction);
+        });
+      });
+    } catch (err) {
+      if (token === placesRouteSwitchTokenRef.current) {
+        setError(getErrorMessage(err, 'Placesを読み込めませんでした。'));
+        const content = placesRouteContentRef.current;
+        if (content) content.style.opacity = '1';
+        applyPlacesRouteVisualOffset(0, true);
+      }
+    } finally {
+      if (token === placesRouteSwitchTokenRef.current) {
+        placesRouteSettleTimerRef.current = window.setTimeout(() => {
+          setPlacesRouteSettling(false);
+          placesRouteSettleTimerRef.current = null;
+        }, 300);
+      }
+    }
   }
 
   function handlePlacesRouteTouchStart(event: React.TouchEvent<HTMLElement>) {
@@ -1027,8 +1076,8 @@ function requestDestinationDelete(destination: DestinationSummary) {
     const next = deltaX < 0 && activePlacesRouteIndex < placesRouteIds.length - 1;
     const previous = deltaX > 0 && activePlacesRouteIndex > 0;
     const change = Math.abs(deltaX) >= 48 || Math.abs(velocity) >= .34;
-    if (change && next) movePlacesRoute(activePlacesRouteIndex + 1);
-    else if (change && previous) movePlacesRoute(activePlacesRouteIndex - 1);
+    if (change && next) void movePlacesRoute(activePlacesRouteIndex + 1);
+    else if (change && previous) void movePlacesRoute(activePlacesRouteIndex - 1);
     else applyPlacesRouteVisualOffset(0, true);
   }
 
@@ -1086,16 +1135,16 @@ function requestDestinationDelete(destination: DestinationSummary) {
 
       <section className="page-content route-tab-content" aria-labelledby="places-title">
         <section ref={placesRouteCarouselRef} className="places-route-carousel" aria-label="編集するRouteを選択" onTouchStart={handlePlacesRouteTouchStart} onTouchMove={handlePlacesRouteTouchMove} onTouchEnd={handlePlacesRouteTouchEnd} onTouchCancel={handlePlacesRouteTouchEnd}>
-          <button type="button" className="places-route-arrow" onClick={() => movePlacesRoute(activePlacesRouteIndex - 1)} disabled={activePlacesRouteIndex === 0} aria-label="前のRouteを見る">‹</button>
+          <button type="button" className="places-route-arrow" onClick={() => void movePlacesRoute(activePlacesRouteIndex - 1)} disabled={activePlacesRouteIndex === 0} aria-label="前のRouteを見る">‹</button>
           <div className="places-route-carousel-title">
             <small>{placesRouteCategory}</small>
             <strong>{activePlacesRoute?.name ?? 'メインの予定'}</strong>
             <span>{activePlacesRouteIndex + 1} / {placesRouteIds.length}</span>
           </div>
-          <button type="button" className="places-route-arrow" onClick={() => movePlacesRoute(activePlacesRouteIndex + 1)} disabled={activePlacesRouteIndex >= placesRouteIds.length - 1} aria-label="次のRouteを見る">›</button>
-          <div className="places-route-dots">{placesRouteIds.map((id,index)=><button type="button" key={id ?? 'main'} className={index===activePlacesRouteIndex?'is-active':''} onClick={()=>movePlacesRoute(index)} aria-label={`${index+1}ページ目を見る`}/>)}</div>
+          <button type="button" className="places-route-arrow" onClick={() => void movePlacesRoute(activePlacesRouteIndex + 1)} disabled={activePlacesRouteIndex >= placesRouteIds.length - 1} aria-label="次のRouteを見る">›</button>
+          <div className="places-route-dots">{placesRouteIds.map((id,index)=><button type="button" key={id ?? 'main'} className={index===activePlacesRouteIndex?'is-active':''} onClick={()=>void movePlacesRoute(index)} aria-label={`${index+1}ページ目を見る`}/>)}</div>
         </section>
-        <div ref={placesRouteMotionRef} className={`places-route-motion is-${placesRouteDirection}`} key={`places-route-${placesRouteMotionId}`}>
+        <div ref={placesRouteContentRef} className="places-route-content-buffer"><div ref={placesRouteMotionRef} className={`places-route-motion is-${placesRouteDirection}`} key={`places-route-${placesRouteMotionId}`}>
         <div className="route-tab-heading places-compact-heading">
           <div>
             <p className="eyebrow">{activeBranchId ? 'SUB ROUTE' : 'PLACES'}</p>
@@ -1141,7 +1190,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
                             {!activeBranchId && (mainConnectionsByDestination.get(destination.id)?.length ?? 0) > 0 ? (
                               <div className="place-route-connections">
                                 {mainConnectionsByDestination.get(destination.id)?.map((connection) => (
-                                  <button className={`place-route-connection is-${connection.kind}`} type="button" key={`${connection.route.id}-${connection.kind}`} onPointerDown={(event) => event.stopPropagation()} onClick={() => setActiveBranchId(connection.route.id)}>
+                                  <button className={`place-route-connection is-${connection.kind}`} type="button" key={`${connection.route.id}-${connection.kind}`} onPointerDown={(event) => event.stopPropagation()} onClick={() => { const index = placesRouteIds.findIndex((id) => id === connection.route.id); if (index >= 0) void movePlacesRoute(index); }}>
                                     <span className="place-route-connection-mark" aria-hidden="true">{connection.kind === 'start' ? '↗' : '↘'}</span>
                                     <span><strong>{connection.label}</strong><small>{connection.detail}</small></span>
                                     <span className="place-route-connection-arrow" aria-hidden="true">›</span>
@@ -1180,7 +1229,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
             ) : null}
           </div>
         )}
-        </div>
+        </div></div>
       </section>
 
       {dragOverlay && (() => {
