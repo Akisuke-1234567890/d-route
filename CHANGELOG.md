@@ -1,3 +1,11 @@
+# D Route v2.1.0-p79.4
+
+- PlacesのメインRoute／サブRoute切替ジェスチャーだけを軽量化。
+- スワイプ中はReact state更新ではなくDOMのtranslate3dをrequestAnimationFrameで直接更新。
+- 指追従、切替判定、端の抵抗感、戻りアニメーションを改善。
+- 下帯固定、Route画面、Destination編集・削除・並び替えには変更なし。
+- DB変更なし。
+
 # D Route v2.1.0-p79.3
 
 - p78.9のRoute／Places内切替挙動へ復帰。

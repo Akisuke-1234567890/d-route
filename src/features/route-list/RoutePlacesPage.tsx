@@ -115,10 +115,13 @@ export function RoutePlacesPage() {
   const [activeBranchId, setActiveBranchId] = useState<string | null>(null);
   const [placesRouteDirection, setPlacesRouteDirection] = useState<'next' | 'previous'>('next');
   const [placesRouteMotionId, setPlacesRouteMotionId] = useState(0);
-  const [placesRouteDragX, setPlacesRouteDragX] = useState(0);
   const [placesRouteDragging, setPlacesRouteDragging] = useState(false);
   const [placesRouteSettling, setPlacesRouteSettling] = useState(false);
   const placesRouteSwipeStartTimeRef = useRef(0);
+  const placesRouteCarouselRef = useRef<HTMLElement | null>(null);
+  const placesRouteMotionRef = useRef<HTMLDivElement | null>(null);
+  const placesRouteRafRef = useRef<number | null>(null);
+  const placesRouteVisualXRef = useRef(0);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const placesSwipeStartXRef = useRef<number | null>(null);
   const placesSwipeStartYRef = useRef<number | null>(null);
@@ -944,6 +947,20 @@ function requestDestinationDelete(destination: DestinationSummary) {
     }
   }
 
+  function applyPlacesRouteVisualOffset(nextX: number, animate: boolean) {
+    placesRouteVisualXRef.current = nextX;
+    if (placesRouteRafRef.current !== null) window.cancelAnimationFrame(placesRouteRafRef.current);
+    placesRouteRafRef.current = window.requestAnimationFrame(() => {
+      const transition = animate ? 'transform 280ms cubic-bezier(.22,.82,.22,1)' : 'none';
+      for (const element of [placesRouteCarouselRef.current, placesRouteMotionRef.current]) {
+        if (!element) continue;
+        element.style.transition = transition;
+        element.style.transform = `translate3d(${nextX}px,0,0)`;
+      }
+      placesRouteRafRef.current = null;
+    });
+  }
+
   function commitPlacesRoute(nextIndex: number, direction: 'next' | 'previous') {
     const bounded = Math.max(0, Math.min(placesRouteIds.length - 1, nextIndex));
     if (bounded === activePlacesRouteIndex) return;
@@ -959,25 +976,25 @@ function requestDestinationDelete(destination: DestinationSummary) {
     clearPlacesRouteSettleTimer();
     setPlacesRouteDragging(false);
     setPlacesRouteSettling(true);
-    setPlacesRouteDragX(direction === 'next' ? -72 : 72);
+    applyPlacesRouteVisualOffset(direction === 'next' ? -54 : 54, true);
     placesRouteSettleTimerRef.current = window.setTimeout(() => {
       commitPlacesRoute(bounded, direction);
-      setPlacesRouteDragX(direction === 'next' ? 38 : -38);
-      requestAnimationFrame(() => requestAnimationFrame(() => setPlacesRouteDragX(0)));
+      applyPlacesRouteVisualOffset(direction === 'next' ? 24 : -24, false);
+      requestAnimationFrame(() => applyPlacesRouteVisualOffset(0, true));
       placesRouteSettleTimerRef.current = window.setTimeout(() => {
         setPlacesRouteSettling(false);
         placesRouteSettleTimerRef.current = null;
-      }, 230);
-    }, 145);
+      }, 290);
+    }, 170);
   }
 
   function handlePlacesRouteTouchStart(event: React.TouchEvent<HTMLElement>) {
-    if (alternateRouteOpen || createOpen || editing || phaseCreateOpen || phaseEditing) return;
+    if (alternateRouteOpen || createOpen || editing || phaseCreateOpen || phaseEditing || placesRouteSettling) return;
     placesSwipeStartXRef.current = event.touches[0]?.clientX ?? null;
     placesSwipeStartYRef.current = event.touches[0]?.clientY ?? null;
     placesRouteSwipeStartTimeRef.current = performance.now();
-    setPlacesRouteSettling(false);
     setPlacesRouteDragging(true);
+    applyPlacesRouteVisualOffset(0, false);
   }
 
   function handlePlacesRouteTouchMove(event: React.TouchEvent<HTMLElement>) {
@@ -987,10 +1004,14 @@ function requestDestinationDelete(destination: DestinationSummary) {
     if (startX === null || startY === null || !touch) return;
     const deltaX = touch.clientX - startX;
     const deltaY = touch.clientY - startY;
-    if (Math.abs(deltaY) > Math.abs(deltaX) * 1.2) return;
+    if (Math.abs(deltaY) > Math.abs(deltaX) * 1.15) return;
+    if (Math.abs(deltaX) > 5) event.preventDefault();
     const atStart = activePlacesRouteIndex === 0 && deltaX > 0;
     const atEnd = activePlacesRouteIndex >= placesRouteIds.length - 1 && deltaX < 0;
-    setPlacesRouteDragX((atStart || atEnd) ? deltaX * .24 : deltaX);
+    const visualX = (atStart || atEnd)
+      ? Math.sign(deltaX) * Math.pow(Math.abs(deltaX), .82) * .36
+      : deltaX;
+    applyPlacesRouteVisualOffset(visualX, false);
   }
 
   function handlePlacesRouteTouchEnd(event: React.TouchEvent<HTMLElement>) {
@@ -998,31 +1019,23 @@ function requestDestinationDelete(destination: DestinationSummary) {
     const touch = event.changedTouches[0];
     placesSwipeStartXRef.current = null;
     placesSwipeStartYRef.current = null;
-    if (startX === null || !touch) { setPlacesRouteDragging(false); setPlacesRouteDragX(0); return; }
+    setPlacesRouteDragging(false);
+    if (startX === null || !touch) { applyPlacesRouteVisualOffset(0, true); return; }
     const deltaX = touch.clientX - startX;
     const elapsed = Math.max(1, performance.now() - placesRouteSwipeStartTimeRef.current);
     const velocity = deltaX / elapsed;
     const next = deltaX < 0 && activePlacesRouteIndex < placesRouteIds.length - 1;
     const previous = deltaX > 0 && activePlacesRouteIndex > 0;
-    const change = Math.abs(deltaX) >= 58 || Math.abs(velocity) >= .42;
-    setPlacesRouteDragging(false);
+    const change = Math.abs(deltaX) >= 48 || Math.abs(velocity) >= .34;
     if (change && next) movePlacesRoute(activePlacesRouteIndex + 1);
     else if (change && previous) movePlacesRoute(activePlacesRouteIndex - 1);
-    else {
-      setPlacesRouteSettling(true);
-      setPlacesRouteDragX(0);
-      clearPlacesRouteSettleTimer();
-      placesRouteSettleTimerRef.current = window.setTimeout(() => {
-        setPlacesRouteSettling(false);
-        placesRouteSettleTimerRef.current = null;
-      }, 220);
-    }
+    else applyPlacesRouteVisualOffset(0, true);
   }
 
-  const placesRouteDragStyle = {
-    transform: `translate3d(${placesRouteDragX}px,0,0)`,
-    transition: placesRouteDragging ? 'none' : 'transform 230ms cubic-bezier(.2,.78,.2,1)',
-  };
+  useEffect(() => () => {
+    clearPlacesRouteSettleTimer();
+    if (placesRouteRafRef.current !== null) window.cancelAnimationFrame(placesRouteRafRef.current);
+  }, []);
 
   function getDestinationDragShift(index: number) {
     const session = dragSessionRef.current;
@@ -1072,7 +1085,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
       </header>
 
       <section className="page-content route-tab-content" aria-labelledby="places-title">
-        <section className="places-route-carousel" aria-label="編集するRouteを選択" onTouchStart={handlePlacesRouteTouchStart} onTouchMove={handlePlacesRouteTouchMove} onTouchEnd={handlePlacesRouteTouchEnd} onTouchCancel={handlePlacesRouteTouchEnd} style={placesRouteDragStyle}>
+        <section ref={placesRouteCarouselRef} className="places-route-carousel" aria-label="編集するRouteを選択" onTouchStart={handlePlacesRouteTouchStart} onTouchMove={handlePlacesRouteTouchMove} onTouchEnd={handlePlacesRouteTouchEnd} onTouchCancel={handlePlacesRouteTouchEnd}>
           <button type="button" className="places-route-arrow" onClick={() => movePlacesRoute(activePlacesRouteIndex - 1)} disabled={activePlacesRouteIndex === 0} aria-label="前のRouteを見る">‹</button>
           <div className="places-route-carousel-title">
             <small>{placesRouteCategory}</small>
@@ -1082,7 +1095,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
           <button type="button" className="places-route-arrow" onClick={() => movePlacesRoute(activePlacesRouteIndex + 1)} disabled={activePlacesRouteIndex >= placesRouteIds.length - 1} aria-label="次のRouteを見る">›</button>
           <div className="places-route-dots">{placesRouteIds.map((id,index)=><button type="button" key={id ?? 'main'} className={index===activePlacesRouteIndex?'is-active':''} onClick={()=>movePlacesRoute(index)} aria-label={`${index+1}ページ目を見る`}/>)}</div>
         </section>
-        <div className={`places-route-motion places-route-transition is-${placesRouteDirection}`} key={`places-route-${placesRouteMotionId}`} style={placesRouteDragStyle}>
+        <div ref={placesRouteMotionRef} className={`places-route-motion is-${placesRouteDirection}`} key={`places-route-${placesRouteMotionId}`}>
         <div className="route-tab-heading places-compact-heading">
           <div>
             <p className="eyebrow">{activeBranchId ? 'SUB ROUTE' : 'PLACES'}</p>
