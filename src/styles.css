@@ -3215,3 +3215,39 @@ a { color: inherit; }
 }
 .v2-route-page-motion{transition:transform 230ms cubic-bezier(.2,.78,.2,1),opacity 150ms ease-out}
 @media(prefers-reduced-motion:reduce){.v2-route-page-switcher,.v2-route-page-motion{transition:none!important}}
+
+
+/* v2.1.0-p79 Transition Engine: hide route workspace construction before reveal */
+html::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+  background: #060817;
+  opacity: 0;
+  transition: opacity 170ms cubic-bezier(.22,.72,.22,1);
+}
+html.route-workspace-transition-active::after {
+  opacity: .96;
+  pointer-events: auto;
+  transition-duration: 90ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  html::after { transition: none; }
+}
+
+
+.v2-route-buffer-curtain {
+  position: fixed;
+  inset: 0 0 calc(72px + env(safe-area-inset-bottom));
+  z-index: 70;
+  pointer-events: none;
+  background: rgba(6,8,23,.98);
+  opacity: 0;
+  transition: opacity 150ms cubic-bezier(.22,.72,.22,1);
+}
+.v2-route-buffer-curtain.is-visible { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .v2-route-buffer-curtain { transition: none; }
+}

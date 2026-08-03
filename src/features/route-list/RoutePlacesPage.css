@@ -1370,3 +1370,28 @@
 }
 .places-route-motion{transition:transform 230ms cubic-bezier(.2,.78,.2,1),opacity 150ms ease-out}
 @media(prefers-reduced-motion:reduce){.places-route-carousel,.places-route-motion{transition:none!important}}
+
+
+/* v2.1.0-p79 buffered Places Route switch */
+.places-route-transition,
+.places-route-transition::after {
+  animation: none !important;
+  filter: none !important;
+}
+.places-route-transition::after { display: none !important; }
+.places-route-motion { position: relative; isolation: isolate; }
+.places-route-buffer-curtain {
+  position: absolute;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+  border-radius: 16px;
+  background: rgba(6,8,23,.98);
+  opacity: 0;
+  transition: opacity 150ms cubic-bezier(.22,.72,.22,1);
+}
+.places-route-buffer-curtain.is-visible { opacity: 1; }
+.places-route-motion.is-buffering { contain: layout paint; }
+@media (prefers-reduced-motion: reduce) {
+  .places-route-buffer-curtain { transition: none; }
+}
