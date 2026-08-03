@@ -3298,3 +3298,59 @@ html.route-workspace-transition-active::after {
 @media (prefers-reduced-motion: reduce) {
   .route-workspace-layer { transition: none !important; }
 }
+
+/* v2.1.0-p79.2 restore workspace and Route switch motion while keeping bottom nav fixed */
+.route-workspace-layer.is-current {
+  transform: translate3d(0, 0, 0);
+  transition:
+    opacity 220ms cubic-bezier(.22,.72,.22,1),
+    transform 220ms cubic-bezier(.22,.72,.22,1);
+  will-change: opacity, transform;
+}
+.route-workspace-layer.is-current.is-leaving {
+  opacity: .18;
+  transform: translate3d(-10px, 0, 0);
+  pointer-events: none;
+}
+.route-workspace-layer.is-incoming {
+  opacity: 0;
+  transform: translate3d(12px, 0, 0);
+  transition:
+    opacity 220ms cubic-bezier(.22,.72,.22,1),
+    transform 220ms cubic-bezier(.22,.72,.22,1);
+  will-change: opacity, transform;
+}
+.route-workspace-layer.is-incoming.is-visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+/* Route main/sub pages: no dark curtain; reveal the prepared page with a light slide/fade. */
+.v2-route-buffer-curtain,
+.v2-route-buffer-curtain.is-visible {
+  display: none !important;
+}
+.v2-route-page-motion.is-next {
+  animation: p792-route-enter-next 240ms cubic-bezier(.22,.75,.28,1) both !important;
+}
+.v2-route-page-motion.is-previous {
+  animation: p792-route-enter-previous 240ms cubic-bezier(.22,.75,.28,1) both !important;
+}
+@keyframes p792-route-enter-next {
+  from { opacity: .18; transform: translate3d(18px,0,0); }
+  to { opacity: 1; transform: translate3d(0,0,0); }
+}
+@keyframes p792-route-enter-previous {
+  from { opacity: .18; transform: translate3d(-18px,0,0); }
+  to { opacity: 1; transform: translate3d(0,0,0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-workspace-layer,
+  .v2-route-page-motion.is-next,
+  .v2-route-page-motion.is-previous {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+}
