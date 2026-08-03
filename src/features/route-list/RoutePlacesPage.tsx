@@ -118,6 +118,8 @@ export function RoutePlacesPage() {
   const [placesRouteMotionId, setPlacesRouteMotionId] = useState(0);
   const placesSwipeStartXRef = useRef<number | null>(null);
   const placesSwipeStartYRef = useRef<number | null>(null);
+  const placesSwipeBlockedRef = useRef(false);
+  const placesRouteGestureLockRef = useRef(false);
   const [phases, setPhases] = useState<PhaseSummary[]>([]);
   const [selectedPhaseId, setSelectedPhaseId] = useState('');
   const [editPhaseId, setEditPhaseId] = useState('');
@@ -607,6 +609,10 @@ function closeDestinationSwipe() {
 function handleDestinationPointerDown(event: ReactPointerEvent<HTMLElement>, destinationId: string) {
   if (event.pointerType === 'mouse' && event.button !== 0) return;
   event.stopPropagation();
+  placesRouteGestureLockRef.current = true;
+  placesSwipeBlockedRef.current = true;
+  placesSwipeStartXRef.current = null;
+  placesSwipeStartYRef.current = null;
   if (swipedDestinationId && swipedDestinationId !== destinationId) closeDestinationSwipe();
   activeDestinationSwipeIdRef.current = destinationId;
   destinationSwipeStartXRef.current = event.clientX;
@@ -624,6 +630,7 @@ function handleDestinationPointerMove(event: ReactPointerEvent<HTMLElement>, des
     destinationSwipeAxisRef.current = Math.abs(deltaX) > Math.abs(deltaY) * 1.12 ? 'horizontal' : 'vertical';
   }
   if (destinationSwipeAxisRef.current !== 'horizontal') return;
+  event.preventDefault();
   event.stopPropagation();
   const nextOffset = Math.max(-DESTINATION_DELETE_REVEAL_WIDTH, Math.min(0, destinationSwipeStartOffsetRef.current + deltaX));
   setSwipedDestinationId(destinationId);
@@ -640,6 +647,7 @@ function handleDestinationPointerEnd(event: ReactPointerEvent<HTMLElement>, dest
   setDestinationSwipeOffset(shouldOpen ? -DESTINATION_DELETE_REVEAL_WIDTH : 0);
   activeDestinationSwipeIdRef.current = null;
   destinationSwipeAxisRef.current = 'pending';
+  window.setTimeout(() => { placesRouteGestureLockRef.current = false; }, 0);
 }
 
 function requestDestinationDelete(destination: DestinationSummary) {
@@ -706,11 +714,20 @@ function requestDestinationDelete(destination: DestinationSummary) {
     setReorderOverId(null);
     setDragTargetIndex(null);
     setReorderingId(null);
+    window.setTimeout(() => { placesRouteGestureLockRef.current = false; }, 0);
   }
 
   function beginDestinationDrag(event: React.PointerEvent<HTMLButtonElement>, destinationId: string, phaseId: string) {
+    event.preventDefault();
+    event.stopPropagation();
     if (dragSessionRef.current || reorderSaving) return;
     if (event.pointerType === 'mouse' && event.button !== 0) return;
+
+    placesRouteGestureLockRef.current = true;
+    placesSwipeBlockedRef.current = true;
+    placesSwipeStartXRef.current = null;
+    placesSwipeStartYRef.current = null;
+    closeDestinationSwipe();
 
     const target = event.currentTarget;
     try {
@@ -768,6 +785,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
   }
 
   function moveDraggedDestination(event: React.PointerEvent<HTMLButtonElement>) {
+    event.stopPropagation();
     const session = dragSessionRef.current;
     if (!session || session.pointerId !== event.pointerId) return;
 
@@ -778,7 +796,14 @@ function requestDestinationDelete(destination: DestinationSummary) {
     }
 
     event.preventDefault();
+    event.stopPropagation();
     setDragOverlay((current) => current ? { ...current, top: event.clientY - session.grabOffsetY } : current);
+
+    // Allow long lists to keep moving while the finger approaches the viewport edge.
+    const upperEdge = 118;
+    const lowerEdge = window.innerHeight - 138;
+    if (event.clientY < upperEdge) window.scrollBy({ top: -14, behavior: 'auto' });
+    else if (event.clientY > lowerEdge) window.scrollBy({ top: 14, behavior: 'auto' });
 
     // Keep the actual DOM order fixed for the whole gesture. On iOS Safari, moving the
     // captured handle's DOM node while a pointer is down can cause pointer capture to be
@@ -851,10 +876,13 @@ function requestDestinationDelete(destination: DestinationSummary) {
   }
 
   async function finishDestinationDrag(event: React.PointerEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
     await finishDestinationDragByPointerId(event.pointerId);
   }
 
   function cancelDestinationDrag(event: React.PointerEvent<HTMLButtonElement>) {
+    event.stopPropagation();
     const session = dragSessionRef.current;
     if (!session || session.pointerId !== event.pointerId) return;
     resetDestinationDrag({ restoreOrder: session.active });
@@ -913,14 +941,22 @@ function requestDestinationDelete(destination: DestinationSummary) {
   }
 
   function handlePlacesRouteTouchStart(event: React.TouchEvent<HTMLElement>) {
-    if (dragSessionRef.current || reorderingId) return;
+    const target = event.target instanceof Element ? event.target : null;
+    const startedInsideDestination = Boolean(target?.closest('[data-destination-interaction="true"]'));
+    placesSwipeBlockedRef.current = startedInsideDestination || placesRouteGestureLockRef.current;
+    if (placesSwipeBlockedRef.current || dragSessionRef.current || reorderingId) {
+      placesSwipeStartXRef.current = null;
+      placesSwipeStartYRef.current = null;
+      return;
+    }
     if (alternateRouteOpen || createOpen || editing || phaseCreateOpen || phaseEditing) return;
     placesSwipeStartXRef.current = event.touches[0]?.clientX ?? null;
     placesSwipeStartYRef.current = event.touches[0]?.clientY ?? null;
   }
 
   function handlePlacesRouteTouchEnd(event: React.TouchEvent<HTMLElement>) {
-    if (dragSessionRef.current || reorderingId) {
+    if (placesSwipeBlockedRef.current || placesRouteGestureLockRef.current || dragSessionRef.current || reorderingId) {
+      placesSwipeBlockedRef.current = false;
       placesSwipeStartXRef.current = null;
       placesSwipeStartYRef.current = null;
       return;
@@ -1041,7 +1077,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
                   ) : (
                     <div className="places-list">
                       {phaseDestinations.map((destination, index) => { const dragShift = getDestinationDragShift(index); return (
-                        <div className={`places-destination-swipe-shell${swipedDestinationId === destination.id ? ' is-open' : ''}`} key={destination.id} style={dragShift !== 0 ? { transform: `translateY(${dragShift}px)` } : undefined} onTouchStart={(event) => event.stopPropagation()} onTouchEnd={(event) => event.stopPropagation()}>
+                        <div data-destination-interaction="true" className={`places-destination-swipe-shell${swipedDestinationId === destination.id ? ' is-open' : ''}`} key={destination.id} style={dragShift !== 0 ? { transform: `translateY(${dragShift}px)` } : undefined} onTouchStart={(event) => event.stopPropagation()} onTouchEnd={(event) => event.stopPropagation()}>
                           <button className="places-destination-swipe-delete" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => requestDestinationDelete(destination)}>削除</button>
                           <article className={`place-card places-destination-swipe-panel${reorderingId === destination.id ? ' is-drag-placeholder' : ''}${dragShift !== 0 ? ' is-reorder-shifting' : ''}${reorderingId && reorderOverId === destination.id && reorderingId !== destination.id ? ' is-reorder-over' : ''}`} data-destination-id={destination.id} data-phase-id={phase.id} data-draggable={destination.timeType === 'none' ? 'true' : 'false'} style={{ transform: `translateX(${swipedDestinationId === destination.id ? destinationSwipeOffset : 0}px)` }} onPointerDown={(event) => handleDestinationPointerDown(event, destination.id)} onPointerMove={(event) => handleDestinationPointerMove(event, destination.id)} onPointerUp={(event) => handleDestinationPointerEnd(event, destination.id)} onPointerCancel={(event) => handleDestinationPointerEnd(event, destination.id)}>
                           <div className="place-order" aria-label={`${index + 1}番目`}>{index + 1}</div><div className="place-icon" aria-hidden="true">📍</div>
@@ -1065,7 +1101,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
                               </div>
                             ) : null}
                           </div>
-                          <div className={`place-card-actions ${destination.timeType !== 'none' ? 'is-timed' : ''}`}><button className="place-edit-button" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeDestinationSwipe(); openEditModal(destination); }} disabled={Boolean(reorderingId) || reorderSaving}>編集</button>{destination.timeType === 'none' ? <button className="place-drag-handle" type="button" aria-label={`${destination.name}を長押しして並び替え`} disabled={reorderSaving || (Boolean(reorderingId) && reorderingId !== destination.id)} onPointerDown={(event) => beginDestinationDrag(event, destination.id, phase.id)} onPointerMove={moveDraggedDestination} onPointerUp={(event) => void finishDestinationDrag(event)} onPointerCancel={cancelDestinationDrag} onLostPointerCapture={handleLostDestinationPointerCapture}><span className="drag-dot-grid" aria-hidden="true"><i /><i /><i /><i /><i /><i /></span></button> : null}</div>
+                          <div className={`place-card-actions ${destination.timeType !== 'none' ? 'is-timed' : ''}`}><button className="place-edit-button" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeDestinationSwipe(); openEditModal(destination); }} disabled={Boolean(reorderingId) || reorderSaving}>編集</button>{destination.timeType === 'none' ? <button data-destination-interaction="true" data-destination-drag-handle="true" className="place-drag-handle" type="button" aria-label={`${destination.name}を長押しして並び替え`} disabled={reorderSaving || (Boolean(reorderingId) && reorderingId !== destination.id)} onPointerDown={(event) => beginDestinationDrag(event, destination.id, phase.id)} onPointerMove={moveDraggedDestination} onPointerUp={(event) => void finishDestinationDrag(event)} onPointerCancel={cancelDestinationDrag} onLostPointerCapture={handleLostDestinationPointerCapture}><span className="drag-dot-grid" aria-hidden="true"><i /><i /><i /><i /><i /><i /></span></button> : null}</div>
                           </article>
                         </div>
                       ); })}

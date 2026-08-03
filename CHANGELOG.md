@@ -1,3 +1,11 @@
+## v2.1.0-p78.5
+
+- Destinationカード操作中は親のRoute切替スワイプを完全に停止
+- ドラッグハンドルのPointer操作をカード横スワイプから分離
+- Destination上下並び替え中の指追従と画面端自動スクロールを改善
+- Destination操作終了後にのみRoute切替を再有効化
+- DB変更なし
+
 ## v2.1.0-p78.4
 
 - p78.2でPhase削除UI撤去後に残った未定義`phaseDeleting`参照を削除
