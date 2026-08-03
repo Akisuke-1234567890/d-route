@@ -17,7 +17,8 @@ import {
   type DestinationTimeType,
 } from './destinations';
 import { createRoutePhase, deleteRoutePhase, getRoutePhases, updateRoutePhase, type PhaseSummary } from './phases';
-import { createAlternateRoute, configureAlternateRoute, deleteAlternateRoute, listRouteBranches, listAlternateRouteDestinations, saveAlternateRouteDestination, deleteAlternateRouteDestination, type AlternateRouteConnectionType, type RouteBranch, type AlternateRouteDestination } from './branches';
+import { createAlternateRoute, configureAlternateRoute, deleteAlternateRoute, listRouteBranches, listAlternateRouteDestinations, saveAlternateRouteDestination, deleteAlternateRouteDestination, listRouteBranchAssignments, assignMemberToBranch, clearMemberBranch, type AlternateRouteConnectionType, type RouteBranch, type AlternateRouteDestination, type RouteBranchAssignment } from './branches';
+import { listRouteMembers, type RouteMember } from './members';
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error && error.message) return error.message;
@@ -152,6 +153,10 @@ export function RoutePlacesPage() {
   const [alternateRouteSaving, setAlternateRouteSaving] = useState(false);
   const [alternateRouteError, setAlternateRouteError] = useState<string | null>(null);
   const [alternateRouteDeleting, setAlternateRouteDeleting] = useState(false);
+  const [alternateRouteMembers, setAlternateRouteMembers] = useState<RouteMember[]>([]);
+  const [alternateRouteAssignments, setAlternateRouteAssignments] = useState<RouteBranchAssignment[]>([]);
+  const [alternateRouteSelectedMemberIds, setAlternateRouteSelectedMemberIds] = useState<string[]>([]);
+  const [alternateRouteMembersLoading, setAlternateRouteMembersLoading] = useState(false);
   const [alternateRouteDestinations, setAlternateRouteDestinations] = useState<AlternateRouteDestination[]>([]);
   const [alternateDestinationEditing, setAlternateDestinationEditing] = useState<AlternateRouteDestination | null>(null);
   const [alternateDestinationName, setAlternateDestinationName] = useState('');
@@ -257,6 +262,57 @@ export function RoutePlacesPage() {
     return `${time ? `${time} ` : ''}${destination.name}`;
   }
 
+  async function loadAlternateRouteMemberSelection(branchId: string | null) {
+    setAlternateRouteMembersLoading(true);
+    const [membersResult, assignmentsResult] = await Promise.allSettled([
+      listRouteMembers(routeId),
+      listRouteBranchAssignments(routeId),
+    ]);
+
+    if (membersResult.status === 'fulfilled') {
+      setAlternateRouteMembers(membersResult.value.filter((member) => member.status === 'participating'));
+    } else {
+      setAlternateRouteMembers([]);
+      setAlternateRouteError(getErrorMessage(membersResult.reason, '参加メンバーを読み込めませんでした。'));
+    }
+
+    if (assignmentsResult.status === 'fulfilled') {
+      setAlternateRouteAssignments(assignmentsResult.value);
+      setAlternateRouteSelectedMemberIds(branchId
+        ? assignmentsResult.value.filter((assignment) => assignment.branchId === branchId).map((assignment) => assignment.memberUserId)
+        : []);
+    } else {
+      setAlternateRouteAssignments([]);
+      setAlternateRouteSelectedMemberIds([]);
+      setAlternateRouteError((current) => current ?? getErrorMessage(assignmentsResult.reason, '別行動の参加者設定を読み込めませんでした。'));
+    }
+    setAlternateRouteMembersLoading(false);
+  }
+
+  function toggleAlternateRouteMember(userId: string) {
+    setAlternateRouteSelectedMemberIds((current) => current.includes(userId)
+      ? current.filter((id) => id !== userId)
+      : [...current, userId]);
+  }
+
+  async function saveAlternateRouteMemberSelection(branchId: string) {
+    const selected = new Set(alternateRouteSelectedMemberIds);
+    const currentForBranch = alternateRouteAssignments.filter((assignment) => assignment.branchId === branchId);
+
+    for (const assignment of currentForBranch) {
+      if (!selected.has(assignment.memberUserId)) {
+        await clearMemberBranch(routeId, assignment.memberUserId);
+      }
+    }
+
+    for (const memberUserId of selected) {
+      const current = alternateRouteAssignments.find((assignment) => assignment.memberUserId === memberUserId);
+      if (current?.branchId !== branchId) {
+        await assignMemberToBranch(routeId, branchId, memberUserId);
+      }
+    }
+  }
+
   function openAlternateRouteCreate() {
     setAlternateRouteEditing(null);
     setAlternateRouteName('');
@@ -265,6 +321,10 @@ export function RoutePlacesPage() {
     setAlternateRouteStartId('');
     setAlternateRouteEndId('');
     setAlternateRouteError(null);
+    setAlternateRouteMembers([]);
+    setAlternateRouteAssignments([]);
+    setAlternateRouteSelectedMemberIds([]);
+    void loadAlternateRouteMemberSelection(null);
     setAlternateRouteOpen(true);
   }
 
@@ -278,6 +338,7 @@ export function RoutePlacesPage() {
     setAlternateRouteStartId(route.startDestinationId ?? '');
     setAlternateRouteEndId(route.endDestinationId ?? '');
     setAlternateRouteError(null);
+    void loadAlternateRouteMemberSelection(route.id);
     setAlternateRouteOpen(true);
   }
 
@@ -352,6 +413,15 @@ export function RoutePlacesPage() {
       const saved = alternateRouteEditing
         ? await configureAlternateRoute(alternateRouteEditing.id, input)
         : await createAlternateRoute(input);
+      try {
+        await saveAlternateRouteMemberSelection(saved.id);
+      } catch (memberError) {
+        setAlternateRouteEditing(saved);
+        setAlternateRoutes((current) => current.some((item) => item.id === saved.id)
+          ? current.map((item) => item.id === saved.id ? saved : item)
+          : [...current, saved].sort((a, b) => a.orderValue - b.orderValue));
+        throw new Error(`別行動は保存しましたが、参加者設定を保存できませんでした。${getErrorMessage(memberError, '')}`);
+      }
       setAlternateRoutes((current) => alternateRouteEditing
         ? current.map((item) => item.id === saved.id ? saved : item)
         : [...current, saved].sort((a, b) => a.orderValue - b.orderValue));
@@ -1254,6 +1324,23 @@ function handlePhasePointerEnd(event: ReactPointerEvent<HTMLElement>, phaseId: s
               {alternateRouteType !== 'leave' ? <div className="field-group"><label htmlFor="alternate-route-end">合流する場所</label><select id="alternate-route-end" value={alternateRouteEndId} onChange={(event) => setAlternateRouteEndId(event.target.value)} disabled={alternateRouteSaving || alternateRouteDeleting}><option value="">メインの予定から選択</option>{timedDestinations.map((destination) => <option key={destination.id} value={destination.id}>{destinationLabel(destination.id)}</option>)}</select></div> : null}
               {timedDestinations.length === 0 ? <p className="form-error">接続先に使える予定がありません。先にメインの予定へ時間を設定してください。</p> : null}
               <div className="field-group"><label htmlFor="alternate-route-description">説明 <span className="field-optional">任意</span></label><textarea id="alternate-route-description" value={alternateRouteDescription} onChange={(event) => setAlternateRouteDescription(event.target.value)} maxLength={200} rows={3} disabled={alternateRouteSaving || alternateRouteDeleting} /></div>
+              <section className="alternate-route-member-editor" aria-labelledby="alternate-route-members-title">
+                <div className="alternate-route-member-heading"><div><strong id="alternate-route-members-title">この別行動に参加する人</strong><small>{alternateRouteSelectedMemberIds.length}人を選択中</small></div></div>
+                {alternateRouteMembersLoading ? <p className="route-tab-demo-note">参加メンバーを読み込んでいます。</p> : alternateRouteMembers.length ? (
+                  <div className="alternate-route-member-list">{alternateRouteMembers.map((member) => {
+                    const selected = alternateRouteSelectedMemberIds.includes(member.userId);
+                    const currentAssignment = alternateRouteAssignments.find((assignment) => assignment.memberUserId === member.userId);
+                    const assignedElsewhere = currentAssignment && currentAssignment.branchId !== alternateRouteEditing?.id;
+                    return <label className={`alternate-route-member-option${selected ? ' is-selected' : ''}`} key={member.id}>
+                      <input type="checkbox" checked={selected} onChange={() => toggleAlternateRouteMember(member.userId)} disabled={alternateRouteSaving || alternateRouteDeleting} />
+                      <span className="alternate-route-member-avatar" aria-hidden="true">{member.displayName.slice(0, 2).toUpperCase()}</span>
+                      <span><strong>{member.displayName}</strong><small>{member.role === 'owner' ? 'リーダー' : assignedElsewhere ? '別の別行動に設定中' : '参加メンバー'}</small></span>
+                      <span className="alternate-route-member-check" aria-hidden="true">{selected ? '✓' : ''}</span>
+                    </label>;
+                  })}</div>
+                ) : <p className="route-tab-demo-note">参加中のメンバーはいません。先にMembersから招待・参加登録を行ってください。</p>}
+                <p className="field-hint">別の別行動に設定中の人を選ぶと、所属先はこちらへ移ります。メンバーは後から変更できます。</p>
+              </section>
               {alternateRouteEditing ? <section className="alternate-destination-editor"><div className="alternate-destination-heading"><div><strong>この別行動の予定</strong><small>{alternateRouteDestinations.length}件</small></div><button type="button" className="secondary-button" onClick={startAlternateDestinationCreate}>＋予定</button></div>
                 <div className="alternate-destination-list">{alternateRouteDestinations.map(item=><div className="alternate-destination-row" key={item.id}><button type="button" onClick={()=>startAlternateDestinationEdit(item)}><strong>{item.startTime ? `${item.startTime} ` : ''}{item.name}</strong><small>{item.locationName || '場所未設定'}</small></button><button type="button" className="alternate-destination-delete" onClick={()=>void handleAlternateDestinationDelete(item)}>削除</button></div>)}</div>
                 <div className="alternate-destination-form"><input value={alternateDestinationName} onChange={e=>setAlternateDestinationName(e.target.value)} placeholder="予定名" maxLength={40}/><input value={alternateDestinationLocation} onChange={e=>setAlternateDestinationLocation(e.target.value)} placeholder="場所（任意）" maxLength={80}/><select value={alternateDestinationTimeType} onChange={e=>setAlternateDestinationTimeType(e.target.value as 'none'|'fixed'|'approx')}><option value="none">時間なし</option><option value="fixed">時間を指定</option><option value="approx">目安時間</option></select>{alternateDestinationTimeType!=='none'?<div className="alternate-destination-times"><input type="time" step="300" value={alternateDestinationStart} onChange={e=>setAlternateDestinationStart(e.target.value)}/><input type="time" step="300" value={alternateDestinationEnd} onChange={e=>setAlternateDestinationEnd(e.target.value)}/></div>:null}<textarea value={alternateDestinationDescription} onChange={e=>setAlternateDestinationDescription(e.target.value)} placeholder="メモ（任意）" maxLength={200} rows={2}/><button type="button" className="primary-button" disabled={!alternateDestinationName.trim()||alternateDestinationSaving} onClick={()=>void handleAlternateDestinationSave()}>{alternateDestinationSaving?'保存中…':alternateDestinationEditing?'予定を更新':'予定を追加'}</button></div>
