@@ -127,14 +127,14 @@ export function RoutePlacesPage() {
   const [phaseDescription, setPhaseDescription] = useState('');
   const [phaseStartTime, setPhaseStartTime] = useState('');
   const [phaseSaving, setPhaseSaving] = useState(false);
-  const [phaseDeleting, setPhaseDeleting] = useState(false);
   const [phaseError, setPhaseError] = useState<string | null>(null);
-  const [swipedPhaseId, setSwipedPhaseId] = useState<string | null>(null);
-  const [phaseSwipeOffset, setPhaseSwipeOffset] = useState(0);
-  const phaseSwipeStartXRef = useRef(0);
-  const phaseSwipeStartOffsetRef = useRef(0);
-  const activePhaseSwipeIdRef = useRef<string | null>(null);
-  const phaseSwipeMovedRef = useRef(false);
+  const [swipedDestinationId, setSwipedDestinationId] = useState<string | null>(null);
+  const [destinationSwipeOffset, setDestinationSwipeOffset] = useState(0);
+  const destinationSwipeStartXRef = useRef(0);
+  const destinationSwipeStartYRef = useRef(0);
+  const destinationSwipeStartOffsetRef = useRef(0);
+  const activeDestinationSwipeIdRef = useRef<string | null>(null);
+  const destinationSwipeAxisRef = useRef<'pending' | 'horizontal' | 'vertical'>('pending');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -595,78 +595,57 @@ export function RoutePlacesPage() {
   }
 
 
-async function handlePhaseDelete(targetPhase: PhaseSummary) {
-  if (phaseSaving || phaseDeleting) return;
-  if (phases.length <= 1) {
-    setToast('最後のPhaseは削除できません。');
-    closePhaseSwipe();
-    return;
-  }
-  const count = destinations.filter((destination) => destination.phaseId === targetPhase.id).length;
-  const remaining = phases.filter((phase) => phase.id !== targetPhase.id).slice().sort((a,b)=>a.orderValue-b.orderValue);
-  const fallback = remaining.find((phase)=>phase.isDefault) ?? remaining[0];
-  const phaseLabel = targetPhase.name.trim() || '名前未設定のPhase';
-  const fallbackLabel = fallback?.name.trim() || '名前未設定のPhase';
-  const message = count > 0
-    ? `「${phaseLabel}」を削除しますか？\n\nこのPhaseの目的地 ${count}件は「${fallbackLabel}」へ移動します。`
-    : `「${phaseLabel}」を削除しますか？`;
-  if (!window.confirm(message)) { closePhaseSwipe(); return; }
+const DESTINATION_DELETE_REVEAL_WIDTH = 92;
 
-  setPhaseDeleting(true);
-  setPhaseError(null);
-  try {
-    await deleteRoutePhase(routeId, targetPhase.id, activeBranchId);
-    const [nextPhases, nextDestinations] = await Promise.all([
-      getRoutePhases(routeId, activeBranchId),
-      getRouteDestinations(routeId, activeBranchId),
-    ]);
-    setPhases(nextPhases);
-    setDestinations(nextDestinations);
-    setPhaseEditing(null);
-    setPhaseCreateOpen(false);
-    setToast('Phaseを削除しました。');
-  } catch (err) {
-    setToast(getErrorMessage(err, 'Phaseを削除できませんでした。'));
-  } finally {
-    setPhaseDeleting(false);
-    closePhaseSwipe();
-  }
+function closeDestinationSwipe() {
+  setSwipedDestinationId(null);
+  setDestinationSwipeOffset(0);
+  activeDestinationSwipeIdRef.current = null;
+  destinationSwipeAxisRef.current = 'pending';
 }
 
-const PHASE_DELETE_REVEAL_WIDTH = 92;
-
-function closePhaseSwipe() {
-  setSwipedPhaseId(null);
-  setPhaseSwipeOffset(0);
-  activePhaseSwipeIdRef.current = null;
-}
-
-function handlePhasePointerDown(event: ReactPointerEvent<HTMLElement>, phaseId: string) {
+function handleDestinationPointerDown(event: ReactPointerEvent<HTMLElement>, destinationId: string) {
   if (event.pointerType === 'mouse' && event.button !== 0) return;
-  if (swipedPhaseId && swipedPhaseId !== phaseId) closePhaseSwipe();
-  activePhaseSwipeIdRef.current = phaseId;
-  phaseSwipeStartXRef.current = event.clientX;
-  phaseSwipeStartOffsetRef.current = swipedPhaseId === phaseId ? phaseSwipeOffset : 0;
-  phaseSwipeMovedRef.current = false;
+  event.stopPropagation();
+  if (swipedDestinationId && swipedDestinationId !== destinationId) closeDestinationSwipe();
+  activeDestinationSwipeIdRef.current = destinationId;
+  destinationSwipeStartXRef.current = event.clientX;
+  destinationSwipeStartYRef.current = event.clientY;
+  destinationSwipeStartOffsetRef.current = swipedDestinationId === destinationId ? destinationSwipeOffset : 0;
+  destinationSwipeAxisRef.current = 'pending';
   event.currentTarget.setPointerCapture(event.pointerId);
 }
 
-function handlePhasePointerMove(event: ReactPointerEvent<HTMLElement>, phaseId: string) {
-  if (activePhaseSwipeIdRef.current !== phaseId) return;
-  const deltaX = event.clientX - phaseSwipeStartXRef.current;
-  if (Math.abs(deltaX) > 6) phaseSwipeMovedRef.current = true;
-  const nextOffset = Math.max(-PHASE_DELETE_REVEAL_WIDTH, Math.min(0, phaseSwipeStartOffsetRef.current + deltaX));
-  setSwipedPhaseId(phaseId);
-  setPhaseSwipeOffset(nextOffset);
+function handleDestinationPointerMove(event: ReactPointerEvent<HTMLElement>, destinationId: string) {
+  if (activeDestinationSwipeIdRef.current !== destinationId) return;
+  const deltaX = event.clientX - destinationSwipeStartXRef.current;
+  const deltaY = event.clientY - destinationSwipeStartYRef.current;
+  if (destinationSwipeAxisRef.current === 'pending' && (Math.abs(deltaX) > 8 || Math.abs(deltaY) > 8)) {
+    destinationSwipeAxisRef.current = Math.abs(deltaX) > Math.abs(deltaY) * 1.12 ? 'horizontal' : 'vertical';
+  }
+  if (destinationSwipeAxisRef.current !== 'horizontal') return;
+  event.stopPropagation();
+  const nextOffset = Math.max(-DESTINATION_DELETE_REVEAL_WIDTH, Math.min(0, destinationSwipeStartOffsetRef.current + deltaX));
+  setSwipedDestinationId(destinationId);
+  setDestinationSwipeOffset(nextOffset);
 }
 
-function handlePhasePointerEnd(event: ReactPointerEvent<HTMLElement>, phaseId: string) {
-  if (activePhaseSwipeIdRef.current !== phaseId) return;
+function handleDestinationPointerEnd(event: ReactPointerEvent<HTMLElement>, destinationId: string) {
+  if (activeDestinationSwipeIdRef.current !== destinationId) return;
+  event.stopPropagation();
   try { event.currentTarget.releasePointerCapture(event.pointerId); } catch { /* already released */ }
-  const shouldOpen = phaseSwipeOffset <= -(PHASE_DELETE_REVEAL_WIDTH * 0.52);
-  setSwipedPhaseId(shouldOpen ? phaseId : null);
-  setPhaseSwipeOffset(shouldOpen ? -PHASE_DELETE_REVEAL_WIDTH : 0);
-  activePhaseSwipeIdRef.current = null;
+  const horizontal = destinationSwipeAxisRef.current === 'horizontal';
+  const shouldOpen = horizontal && destinationSwipeOffset <= -(DESTINATION_DELETE_REVEAL_WIDTH * 0.52);
+  setSwipedDestinationId(shouldOpen ? destinationId : null);
+  setDestinationSwipeOffset(shouldOpen ? -DESTINATION_DELETE_REVEAL_WIDTH : 0);
+  activeDestinationSwipeIdRef.current = null;
+  destinationSwipeAxisRef.current = 'pending';
+}
+
+function requestDestinationDelete(destination: DestinationSummary) {
+  closeDestinationSwipe();
+  setDeleteError(null);
+  setDeleteTarget(destination);
 }
 
   async function handlePhaseEdit(event: FormEvent<HTMLFormElement>) {
@@ -1005,25 +984,23 @@ function handlePhasePointerEnd(event: ReactPointerEvent<HTMLElement>, phaseId: s
           <div className="phase-planning-list">
             {phases.map((phase) => {
               const phaseDestinations = destinationsByPhase.get(phase.id) ?? [];
-              const phaseSwipeOpen = swipedPhaseId === phase.id;
-              const phaseOffset = phaseSwipeOpen ? phaseSwipeOffset : 0;
               return (
-                <div className={`places-phase-swipe-shell${phaseSwipeOpen ? ' is-open' : ''}`} key={phase.id}>
-                  <button className="places-phase-swipe-delete" type="button" disabled={phases.length <= 1 || phaseDeleting} onClick={() => void handlePhaseDelete(phase)}>{phaseDeleting && phaseSwipeOpen ? '削除中…' : phases.length <= 1 ? '削除不可' : '削除'}</button>
-                  <section className="places-phase-section places-phase-swipe-panel" style={{ transform: `translateX(${phaseOffset}px)` }} onPointerDown={(event) => handlePhasePointerDown(event, phase.id)} onPointerMove={(event) => handlePhasePointerMove(event, phase.id)} onPointerUp={(event) => handlePhasePointerEnd(event, phase.id)} onPointerCancel={(event) => handlePhasePointerEnd(event, phase.id)}>
+                <section className="places-phase-section" key={phase.id}>
                   <header className="places-phase-header">
                     <div className="places-phase-copy">
                       <div className="places-phase-titleline"><h2>{phase.name || 'Phase'}</h2>{!phase.name && <span className="phase-unnamed-badge">名前未設定</span>}{phase.startTime && <span className="phase-start-badge">{phase.startTime.slice(0, 5)}〜</span>}</div>
                       {phase.description && <p>{phase.description}</p>}
                     </div>
-                    <div className="places-phase-actions"><button className="phase-edit-button" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closePhaseSwipe(); openPhaseEdit(phase); }}>編集</button><button className="phase-add-place-button" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closePhaseSwipe(); openCreateModal(phase.id); }}>＋ 目的地</button></div>
+                    <div className="places-phase-actions"><button className="phase-edit-button" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeDestinationSwipe(); openPhaseEdit(phase); }}>編集</button><button className="phase-add-place-button" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeDestinationSwipe(); openCreateModal(phase.id); }}>＋ 目的地</button></div>
                   </header>
                   {phaseDestinations.length === 0 ? (
-                    <button className="phase-empty-add" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closePhaseSwipe(); openCreateModal(phase.id); }}>このPhaseに最初の目的地を追加</button>
+                    <button className="phase-empty-add" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeDestinationSwipe(); openCreateModal(phase.id); }}>このPhaseに最初の目的地を追加</button>
                   ) : (
                     <div className="places-list">
                       {phaseDestinations.map((destination, index) => { const dragShift = getDestinationDragShift(index); return (
-                        <article className={`place-card${reorderingId === destination.id ? ' is-drag-placeholder' : ''}${dragShift !== 0 ? ' is-reorder-shifting' : ''}${reorderingId && reorderOverId === destination.id && reorderingId !== destination.id ? ' is-reorder-over' : ''}`} key={destination.id} data-destination-id={destination.id} data-phase-id={phase.id} data-draggable={destination.timeType === 'none' ? 'true' : 'false'} style={dragShift !== 0 ? { transform: `translateY(${dragShift}px)` } : undefined}>
+                        <div className={`places-destination-swipe-shell${swipedDestinationId === destination.id ? ' is-open' : ''}`} key={destination.id} style={dragShift !== 0 ? { transform: `translateY(${dragShift}px)` } : undefined} onTouchStart={(event) => event.stopPropagation()} onTouchEnd={(event) => event.stopPropagation()}>
+                          <button className="places-destination-swipe-delete" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => requestDestinationDelete(destination)}>削除</button>
+                          <article className={`place-card places-destination-swipe-panel${reorderingId === destination.id ? ' is-drag-placeholder' : ''}${dragShift !== 0 ? ' is-reorder-shifting' : ''}${reorderingId && reorderOverId === destination.id && reorderingId !== destination.id ? ' is-reorder-over' : ''}`} data-destination-id={destination.id} data-phase-id={phase.id} data-draggable={destination.timeType === 'none' ? 'true' : 'false'} style={{ transform: `translateX(${swipedDestinationId === destination.id ? destinationSwipeOffset : 0}px)` }} onPointerDown={(event) => handleDestinationPointerDown(event, destination.id)} onPointerMove={(event) => handleDestinationPointerMove(event, destination.id)} onPointerUp={(event) => handleDestinationPointerEnd(event, destination.id)} onPointerCancel={(event) => handleDestinationPointerEnd(event, destination.id)}>
                           <div className="place-order" aria-label={`${index + 1}番目`}>{index + 1}</div><div className="place-icon" aria-hidden="true">📍</div>
                           <div className="place-copy">
                             <div className="place-meta">
@@ -1036,7 +1013,7 @@ function handlePhasePointerEnd(event: ReactPointerEvent<HTMLElement>, phaseId: s
                             {!activeBranchId && (mainConnectionsByDestination.get(destination.id)?.length ?? 0) > 0 ? (
                               <div className="place-route-connections">
                                 {mainConnectionsByDestination.get(destination.id)?.map((connection) => (
-                                  <button className={`place-route-connection is-${connection.kind}`} type="button" key={`${connection.route.id}-${connection.kind}`} onClick={() => setActiveBranchId(connection.route.id)}>
+                                  <button className={`place-route-connection is-${connection.kind}`} type="button" key={`${connection.route.id}-${connection.kind}`} onPointerDown={(event) => event.stopPropagation()} onClick={() => setActiveBranchId(connection.route.id)}>
                                     <span className="place-route-connection-mark" aria-hidden="true">{connection.kind === 'start' ? '↗' : '↘'}</span>
                                     <span><strong>{connection.label}</strong><small>{connection.detail}</small></span>
                                     <span className="place-route-connection-arrow" aria-hidden="true">›</span>
@@ -1045,13 +1022,13 @@ function handlePhasePointerEnd(event: ReactPointerEvent<HTMLElement>, phaseId: s
                               </div>
                             ) : null}
                           </div>
-                          <div className={`place-card-actions ${destination.timeType !== 'none' ? 'is-timed' : ''}`}><button className="place-edit-button" type="button" onClick={() => openEditModal(destination)} disabled={Boolean(reorderingId) || reorderSaving}>編集</button>{destination.timeType === 'none' ? <button className="place-drag-handle" type="button" aria-label={`${destination.name}を長押しして並び替え`} disabled={reorderSaving || (Boolean(reorderingId) && reorderingId !== destination.id)} onPointerDown={(event) => beginDestinationDrag(event, destination.id, phase.id)} onPointerMove={moveDraggedDestination} onPointerUp={(event) => void finishDestinationDrag(event)} onPointerCancel={cancelDestinationDrag} onLostPointerCapture={handleLostDestinationPointerCapture}><span className="drag-dot-grid" aria-hidden="true"><i /><i /><i /><i /><i /><i /></span></button> : null}</div>
-                        </article>
+                          <div className={`place-card-actions ${destination.timeType !== 'none' ? 'is-timed' : ''}`}><button className="place-edit-button" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeDestinationSwipe(); openEditModal(destination); }} disabled={Boolean(reorderingId) || reorderSaving}>編集</button>{destination.timeType === 'none' ? <button className="place-drag-handle" type="button" aria-label={`${destination.name}を長押しして並び替え`} disabled={reorderSaving || (Boolean(reorderingId) && reorderingId !== destination.id)} onPointerDown={(event) => beginDestinationDrag(event, destination.id, phase.id)} onPointerMove={moveDraggedDestination} onPointerUp={(event) => void finishDestinationDrag(event)} onPointerCancel={cancelDestinationDrag} onLostPointerCapture={handleLostDestinationPointerCapture}><span className="drag-dot-grid" aria-hidden="true"><i /><i /><i /><i /><i /><i /></span></button> : null}</div>
+                          </article>
+                        </div>
                       ); })}
                     </div>
                   )}
-                  </section>
-                </div>
+                </section>
               );
             })}
             {exceptionDestinations.length > 0 ? (
@@ -1067,7 +1044,7 @@ function handlePhasePointerEnd(event: ReactPointerEvent<HTMLElement>, phaseId: s
                     <article className="place-card is-exception" key={destination.id}>
                       <div className="place-order">{index + 1}</div>
                       <div className="place-copy"><div className="place-meta">{destination.importance === 'must' ? <span className="place-required-mark" aria-label="必須" title="必須">★</span> : null}{formatDestinationTime(destination) ? <span className="place-time-badge is-exception-time">{formatDestinationTime(destination)}</span> : null}</div><h2>{destination.name}</h2><p>所属：{phases.find((phase) => phase.id === destination.phaseId)?.name || '名前未設定のPhase'}</p></div>
-                      <div className="place-card-actions"><button className="place-edit-button" type="button" onClick={() => openEditModal(destination)}>編集</button></div>
+                      <div className="place-card-actions"><button className="place-edit-button" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeDestinationSwipe(); openEditModal(destination); }}>編集</button></div>
                     </article>
                   ))}
                 </div>
