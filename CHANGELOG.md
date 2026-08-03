@@ -825,3 +825,15 @@ Known issues: Supabase ProjectとRedirect URLは配布先で設定が必要。Ro
 - 画面構成が生成される途中を見せない
 - Destination削除・並び替え・縦スクロール、下部ナビ固定には変更なし
 - DB変更なし
+
+
+## v2.1.0-p79.6 Places Route-matched switch
+
+- PlacesのメインRoute / サブRoute切替を、正常に動作しているRoute画面の距離・速度判定と送り出しタイミングへ統一
+- スワイプ中に動くのは上部のRoute切替枠だけとし、Phase / Destination本文は横移動させない
+- サブRouteのPlanningデータを事前キャッシュし、切替確定時の取得待ちによる「パッと生成される」見え方を抑制
+- 切替枠は現在表示を送り出した後、反対側の近位置から中央へ入るRoute画面と同じ動作
+- p79.5のPlaces独自クロスフェード処理を撤去
+- 下部ナビ固定、Destination削除・並び替え、Route閲覧画面には変更なし
+- 改善しない場合はp79.3へ戻しやすい最小差分
+- DB変更なし

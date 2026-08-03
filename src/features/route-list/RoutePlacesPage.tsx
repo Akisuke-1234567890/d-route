@@ -130,6 +130,7 @@ export function RoutePlacesPage() {
   const placesSwipeBlockedRef = useRef(false);
   const placesRouteGestureLockRef = useRef(false);
   const placesRouteSettleTimerRef = useRef<number | null>(null);
+  const placesPlanningCacheRef = useRef(new Map<string, { phases: PhaseSummary[]; destinations: DestinationSummary[] }>());
   const [phases, setPhases] = useState<PhaseSummary[]>([]);
   const [selectedPhaseId, setSelectedPhaseId] = useState('');
   const [editPhaseId, setEditPhaseId] = useState('');
@@ -230,6 +231,7 @@ export function RoutePlacesPage() {
       setPhases(nextPhases);
       setDestinations(nextDestinations);
       setAlternateRoutes(nextAlternateRoutes);
+      placesPlanningCacheRef.current.set(activeBranchId ?? 'main', { phases: nextPhases, destinations: nextDestinations });
     } catch (err) {
       setError(getErrorMessage(err, 'Placesを読み込めませんでした。'));
     } finally {
@@ -955,90 +957,79 @@ function requestDestinationDelete(destination: DestinationSummary) {
     placesRouteRafRef.current = window.requestAnimationFrame(() => {
       const element = placesRouteCarouselRef.current;
       if (element) {
-        element.style.transition = animate ? 'transform 280ms cubic-bezier(.22,.82,.22,1)' : 'none';
+        element.style.transition = animate ? 'transform 280ms cubic-bezier(.22,.72,.22,1)' : 'none';
         element.style.transform = `translate3d(${nextX}px,0,0)`;
       }
       placesRouteRafRef.current = null;
     });
   }
 
-  function revealPreparedPlacesContent(direction: 'next' | 'previous') {
-    const element = placesRouteContentRef.current;
-    if (!element) return;
-    const enterX = direction === 'next' ? 14 : -14;
-    element.style.transition = 'none';
-    element.style.opacity = '0';
-    element.style.transform = `translate3d(${enterX}px,0,0)`;
-    window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(() => {
-        element.style.transition = 'opacity 190ms ease-out, transform 240ms cubic-bezier(.22,.82,.22,1)';
-        element.style.opacity = '1';
-        element.style.transform = 'translate3d(0,0,0)';
-      });
-    });
+  async function getPreparedPlacesPlanning(branchId: string | null) {
+    const key = branchId ?? 'main';
+    const cached = placesPlanningCacheRef.current.get(key);
+    if (cached) return cached;
+    const [nextPhases, nextDestinations] = await Promise.all([
+      getRoutePhases(routeId, branchId),
+      getRouteDestinations(routeId, branchId),
+    ]);
+    const prepared = { phases: nextPhases, destinations: nextDestinations };
+    placesPlanningCacheRef.current.set(key, prepared);
+    return prepared;
   }
 
   async function movePlacesRoute(nextIndex: number) {
     const bounded = Math.max(0, Math.min(placesRouteIds.length - 1, nextIndex));
     if (bounded === activePlacesRouteIndex || placesRouteSettling) return;
+
     const direction: 'next' | 'previous' = bounded > activePlacesRouteIndex ? 'next' : 'previous';
     const targetBranchId = placesRouteIds[bounded];
     const token = ++placesRouteSwitchTokenRef.current;
+    const width = Math.max(placesRouteCarouselRef.current?.clientWidth ?? 0, 280);
 
     clearPlacesRouteSettleTimer();
     setPlacesRouteDragging(false);
     setPlacesRouteSettling(true);
-    applyPlacesRouteVisualOffset(direction === 'next' ? -46 : 46, true);
 
     try {
-      const [nextPhases, nextDestinations, nextAlternateRoutes] = await Promise.all([
-        getRoutePhases(routeId, targetBranchId),
-        getRouteDestinations(routeId, targetBranchId),
-        listRouteBranches(routeId),
-      ]);
+      // Route画面と同様、切替先を先に用意してからカードを送り出す。
+      const prepared = await getPreparedPlacesPlanning(targetBranchId);
       if (token !== placesRouteSwitchTokenRef.current) return;
 
-      const content = placesRouteContentRef.current;
-      if (content) {
-        content.style.transition = 'opacity 90ms ease-out';
-        content.style.opacity = '0';
-      }
-
-      window.requestAnimationFrame(() => {
+      applyPlacesRouteVisualOffset(direction === 'next' ? -width : width, true);
+      placesRouteSettleTimerRef.current = window.setTimeout(() => {
         if (token !== placesRouteSwitchTokenRef.current) return;
+
         setPlacesRouteDirection(direction);
         setPlacesRouteMotionId((current) => current + 1);
         setActiveBranchId(targetBranchId);
-        setPhases(nextPhases);
-        setDestinations(nextDestinations);
-        setAlternateRoutes(nextAlternateRoutes);
+        setPhases(prepared.phases);
+        setDestinations(prepared.destinations);
         setError(null);
         setLoading(false);
-        applyPlacesRouteVisualOffset(direction === 'next' ? 18 : -18, false);
+
+        // 新しい切替枠を反対側の近位置に置き、次フレームで中央へ戻す。
+        applyPlacesRouteVisualOffset(direction === 'next' ? width * .22 : -width * .22, false);
         window.requestAnimationFrame(() => {
-          applyPlacesRouteVisualOffset(0, true);
-          revealPreparedPlacesContent(direction);
+          window.requestAnimationFrame(() => applyPlacesRouteVisualOffset(0, true));
         });
-      });
-    } catch (err) {
-      if (token === placesRouteSwitchTokenRef.current) {
-        setError(getErrorMessage(err, 'Placesを読み込めませんでした。'));
-        const content = placesRouteContentRef.current;
-        if (content) content.style.opacity = '1';
-        applyPlacesRouteVisualOffset(0, true);
-      }
-    } finally {
-      if (token === placesRouteSwitchTokenRef.current) {
+
         placesRouteSettleTimerRef.current = window.setTimeout(() => {
           setPlacesRouteSettling(false);
           placesRouteSettleTimerRef.current = null;
-        }, 300);
+        }, 280);
+      }, 190);
+    } catch (err) {
+      if (token === placesRouteSwitchTokenRef.current) {
+        setError(getErrorMessage(err, 'Placesを読み込めませんでした。'));
+        applyPlacesRouteVisualOffset(0, true);
+        setPlacesRouteSettling(false);
       }
     }
   }
 
   function handlePlacesRouteTouchStart(event: React.TouchEvent<HTMLElement>) {
     if (alternateRouteOpen || createOpen || editing || phaseCreateOpen || phaseEditing || placesRouteSettling) return;
+    clearPlacesRouteSettleTimer();
     placesSwipeStartXRef.current = event.touches[0]?.clientX ?? null;
     placesSwipeStartYRef.current = event.touches[0]?.clientY ?? null;
     placesRouteSwipeStartTimeRef.current = performance.now();
@@ -1050,36 +1041,60 @@ function requestDestinationDelete(destination: DestinationSummary) {
     const startX = placesSwipeStartXRef.current;
     const startY = placesSwipeStartYRef.current;
     const touch = event.touches[0];
-    if (startX === null || startY === null || !touch) return;
+    if (startX === null || startY === null || !touch || placesRouteSettling) return;
     const deltaX = touch.clientX - startX;
     const deltaY = touch.clientY - startY;
-    if (Math.abs(deltaY) > Math.abs(deltaX) * 1.15) return;
-    if (Math.abs(deltaX) > 5) event.preventDefault();
+    if (Math.abs(deltaX) <= Math.abs(deltaY)) return;
+    event.preventDefault();
     const atStart = activePlacesRouteIndex === 0 && deltaX > 0;
     const atEnd = activePlacesRouteIndex >= placesRouteIds.length - 1 && deltaX < 0;
-    const visualX = (atStart || atEnd)
-      ? Math.sign(deltaX) * Math.pow(Math.abs(deltaX), .82) * .36
-      : deltaX;
-    applyPlacesRouteVisualOffset(visualX, false);
+    applyPlacesRouteVisualOffset(atStart || atEnd ? deltaX * .24 : deltaX, false);
   }
 
   function handlePlacesRouteTouchEnd(event: React.TouchEvent<HTMLElement>) {
     const startX = placesSwipeStartXRef.current;
-    const touch = event.changedTouches[0];
     placesSwipeStartXRef.current = null;
     placesSwipeStartYRef.current = null;
-    setPlacesRouteDragging(false);
-    if (startX === null || !touch) { applyPlacesRouteVisualOffset(0, true); return; }
-    const deltaX = touch.clientX - startX;
+    const endX = event.changedTouches[0]?.clientX;
+    if (startX === null || endX === undefined) {
+      setPlacesRouteDragging(false);
+      applyPlacesRouteVisualOffset(0, true);
+      return;
+    }
+
+    const delta = endX - startX;
     const elapsed = Math.max(1, performance.now() - placesRouteSwipeStartTimeRef.current);
-    const velocity = deltaX / elapsed;
-    const next = deltaX < 0 && activePlacesRouteIndex < placesRouteIds.length - 1;
-    const previous = deltaX > 0 && activePlacesRouteIndex > 0;
-    const change = Math.abs(deltaX) >= 48 || Math.abs(velocity) >= .34;
-    if (change && next) void movePlacesRoute(activePlacesRouteIndex + 1);
-    else if (change && previous) void movePlacesRoute(activePlacesRouteIndex - 1);
-    else applyPlacesRouteVisualOffset(0, true);
+    const velocity = delta / elapsed;
+    const wantsNext = delta < 0 && activePlacesRouteIndex < placesRouteIds.length - 1;
+    const wantsPrevious = delta > 0 && activePlacesRouteIndex > 0;
+    const shouldChange = Math.abs(delta) >= 72 || Math.abs(velocity) >= .48;
+    setPlacesRouteDragging(false);
+
+    if (shouldChange && wantsNext) void movePlacesRoute(activePlacesRouteIndex + 1);
+    else if (shouldChange && wantsPrevious) void movePlacesRoute(activePlacesRouteIndex - 1);
+    else {
+      setPlacesRouteSettling(true);
+      applyPlacesRouteVisualOffset(0, true);
+      placesRouteSettleTimerRef.current = window.setTimeout(() => {
+        setPlacesRouteSettling(false);
+        placesRouteSettleTimerRef.current = null;
+      }, 260);
+    }
   }
+
+  useEffect(() => {
+    if (alternateRoutes.length === 0) return;
+    let cancelled = false;
+    alternateRoutes.forEach((route) => {
+      if (placesPlanningCacheRef.current.has(route.id)) return;
+      void Promise.all([getRoutePhases(routeId, route.id), getRouteDestinations(routeId, route.id)])
+        .then(([nextPhases, nextDestinations]) => {
+          if (!cancelled) placesPlanningCacheRef.current.set(route.id, { phases: nextPhases, destinations: nextDestinations });
+        })
+        .catch(() => { /* 先読み失敗時は切替時に再取得する */ });
+    });
+    return () => { cancelled = true; };
+  }, [routeId, alternateRoutes]);
 
   useEffect(() => () => {
     clearPlacesRouteSettleTimer();
