@@ -109,7 +109,13 @@ function PhaseDashboard({ routeId, participantView }: { routeId: string; partici
   const [routePageIndex, setRoutePageIndex] = useState(0);
   const [routePageDirection, setRoutePageDirection] = useState<'next' | 'previous'>('next');
   const [routePageAnimationId, setRoutePageAnimationId] = useState(0);
+  const [routeDragX, setRouteDragX] = useState(0);
+  const [routeDragging, setRouteDragging] = useState(false);
+  const [routeSettling, setRouteSettling] = useState(false);
   const routeSwipeStartX = useRef<number | null>(null);
+  const routeSwipeStartY = useRef<number | null>(null);
+  const routeSwipeStartTime = useRef(0);
+  const routeSwipeTimer = useRef<number | null>(null);
 
   useEffect(() => {
     const supabase = getSupabaseClient();
@@ -416,25 +422,95 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
 
   const moveToRoutePage = (nextIndex: number) => {
     const boundedIndex = Math.max(0, Math.min(routePageCount - 1, nextIndex));
-    if (boundedIndex === routePageIndex) return;
+    if (boundedIndex === routePageIndex || routeSettling) return;
     setRoutePageDirection(boundedIndex > routePageIndex ? 'next' : 'previous');
     setRoutePageIndex(boundedIndex);
     setRoutePageAnimationId((current) => current + 1);
   };
   const showNextRoutePage = () => moveToRoutePage(routePageIndex + 1);
   const showPreviousRoutePage = () => moveToRoutePage(routePageIndex - 1);
+
+  const clearRouteSwipeTimer = () => {
+    if (routeSwipeTimer.current !== null) {
+      window.clearTimeout(routeSwipeTimer.current);
+      routeSwipeTimer.current = null;
+    }
+  };
+
+  const settleRoutePage = (targetIndex: number, direction: 'next' | 'previous') => {
+    clearRouteSwipeTimer();
+    const width = Math.max(window.innerWidth, 320);
+    setRouteDragging(false);
+    setRouteSettling(true);
+    setRoutePageDirection(direction);
+    setRouteDragX(direction === 'next' ? -width : width);
+    routeSwipeTimer.current = window.setTimeout(() => {
+      setRoutePageIndex(targetIndex);
+      setRoutePageAnimationId((current) => current + 1);
+      setRouteSettling(false);
+      setRouteDragX(direction === 'next' ? width * 0.22 : -width * 0.22);
+      requestAnimationFrame(() => requestAnimationFrame(() => setRouteDragX(0)));
+      routeSwipeTimer.current = window.setTimeout(() => {
+        setRouteSettling(false);
+        routeSwipeTimer.current = null;
+      }, 280);
+    }, 190);
+  };
+
   const onRouteSwipeStart = (event: TouchEvent<HTMLElement>) => {
+    if (routeSettling) return;
+    clearRouteSwipeTimer();
     routeSwipeStartX.current = event.touches[0]?.clientX ?? null;
+    routeSwipeStartY.current = event.touches[0]?.clientY ?? null;
+    routeSwipeStartTime.current = performance.now();
+    setRouteDragging(true);
+    setRouteDragX(0);
+  };
+  const onRouteSwipeMove = (event: TouchEvent<HTMLElement>) => {
+    const startX = routeSwipeStartX.current;
+    const startY = routeSwipeStartY.current;
+    const touch = event.touches[0];
+    if (startX === null || startY === null || !touch || routeSettling) return;
+    const deltaX = touch.clientX - startX;
+    const deltaY = touch.clientY - startY;
+    if (Math.abs(deltaX) <= Math.abs(deltaY)) return;
+    event.preventDefault();
+    const atFirst = routePageIndex === 0 && deltaX > 0;
+    const atLast = routePageIndex === routePageCount - 1 && deltaX < 0;
+    const resisted = atFirst || atLast ? deltaX * 0.24 : deltaX;
+    setRouteDragX(resisted);
   };
   const onRouteSwipeEnd = (event: TouchEvent<HTMLElement>) => {
     const startX = routeSwipeStartX.current;
     routeSwipeStartX.current = null;
+    routeSwipeStartY.current = null;
     const endX = event.changedTouches[0]?.clientX;
-    if (startX === null || endX === undefined) return;
+    if (startX === null || endX === undefined) {
+      setRouteDragging(false);
+      setRouteDragX(0);
+      return;
+    }
     const delta = endX - startX;
-    if (Math.abs(delta) < 55) return;
-    if (delta < 0) showNextRoutePage();
-    else showPreviousRoutePage();
+    const elapsed = Math.max(1, performance.now() - routeSwipeStartTime.current);
+    const velocity = delta / elapsed;
+    const wantsNext = delta < 0 && routePageIndex < routePageCount - 1;
+    const wantsPrevious = delta > 0 && routePageIndex > 0;
+    const shouldChange = Math.abs(delta) >= 72 || Math.abs(velocity) >= 0.48;
+    if (shouldChange && wantsNext) settleRoutePage(routePageIndex + 1, 'next');
+    else if (shouldChange && wantsPrevious) settleRoutePage(routePageIndex - 1, 'previous');
+    else {
+      setRouteDragging(false);
+      setRouteSettling(true);
+      setRouteDragX(0);
+      routeSwipeTimer.current = window.setTimeout(() => {
+        setRouteSettling(false);
+        routeSwipeTimer.current = null;
+      }, 260);
+    }
+  };
+  const routeDragStyle = {
+    transform: `translate3d(${routeDragX}px, 0, 0)`,
+    transition: routeDragging ? 'none' : 'transform 280ms cubic-bezier(.22,.72,.22,1)',
   };
 
   const routeSwitcher = routePageCount > 1 ? (
@@ -442,7 +518,10 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
       className={`v2-route-page-switcher v2-route-page-motion is-${routePageDirection}`} key={`switcher-${routePageAnimationId}`}
       aria-label="メインRouteと別行動の切り替え"
       onTouchStart={onRouteSwipeStart}
+      onTouchMove={onRouteSwipeMove}
       onTouchEnd={onRouteSwipeEnd}
+      onTouchCancel={onRouteSwipeEnd}
+      style={routeDragStyle}
     >
       <button type="button" onClick={showPreviousRoutePage} disabled={routePageIndex === 0} aria-label="前のRouteを見る">‹</button>
       <div className="v2-route-page-title">
@@ -466,7 +545,7 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
     return (
       <>
         {routeSwitcher}
-        <article className={`v2-alternate-route-panel v2-route-page-motion is-${routePageDirection}`} key={`alternate-${routePageAnimationId}`} onTouchStart={onRouteSwipeStart} onTouchEnd={onRouteSwipeEnd}>
+        <article className={`v2-alternate-route-panel v2-route-page-motion is-${routePageDirection}`} key={`alternate-${routePageAnimationId}`} onTouchStart={onRouteSwipeStart} onTouchMove={onRouteSwipeMove} onTouchEnd={onRouteSwipeEnd} onTouchCancel={onRouteSwipeEnd} style={routeDragStyle}>
           <div className="v2-section-heading">
             <div>
               <p className="eyebrow">{alternateRouteCategory(activeAlternateRoute.connectionType)}</p>
@@ -519,7 +598,7 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
     return (
       <>
         {routeSwitcher}
-        <article className={`v2-participant-route v2-route-page-motion is-${routePageDirection}`} key={`participant-${routePageAnimationId}`} aria-labelledby="participant-route-title">
+        <article className={`v2-participant-route v2-route-page-motion is-${routePageDirection}`} key={`participant-${routePageAnimationId}`} aria-labelledby="participant-route-title" onTouchStart={onRouteSwipeStart} onTouchMove={onRouteSwipeMove} onTouchEnd={onRouteSwipeEnd} onTouchCancel={onRouteSwipeEnd} style={routeDragStyle}>
           <div className="v2-section-heading">
             <div>
               <p className="eyebrow">YOUR ROUTE</p>
@@ -581,7 +660,7 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
   return (
     <>
       {routeSwitcher}
-      <article className={`v2-phase-panel v2-route-page-motion is-${routePageDirection}`} key={`main-${routePageAnimationId}`} aria-labelledby="v2-phase-title">
+      <article className={`v2-phase-panel v2-route-page-motion is-${routePageDirection}`} key={`main-${routePageAnimationId}`} aria-labelledby="v2-phase-title" onTouchStart={onRouteSwipeStart} onTouchMove={onRouteSwipeMove} onTouchEnd={onRouteSwipeEnd} onTouchCancel={onRouteSwipeEnd} style={routeDragStyle}>
         <div className="v2-phase-heading">
           <div>
             <p className="eyebrow">{isManualPhase ? 'VIEWING PHASE' : 'CURRENT PHASE'}</p>

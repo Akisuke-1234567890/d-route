@@ -3172,3 +3172,20 @@ a { color: inherit; }
 @media(prefers-reduced-motion:reduce){
   .v2-route-page-motion.is-next,.v2-route-page-motion.is-previous{animation:none}
 }
+
+/* v2.1.0-p73.2 finger-follow route carousel */
+.v2-route-page-switcher,
+.v2-route-page-motion{
+  backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
+  transform:translate3d(0,0,0);
+  will-change:transform;
+}
+.v2-route-page-switcher{overflow:hidden;touch-action:pan-y pinch-zoom}
+.v2-route-page-motion{touch-action:pan-y pinch-zoom}
+.v2-route-page-motion.is-next,
+.v2-route-page-motion.is-previous{animation:none}
+@media(prefers-reduced-motion:reduce){
+  .v2-route-page-switcher,
+  .v2-route-page-motion{transition:none!important}
+}
