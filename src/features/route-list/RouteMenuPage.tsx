@@ -10,6 +10,7 @@ import { useBodyScrollLock } from '../../shared/hooks/useBodyScrollLock';
 const items = [
   { key:'settings', icon:'⚙️', title:'Route設定', description:'名前と説明を変更' },
   { key:'duplicate', icon:'📄', title:'Routeを複製', description:'内容を引き継いだ新しいRouteを作成' },
+  { key:'my-members', icon:'👤', title:'My Members', description:'自分用の同行者名簿を管理' },
 ] as const;
 
 
@@ -126,17 +127,17 @@ async function handleDuplicateRoute() {
       <div className="route-tab-heading"><div><p className="eyebrow">ROUTE SETTINGS</p><h1 id="menu-title">Route設定</h1><p>現在のRouteの名前・説明・複製を管理します。</p></div></div>
 
       <div className="route-menu-list">{items.map((item) => {
-        const isSettings = item.key === 'settings';
         return <button
           type="button"
           className="route-menu-item"
           key={item.key}
           onClick={() => {
-            if (isSettings) openRouteSettings();
-            else openDuplicateRoute();
+            if (item.key === 'settings') openRouteSettings();
+            else if (item.key === 'duplicate') openDuplicateRoute();
+            else navigate('/my-members');
           }}
-          disabled={!isOwner}
-          title={!isOwner ? 'この操作はリーダーのみ利用できます。' : undefined}
+          disabled={item.key !== 'my-members' && !isOwner}
+          title={item.key !== 'my-members' && !isOwner ? 'この操作はリーダーのみ利用できます。' : undefined}
         ><span className="route-menu-icon" aria-hidden="true">{item.icon}</span><span><strong>{item.title}</strong><small>{item.description}</small></span><span aria-hidden="true">›</span></button>;
       })}</div>
 

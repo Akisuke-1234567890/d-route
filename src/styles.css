@@ -3251,3 +3251,17 @@ a { color: inherit; }
     transform:none!important;
   }
 }
+
+/* v2.1.0-p80 My Members */
+.my-members-content{padding-bottom:48px}
+.my-members-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
+.my-members-list{display:grid;gap:10px;margin-top:20px}
+.my-member-card{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid rgba(196,203,255,.12);border-radius:18px;background:rgba(18,24,56,.72)}
+.my-member-avatar{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:rgba(126,111,255,.16);font-size:1.15rem}
+.my-member-copy{min-width:0;display:grid;gap:3px;flex:1}
+.my-member-copy strong{font-size:.92rem}.my-member-copy small{color:rgba(211,216,241,.55);font-size:.66rem}
+.my-member-edit{min-width:70px;padding:9px 12px}
+.my-member-modal,.my-member-delete-modal{width:min(calc(100vw - 36px),430px)}
+.my-member-delete-link{width:100%;margin-top:14px;border:0;background:transparent;color:#ff8d8d;font:inherit;font-size:.72rem;font-weight:800}
+.my-member-delete-modal{text-align:center}.my-member-delete-modal p{color:rgba(221,225,244,.66);line-height:1.7}
+@media(max-width:420px){.my-members-heading{align-items:stretch}.my-members-heading .primary-button{align-self:flex-end}.my-member-card{padding:12px}}
