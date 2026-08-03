@@ -1,7 +1,6 @@
 import { useEffect, useState, type MouseEvent } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { getOwnRouteMember, type RouteMemberRole } from './members';
-import { beginWorkspaceTransition, revealWorkspaceTransition } from '../../shared/ui/workspaceTransition';
 
 type RouteBottomNavProps = { routeId: string };
 
@@ -28,15 +27,12 @@ export function RouteBottomNav({ routeId }: RouteBottomNavProps) {
     return () => { active = false; };
   }, [routeId]);
 
-  useEffect(() => {
-    revealWorkspaceTransition();
-  }, [location.pathname]);
 
   const handleTabClick = (event: MouseEvent<HTMLAnchorElement>, target: string) => {
     if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     if (location.pathname === target) return;
     event.preventDefault();
-    beginWorkspaceTransition(() => navigate(target));
+    navigate(target);
   };
 
   const tabs = role === 'member' ? participantTabs : ownerTabs;

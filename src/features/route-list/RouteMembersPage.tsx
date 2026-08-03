@@ -3,7 +3,6 @@ import { Link, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
 import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
-import { RouteBottomNav } from './RouteBottomNav';
 import { getSupabaseClient } from '../../shared/api/supabase';
 import { getRoute } from './routes';
 import { getOwnRouteMember, inviteRouteMemberByLoginId, listRouteMembers, respondToRouteInvite, type RouteMember, type RouteMemberStatus } from './members';
@@ -153,6 +152,5 @@ async function answerInvite(status: 'participating' | 'declined') {
       <p className="route-tab-demo-note">Membersでは招待と参加状況のみを扱います。別行動への割り振りはPlacesの別行動編集から設定します。</p>
     </section>
     <footer className="app-footer"><VersionBadge/><span>Route Workspace</span></footer>
-    <RouteBottomNav routeId={routeId}/>
   </main>;
 }

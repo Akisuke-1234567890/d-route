@@ -3,7 +3,6 @@ import { Link, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
 import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
-import { RouteBottomNav } from './RouteBottomNav';
 import './RoutePlacesPage.css';
 import { useBodyScrollLock } from '../../shared/hooks/useBodyScrollLock';
 import {
@@ -1211,7 +1210,6 @@ function requestDestinationDelete(destination: DestinationSummary) {
       })()}
 
       <footer className="app-footer"><VersionBadge /><span>Planning Core</span></footer>
-      <RouteBottomNav routeId={routeId} />
 
       {createOpen && (
         <div className="modal-backdrop" onMouseDown={(event) => {

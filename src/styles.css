@@ -3251,3 +3251,50 @@ html.route-workspace-transition-active::after {
 @media (prefers-reduced-motion: reduce) {
   .v2-route-buffer-curtain { transition: none; }
 }
+
+
+/* v2.1.0-p79.1 persistent workspace navigation and prepared content reveal */
+html::after,
+html.route-workspace-transition-active::after {
+  display: none !important;
+}
+.route-workspace-layout {
+  min-height: 100dvh;
+}
+.route-workspace-content {
+  position: relative;
+  min-height: 100dvh;
+}
+.route-workspace-layer {
+  min-height: 100dvh;
+  opacity: 1;
+}
+.route-workspace-layer.is-current {
+  transition: opacity 150ms ease-out;
+}
+.route-workspace-layer.is-current.is-leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+.route-workspace-layer.is-incoming {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  overflow: hidden;
+  background: #060817;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms cubic-bezier(.22,.72,.22,1);
+}
+.route-workspace-layer.is-incoming.is-visible {
+  opacity: 1;
+}
+.route-workspace-content.is-transitioning {
+  overflow: hidden;
+}
+.route-workspace-layout > .route-bottom-nav {
+  z-index: 140;
+}
+@media (prefers-reduced-motion: reduce) {
+  .route-workspace-layer { transition: none !important; }
+}

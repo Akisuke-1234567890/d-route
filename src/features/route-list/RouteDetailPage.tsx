@@ -7,7 +7,6 @@ import { getRoute, type RouteSummary } from './routes';
 import { getRoutePhases, type PhaseSummary } from './phases';
 import { getRouteDestinations, setRouteDestinationCompleted, type DestinationSummary } from './destinations';
 import { getSupabaseClient } from '../../shared/api/supabase';
-import { RouteBottomNav } from './RouteBottomNav';
 import { formatChatTime, getLatestRouteChatMessages, type RouteChatMessage } from './chat';
 import { getOwnRouteMember, type RouteMember } from './members';
 import {
@@ -950,7 +949,6 @@ export function RouteDetailPage() {
       </section>
 
       <footer className="app-footer"><VersionBadge /><span>Route / Current Phase</span></footer>
-      {routeId ? <RouteBottomNav routeId={routeId} /> : null}
     </main>
   );
 }

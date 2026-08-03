@@ -3,7 +3,6 @@ import { Link, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
 import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
-import { RouteBottomNav } from './RouteBottomNav';
 import {
   formatChatTime,
   getCurrentUserId,
@@ -309,7 +308,6 @@ export function RouteChatPage() {
       </section>
 
       <footer className="app-footer"><VersionBadge/><span>Route Workspace</span></footer>
-      <RouteBottomNav routeId={routeId}/>
     </main>
   );
 }

@@ -4,7 +4,6 @@ import { BrandMark } from '../../shared/ui/BrandMark';
 import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { getSupabaseClient } from '../../shared/api/supabase';
-import { RouteBottomNav } from './RouteBottomNav';
 import { duplicateOwnedRoute, getRoute, updateOwnedRouteSettings, type RouteSummary } from './routes';
 import { useBodyScrollLock } from '../../shared/hooks/useBodyScrollLock';
 
@@ -145,7 +144,6 @@ async function handleDuplicateRoute() {
     </section>
 
     <footer className="app-footer"><VersionBadge/><span>Route Workspace</span></footer>
-    <RouteBottomNav routeId={routeId}/>
 
     {settingsOpen && route && isOwner && (
       <div className="modal-backdrop" role="presentation">

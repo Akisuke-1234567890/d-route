@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useOutlet, useParams } from 'react-router-dom';
 import { getSupabaseClient } from '../shared/api/supabase';
 import { getInitialSession } from '../features/auth/auth';
 import { getOwnProfile, type UserProfile } from '../features/auth/account';
@@ -19,6 +19,74 @@ import { RoutePlacesPage } from '../features/route-list/RoutePlacesPage';
 import { RouteMembersPage } from '../features/route-list/RouteMembersPage';
 import { RouteMenuPage } from '../features/route-list/RouteMenuPage';
 import { RefreshButton } from '../shared/ui/RefreshButton';
+import { RouteBottomNav } from '../features/route-list/RouteBottomNav';
+
+
+function getWorkspaceRouteId(pathname: string): string | null {
+  const match = pathname.match(/^\/routes\/([^/]+)(?:\/(?:places|chat|members|menu))?\/?$/);
+  return match?.[1] ?? null;
+}
+
+function WorkspaceContentTransition() {
+  const location = useLocation();
+  const outlet = useOutlet();
+  const routeKey = `${location.pathname}${location.search}${location.hash}`;
+  const [current, setCurrent] = useState({ key: routeKey, node: outlet });
+  const [incoming, setIncoming] = useState<{ key: string; node: ReactNode } | null>(null);
+  const [revealing, setRevealing] = useState(false);
+  const transitionIdRef = useRef(0);
+
+  useEffect(() => {
+    if (routeKey === current.key) return;
+
+    const transitionId = transitionIdRef.current + 1;
+    transitionIdRef.current = transitionId;
+    setIncoming({ key: routeKey, node: outlet });
+    setRevealing(false);
+
+    let secondFrame = 0;
+    const firstFrame = window.requestAnimationFrame(() => {
+      secondFrame = window.requestAnimationFrame(() => {
+        if (transitionIdRef.current === transitionId) setRevealing(true);
+      });
+    });
+
+    const finishTimer = window.setTimeout(() => {
+      if (transitionIdRef.current !== transitionId) return;
+      setCurrent({ key: routeKey, node: outlet });
+      setIncoming(null);
+      setRevealing(false);
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }, 210);
+
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      if (secondFrame) window.cancelAnimationFrame(secondFrame);
+      window.clearTimeout(finishTimer);
+    };
+  }, [current.key, outlet, routeKey]);
+
+  return (
+    <div className={`route-workspace-content${incoming ? ' is-transitioning' : ''}`}>
+      <div className={`route-workspace-layer is-current${revealing ? ' is-leaving' : ''}`}>{current.node}</div>
+      {incoming ? (
+        <div className={`route-workspace-layer is-incoming${revealing ? ' is-visible' : ''}`} aria-hidden={!revealing}>
+          {incoming.node}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function RouteWorkspaceLayout() {
+  const { routeId = '' } = useParams<{ routeId: string }>();
+  return (
+    <div className="route-workspace-layout">
+      <WorkspaceContentTransition />
+      {routeId ? <RouteBottomNav routeId={routeId} /> : null}
+    </div>
+  );
+}
 
 type FadeRoutesProps = {
   children: ReactNode;
@@ -36,6 +104,15 @@ function FadeRoutes({ children }: FadeRoutesProps) {
       location.search === displayLocation.search &&
       location.hash === displayLocation.hash
     ) {
+      return;
+    }
+
+    const nextWorkspaceId = getWorkspaceRouteId(location.pathname);
+    const currentWorkspaceId = getWorkspaceRouteId(displayLocation.pathname);
+    if (nextWorkspaceId && nextWorkspaceId === currentWorkspaceId) {
+      transitionIdRef.current += 1;
+      setDisplayLocation(location);
+      setPhase('in');
       return;
     }
 
@@ -173,11 +250,13 @@ export function App() {
         <Route path="/account/profile" element={session ? <AccountProfilePage user={session.user} required={!nicknameReady} onCompleted={refreshProfile} /> : <Navigate to="/signin" replace />} />
         <Route path="/auth-preview" element={<AuthPrototypePage />} />
         <Route path="/routes" element={protectedElement(<RouteListPage onSignedOut={() => setSession(null)} />)} />
-        <Route path="/routes/:routeId" element={protectedElement(<RouteDetailPage />)} />
-        <Route path="/routes/:routeId/places" element={protectedElement(<RoutePlacesPage />)} />
-        <Route path="/routes/:routeId/chat" element={protectedElement(<RouteChatPage />)} />
-        <Route path="/routes/:routeId/members" element={protectedElement(<RouteMembersPage />)} />
-        <Route path="/routes/:routeId/menu" element={protectedElement(<RouteMenuPage />)} />
+        <Route path="/routes/:routeId" element={protectedElement(<RouteWorkspaceLayout />)}>
+          <Route index element={<RouteDetailPage />} />
+          <Route path="places" element={<RoutePlacesPage />} />
+          <Route path="chat" element={<RouteChatPage />} />
+          <Route path="members" element={<RouteMembersPage />} />
+          <Route path="menu" element={<RouteMenuPage />} />
+        </Route>
         <Route path="*" element={<Navigate to={flow === 'recovery' && session ? '/recover/reset' : flow === 'setup' && session ? (!credentialsReady ? '/account/setup' : !nicknameReady ? '/account/profile' : '/routes') : signupRequested && !session ? '/start' : session ? (!credentialsReady ? '/account/setup' : !nicknameReady ? '/account/profile' : '/routes') : '/signin'} replace />} />
         </FadeRoutes>
         <RefreshButton />
