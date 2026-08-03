@@ -3204,3 +3204,11 @@ a { color: inherit; }
 .v2-route-page-switcher>button{width:34px;height:34px;border-radius:11px;font-size:1.18rem}
 .v2-route-page-title small{font-size:.49rem}.v2-route-page-title strong{font-size:.72rem}.v2-route-page-title span{font-size:.57rem}
 .v2-route-page-dots{margin-top:1px}.v2-route-page-dots button{height:5px!important;width:5px!important}.v2-route-page-dots button.is-active{width:16px!important}
+
+
+/* v2.1.0-p78.8 Route switch slide + soft fade cue */
+.v2-route-content-transition{position:relative;isolation:isolate;animation:v2-route-soft-reveal 360ms cubic-bezier(.22,.72,.22,1) both}
+.v2-route-content-transition::after{content:"";position:absolute;inset:0;z-index:20;pointer-events:none;border-radius:inherit;background:rgba(4,7,20,.32);animation:v2-route-curtain 360ms ease-out both}
+@keyframes v2-route-soft-reveal{0%{opacity:.18;filter:brightness(.78)}38%{opacity:.62;filter:brightness(.9)}100%{opacity:1;filter:brightness(1)}}
+@keyframes v2-route-curtain{0%{opacity:.62}42%{opacity:.28}100%{opacity:0}}
+@media(prefers-reduced-motion:reduce){.v2-route-content-transition{animation:none}.v2-route-content-transition::after{display:none}}

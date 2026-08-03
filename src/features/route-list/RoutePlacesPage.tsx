@@ -1050,7 +1050,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
           <button type="button" className="places-route-arrow" onClick={() => movePlacesRoute(activePlacesRouteIndex + 1)} disabled={activePlacesRouteIndex >= placesRouteIds.length - 1} aria-label="次のRouteを見る">›</button>
           <div className="places-route-dots">{placesRouteIds.map((id,index)=><button type="button" key={id ?? 'main'} className={index===activePlacesRouteIndex?'is-active':''} onClick={()=>movePlacesRoute(index)} aria-label={`${index+1}ページ目を見る`}/>)}</div>
         </section>
-        <div className={`places-route-motion is-${placesRouteDirection}`} key={`places-route-${placesRouteMotionId}`}>
+        <div className={`places-route-motion places-route-transition is-${placesRouteDirection}`} key={`places-route-${placesRouteMotionId}`}>
         <div className="route-tab-heading places-compact-heading">
           <div>
             <p className="eyebrow">{activeBranchId ? 'SUB ROUTE' : 'PLACES'}</p>
