@@ -803,9 +803,9 @@ function requestDestinationDelete(destination: DestinationSummary) {
     setReorderOverId(targetCard?.dataset.destinationId ?? session.destinationId);
   }
 
-  async function finishDestinationDrag(event: React.PointerEvent<HTMLButtonElement>) {
+  async function finishDestinationDragByPointerId(pointerId: number) {
     const session = dragSessionRef.current;
-    if (!session || session.pointerId !== event.pointerId) return;
+    if (!session || session.pointerId !== pointerId) return;
 
     if (!session.active) {
       resetDestinationDrag();
@@ -850,6 +850,10 @@ function requestDestinationDelete(destination: DestinationSummary) {
     }
   }
 
+  async function finishDestinationDrag(event: React.PointerEvent<HTMLButtonElement>) {
+    await finishDestinationDragByPointerId(event.pointerId);
+  }
+
   function cancelDestinationDrag(event: React.PointerEvent<HTMLButtonElement>) {
     const session = dragSessionRef.current;
     if (!session || session.pointerId !== event.pointerId) return;
@@ -861,6 +865,39 @@ function requestDestinationDelete(destination: DestinationSummary) {
     if (!session || session.pointerId !== event.pointerId) return;
     resetDestinationDrag({ restoreOrder: session.active, releasePointer: false });
   }
+
+  useEffect(() => {
+    function finishActiveDrag(event: PointerEvent) {
+      const session = dragSessionRef.current;
+      if (!session || session.pointerId !== event.pointerId) return;
+      void finishDestinationDragByPointerId(event.pointerId);
+    }
+
+    function cancelActiveDrag(event: PointerEvent) {
+      const session = dragSessionRef.current;
+      if (!session || session.pointerId !== event.pointerId) return;
+      resetDestinationDrag({ restoreOrder: session.active, releasePointer: false });
+    }
+
+    function cancelOnWindowBlur() {
+      const session = dragSessionRef.current;
+      if (!session) return;
+      resetDestinationDrag({ restoreOrder: session.active });
+    }
+
+    // iOS Safari can lose the handle's local pointerup after scrolling, DOM updates,
+    // or a competing gesture. Window-level listeners guarantee that the floating
+    // card and placeholder are always removed when the finger is released.
+    window.addEventListener('pointerup', finishActiveDrag, true);
+    window.addEventListener('pointercancel', cancelActiveDrag, true);
+    window.addEventListener('blur', cancelOnWindowBlur);
+    return () => {
+      window.removeEventListener('pointerup', finishActiveDrag, true);
+      window.removeEventListener('pointercancel', cancelActiveDrag, true);
+      window.removeEventListener('blur', cancelOnWindowBlur);
+      resetDestinationDrag({ restoreOrder: Boolean(dragSessionRef.current?.active) });
+    };
+  }, [routeId, activeBranchId]);
 
   const placesRouteIds = [null, ...alternateRoutes.map((route) => route.id)] as Array<string | null>;
   const activePlacesRouteIndex = Math.max(0, placesRouteIds.findIndex((id) => id === activeBranchId));
@@ -876,12 +913,18 @@ function requestDestinationDelete(destination: DestinationSummary) {
   }
 
   function handlePlacesRouteTouchStart(event: React.TouchEvent<HTMLElement>) {
+    if (dragSessionRef.current || reorderingId) return;
     if (alternateRouteOpen || createOpen || editing || phaseCreateOpen || phaseEditing) return;
     placesSwipeStartXRef.current = event.touches[0]?.clientX ?? null;
     placesSwipeStartYRef.current = event.touches[0]?.clientY ?? null;
   }
 
   function handlePlacesRouteTouchEnd(event: React.TouchEvent<HTMLElement>) {
+    if (dragSessionRef.current || reorderingId) {
+      placesSwipeStartXRef.current = null;
+      placesSwipeStartYRef.current = null;
+      return;
+    }
     const startX = placesSwipeStartXRef.current;
     const startY = placesSwipeStartYRef.current;
     placesSwipeStartXRef.current = null;
@@ -1411,9 +1454,9 @@ function requestDestinationDelete(destination: DestinationSummary) {
       )}
 
       {(phaseCreateOpen || phaseEditing) && (
-        <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !phaseSaving && !phaseDeleting) { setPhaseCreateOpen(false); setPhaseEditing(null); } }}>
+        <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !phaseSaving) { setPhaseCreateOpen(false); setPhaseEditing(null); } }}>
           <section className="route-modal phase-edit-modal phase-centered-modal" role="dialog" aria-modal="true">
-            <div className="modal-header"><div><p className="eyebrow">{phaseEditing ? 'EDIT PHASE' : 'NEW PHASE'}</p><h2>{phaseEditing ? 'Phaseを編集' : 'Phaseを追加'}</h2></div><button className="modal-close-button" type="button" disabled={phaseSaving || phaseDeleting} onClick={() => { setPhaseCreateOpen(false); setPhaseEditing(null); }}>×</button></div>
+            <div className="modal-header"><div><p className="eyebrow">{phaseEditing ? 'EDIT PHASE' : 'NEW PHASE'}</p><h2>{phaseEditing ? 'Phaseを編集' : 'Phaseを追加'}</h2></div><button className="modal-close-button" type="button" disabled={phaseSaving} onClick={() => { setPhaseCreateOpen(false); setPhaseEditing(null); }}>×</button></div>
             <form className="route-create-form place-form" onSubmit={phaseEditing ? handlePhaseEdit : handlePhaseCreate}>
               <div className="field-group"><label htmlFor="phase-name">Phase名 {phaseEditing?.isDefault && <span className="field-optional">空欄可</span>}</label><input id="phase-name" value={phaseName} onChange={(event) => setPhaseName(event.target.value)} placeholder="例：午前" maxLength={40} disabled={phaseSaving} /></div>
               <div className="field-group">
@@ -1439,7 +1482,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
               </div>
               <div className="field-group"><label htmlFor="phase-description">メモ <span className="field-optional">任意</span></label><textarea id="phase-description" value={phaseDescription} onChange={(event) => setPhaseDescription(event.target.value)} maxLength={200} rows={3} disabled={phaseSaving} /></div>
               {phaseError && <p className="form-error" role="alert">{phaseError}</p>}
-              <div className="modal-actions"><button className="secondary-button" type="button" disabled={phaseSaving || phaseDeleting} onClick={() => { setPhaseCreateOpen(false); setPhaseEditing(null); }}>キャンセル</button><button className="primary-button" type="submit" disabled={phaseSaving || phaseDeleting || (!phaseEditing?.isDefault && !phaseName.trim())}>{phaseSaving ? '保存中…' : phaseEditing ? '保存' : '追加'}</button></div>
+              <div className="modal-actions"><button className="secondary-button" type="button" disabled={phaseSaving} onClick={() => { setPhaseCreateOpen(false); setPhaseEditing(null); }}>キャンセル</button><button className="primary-button" type="submit" disabled={phaseSaving || (!phaseEditing?.isDefault && !phaseName.trim())}>{phaseSaving ? '保存中…' : phaseEditing ? '保存' : '追加'}</button></div>
             </form>
           </section>
         </div>

@@ -1,3 +1,18 @@
+## v2.1.0-p78.4
+
+- p78.2でPhase削除UI撤去後に残った未定義`phaseDeleting`参照を削除
+- GitHub ActionsのTypeScript build errorを修正
+- p78.3のDestinationドラッグ終了修正を維持
+- DB変更なし
+
+## v2.1.0-p78.3
+
+- Destination並び替え中に指を離しても浮遊カードが残るiOS不具合を修正
+- windowレベルのpointerup / pointercancelでドラッグ終了を必ず回収
+- ドラッグ中はPlacesのRoute切替スワイプを停止
+- 画面切替・タブ離脱時にも浮遊レイヤーとplaceholderを確実に破棄
+- DB変更なし
+
 ## v2.1.0-p78.2
 
 - Phase全体の左スワイプ削除を撤去
