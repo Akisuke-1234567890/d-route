@@ -837,3 +837,11 @@ Known issues: Supabase ProjectとRedirect URLは配布先で設定が必要。Ro
 - 下部ナビ固定、Destination削除・並び替え、Route閲覧画面には変更なし
 - 改善しない場合はp79.3へ戻しやすい最小差分
 - DB変更なし
+## v2.1.0-p79.7 Places add menu tap recovery
+
+- Placesの「＋追加」ボタンから追加メニューが開かない不具合を修正
+- 追加メニュー本体を復元し、目的地・Phase・別行動／接続設定を選択可能にした
+- 「＋追加」のタップをRoute切替ジェスチャーから分離
+- p79.6のPlaces Route切替挙動と下部ナビ固定は変更なし
+- DB変更なし
+

@@ -1165,7 +1165,16 @@ function requestDestinationDelete(destination: DestinationSummary) {
             <p className="eyebrow">{activeBranchId ? 'SUB ROUTE' : 'PLACES'}</p>
             <h1 id="places-title">{activeBranchId ? (alternateRoutes.find((route) => route.id === activeBranchId)?.name ?? 'サブRoute') : '目的地'}</h1>
           </div>
-          <button className="primary-button places-add-menu-button" type="button" onClick={() => setAddMenuOpen(true)}>＋ 追加</button>
+          <button
+            className="primary-button places-add-menu-button"
+            type="button"
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              closeDestinationSwipe();
+              setAddMenuOpen(true);
+            }}
+          >＋ 追加</button>
         </div>
 
         {loading ? (
@@ -1282,6 +1291,27 @@ function requestDestinationDelete(destination: DestinationSummary) {
       })()}
 
       <footer className="app-footer"><VersionBadge /><span>Planning Core</span></footer>
+
+      {addMenuOpen && (
+        <div
+          className="modal-backdrop places-add-sheet-backdrop"
+          role="presentation"
+          onPointerDown={(event) => event.stopPropagation()}
+          onMouseDown={(event) => { if (event.target === event.currentTarget) setAddMenuOpen(false); }}
+        >
+          <section className="places-add-sheet" role="dialog" aria-modal="true" aria-label="追加する項目を選択">
+            <div className="places-add-sheet-handle" aria-hidden="true" />
+            <button type="button" onClick={() => { setAddMenuOpen(false); openCreateModal(); }}>目的地を追加</button>
+            <button type="button" onClick={() => { setAddMenuOpen(false); openPhaseCreate(); }}>Phaseを追加</button>
+            {!activePlacesRoute ? (
+              <button type="button" onClick={() => { setAddMenuOpen(false); openAlternateRouteCreate(); }}>別行動を追加</button>
+            ) : (
+              <button type="button" onClick={() => { setAddMenuOpen(false); openAlternateRouteEdit(activePlacesRoute); }}>接続設定を開く</button>
+            )}
+            <button className="is-cancel" type="button" onClick={() => setAddMenuOpen(false)}>キャンセル</button>
+          </section>
+        </div>
+      )}
 
       {createOpen && (
         <div className="modal-backdrop" onMouseDown={(event) => {
