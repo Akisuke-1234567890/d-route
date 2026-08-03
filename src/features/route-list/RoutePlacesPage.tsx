@@ -118,7 +118,6 @@ export function RoutePlacesPage() {
   const [placesRouteDragX, setPlacesRouteDragX] = useState(0);
   const [placesRouteDragging, setPlacesRouteDragging] = useState(false);
   const [placesRouteSettling, setPlacesRouteSettling] = useState(false);
-  const [placesRouteCurtain, setPlacesRouteCurtain] = useState(false);
   const placesRouteSwipeStartTimeRef = useRef(0);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const placesSwipeStartXRef = useRef<number | null>(null);
@@ -960,19 +959,16 @@ function requestDestinationDelete(destination: DestinationSummary) {
     clearPlacesRouteSettleTimer();
     setPlacesRouteDragging(false);
     setPlacesRouteSettling(true);
-    setPlacesRouteDragX(direction === 'next' ? -44 : 44);
-    setPlacesRouteCurtain(true);
+    setPlacesRouteDragX(direction === 'next' ? -72 : 72);
     placesRouteSettleTimerRef.current = window.setTimeout(() => {
       commitPlacesRoute(bounded, direction);
-      setPlacesRouteDragX(0);
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => setPlacesRouteCurtain(false));
-      });
+      setPlacesRouteDragX(direction === 'next' ? 38 : -38);
+      requestAnimationFrame(() => requestAnimationFrame(() => setPlacesRouteDragX(0)));
       placesRouteSettleTimerRef.current = window.setTimeout(() => {
         setPlacesRouteSettling(false);
         placesRouteSettleTimerRef.current = null;
-      }, 190);
-    }, 105);
+      }, 230);
+    }, 145);
   }
 
   function handlePlacesRouteTouchStart(event: React.TouchEvent<HTMLElement>) {
@@ -1086,8 +1082,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
           <button type="button" className="places-route-arrow" onClick={() => movePlacesRoute(activePlacesRouteIndex + 1)} disabled={activePlacesRouteIndex >= placesRouteIds.length - 1} aria-label="次のRouteを見る">›</button>
           <div className="places-route-dots">{placesRouteIds.map((id,index)=><button type="button" key={id ?? 'main'} className={index===activePlacesRouteIndex?'is-active':''} onClick={()=>movePlacesRoute(index)} aria-label={`${index+1}ページ目を見る`}/>)}</div>
         </section>
-        <div className={`places-route-motion is-${placesRouteDirection}${placesRouteCurtain ? ' is-buffering' : ''}`} style={placesRouteDragStyle}>
-        <div className={`places-route-buffer-curtain${placesRouteCurtain ? ' is-visible' : ''}`} aria-hidden="true" />
+        <div className={`places-route-motion places-route-transition is-${placesRouteDirection}`} key={`places-route-${placesRouteMotionId}`} style={placesRouteDragStyle}>
         <div className="route-tab-heading places-compact-heading">
           <div>
             <p className="eyebrow">{activeBranchId ? 'SUB ROUTE' : 'PLACES'}</p>

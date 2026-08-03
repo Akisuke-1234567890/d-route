@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { BrowserRouter, Navigate, Route, Routes, useLocation, useOutlet, useParams } from 'react-router-dom';
+import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import { getSupabaseClient } from '../shared/api/supabase';
 import { getInitialSession } from '../features/auth/auth';
 import { getOwnProfile, type UserProfile } from '../features/auth/account';
@@ -22,67 +22,17 @@ import { RefreshButton } from '../shared/ui/RefreshButton';
 import { RouteBottomNav } from '../features/route-list/RouteBottomNav';
 
 
+
 function getWorkspaceRouteId(pathname: string): string | null {
   const match = pathname.match(/^\/routes\/([^/]+)(?:\/(?:places|chat|members|menu))?\/?$/);
   return match?.[1] ?? null;
-}
-
-function WorkspaceContentTransition() {
-  const location = useLocation();
-  const outlet = useOutlet();
-  const routeKey = `${location.pathname}${location.search}${location.hash}`;
-  const [current, setCurrent] = useState({ key: routeKey, node: outlet });
-  const [incoming, setIncoming] = useState<{ key: string; node: ReactNode } | null>(null);
-  const [revealing, setRevealing] = useState(false);
-  const transitionIdRef = useRef(0);
-
-  useEffect(() => {
-    if (routeKey === current.key) return;
-
-    const transitionId = transitionIdRef.current + 1;
-    transitionIdRef.current = transitionId;
-    setIncoming({ key: routeKey, node: outlet });
-    setRevealing(false);
-
-    let secondFrame = 0;
-    const firstFrame = window.requestAnimationFrame(() => {
-      secondFrame = window.requestAnimationFrame(() => {
-        if (transitionIdRef.current === transitionId) setRevealing(true);
-      });
-    });
-
-    const finishTimer = window.setTimeout(() => {
-      if (transitionIdRef.current !== transitionId) return;
-      setCurrent({ key: routeKey, node: outlet });
-      setIncoming(null);
-      setRevealing(false);
-      window.scrollTo({ top: 0, behavior: 'auto' });
-    }, 210);
-
-    return () => {
-      window.cancelAnimationFrame(firstFrame);
-      if (secondFrame) window.cancelAnimationFrame(secondFrame);
-      window.clearTimeout(finishTimer);
-    };
-  }, [current.key, outlet, routeKey]);
-
-  return (
-    <div className={`route-workspace-content${incoming ? ' is-transitioning' : ''}`}>
-      <div className={`route-workspace-layer is-current${revealing ? ' is-leaving' : ''}`}>{current.node}</div>
-      {incoming ? (
-        <div className={`route-workspace-layer is-incoming${revealing ? ' is-visible' : ''}`} aria-hidden={!revealing}>
-          {incoming.node}
-        </div>
-      ) : null}
-    </div>
-  );
 }
 
 function RouteWorkspaceLayout() {
   const { routeId = '' } = useParams<{ routeId: string }>();
   return (
     <div className="route-workspace-layout">
-      <WorkspaceContentTransition />
+      <Outlet />
       {routeId ? <RouteBottomNav routeId={routeId} /> : null}
     </div>
   );

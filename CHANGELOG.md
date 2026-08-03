@@ -1,11 +1,10 @@
-## v2.1.0-p79 Transition Engine
+# D Route v2.1.0-p79.3
 
-- Places内のメインRoute / サブRoute切替で、切替先の画面構成が先に見える症状を抑制
-- Route内のメインRoute / サブRoute切替にも同じバッファ表示を適用
-- 下部ナビのRoute / Places切替前に画面を覆い、遷移先の描画完了後に表示
-- p78.8由来の後追いフェード・filter演出を無効化
-- 切替中は既存画面を保持し、描画完了後に短く開放する方式へ変更
-- DB変更なし
+- p78.9のRoute／Places内切替挙動へ復帰。
+- p79.1で導入した下部ナビ固定だけを維持。
+- p79.1〜p79.2の本文ダブルバッファ、追加フェード、追加スライドを撤去。
+- Route／Places／Chat／Members／Menuの各ページから重複BottomNavを削除し、Workspace共通枠で一度だけ表示。
+- DB変更なし。
 
 ## v2.1.0-p78.9
 

@@ -113,7 +113,6 @@ function PhaseDashboard({ routeId, participantView, memberUserId }: { routeId: s
   const [routeDragX, setRouteDragX] = useState(0);
   const [routeDragging, setRouteDragging] = useState(false);
   const [routeSettling, setRouteSettling] = useState(false);
-  const [routePageCurtain, setRoutePageCurtain] = useState(false);
   const routeSwipeStartX = useRef<number | null>(null);
   const routeSwipeStartY = useRef<number | null>(null);
   const routeSwipeStartTime = useRef(0);
@@ -439,14 +438,8 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
     const boundedIndex = Math.max(0, Math.min(routePageCount - 1, nextIndex));
     if (boundedIndex === routePageIndex || routeSettling) return;
     setRoutePageDirection(boundedIndex > routePageIndex ? 'next' : 'previous');
-    setRouteSettling(true);
-    setRoutePageCurtain(true);
-    window.setTimeout(() => {
-      setRoutePageIndex(boundedIndex);
-      setRoutePageAnimationId((current) => current + 1);
-      requestAnimationFrame(() => requestAnimationFrame(() => setRoutePageCurtain(false)));
-      window.setTimeout(() => setRouteSettling(false), 190);
-    }, 105);
+    setRoutePageIndex(boundedIndex);
+    setRoutePageAnimationId((current) => current + 1);
   };
   const showNextRoutePage = () => moveToRoutePage(routePageIndex + 1);
   const showPreviousRoutePage = () => moveToRoutePage(routePageIndex - 1);
@@ -464,12 +457,10 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
     setRouteDragging(false);
     setRouteSettling(true);
     setRoutePageDirection(direction);
-    setRoutePageCurtain(true);
     setRouteDragX(direction === 'next' ? -width : width);
     routeSwipeTimer.current = window.setTimeout(() => {
       setRoutePageIndex(targetIndex);
       setRoutePageAnimationId((current) => current + 1);
-      requestAnimationFrame(() => requestAnimationFrame(() => setRoutePageCurtain(false)));
       setRouteSettling(false);
       setRouteDragX(direction === 'next' ? width * 0.22 : -width * 0.22);
       requestAnimationFrame(() => requestAnimationFrame(() => setRouteDragX(0)));
@@ -567,7 +558,6 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
     return (
       <>
         {routeSwitcher}
-        <div className={`v2-route-buffer-curtain${routePageCurtain ? ' is-visible' : ''}`} aria-hidden="true" />
         <article className={`v2-alternate-route-panel v2-route-page-motion is-${routePageDirection}`} key={`alternate-${routePageAnimationId}`} style={routeDragStyle}>
           <div className="v2-section-heading">
             <div>
@@ -621,7 +611,6 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
     return (
       <>
         {routeSwitcher}
-        <div className={`v2-route-buffer-curtain${routePageCurtain ? ' is-visible' : ''}`} aria-hidden="true" />
         <article className={`v2-participant-route v2-route-page-motion is-${routePageDirection}`} key={`participant-${routePageAnimationId}`} style={routeDragStyle} aria-labelledby="participant-route-title">
           <div className="v2-section-heading">
             <div>
@@ -684,7 +673,6 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
   return (
     <>
       {routeSwitcher}
-      <div className={`v2-route-buffer-curtain${routePageCurtain ? ' is-visible' : ''}`} aria-hidden="true" />
       <article className={`v2-phase-panel v2-route-page-motion is-${routePageDirection}`} key={`main-${routePageAnimationId}`} style={routeDragStyle} aria-labelledby="v2-phase-title">
         <div className="v2-phase-heading">
           <div>
