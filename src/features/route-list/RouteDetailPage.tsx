@@ -99,6 +99,7 @@ function PhaseDashboard({ routeId, participantView, memberUserId }: { routeId: s
   const [progressSavingId, setProgressSavingId] = useState<string | null>(null);
   const [travelMode, setTravelMode] = useState<'driving' | 'walking' | 'transit'>('walking');
   const [progressError, setProgressError] = useState<string | null>(null);
+  const [routeCompleteSaving, setRouteCompleteSaving] = useState(false);
   const [viewPhaseId, setViewPhaseId] = useState<string | null>(null);
   const [latestChats, setLatestChats] = useState<RouteChatMessage[]>([]);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
@@ -312,8 +313,41 @@ const completedCount = useMemo(
 
   const participantStepLabels = ['現在', '次', 'その次'] as const;
 
+const routeAllCompleted = destinations.length > 0 && destinations.every((destination) => Boolean(destination.completedAt));
+
+const toggleRouteCompleted = async () => {
+  if (routeCompleteSaving || progressSavingId || destinations.length === 0) return;
+
+  const nextCompleted = !routeAllCompleted;
+  const previousDestinations = destinations;
+  const optimisticCompletedAt = nextCompleted ? new Date().toISOString() : null;
+
+  setRouteCompleteSaving(true);
+  setProgressError(null);
+  setDestinations((current) => current.map((destination) => ({
+    ...destination,
+    completedAt: optimisticCompletedAt,
+    completedBy: null,
+  })));
+
+  try {
+    const saved = await Promise.all(
+      previousDestinations.map((destination) =>
+        setRouteDestinationCompleted(routeId, destination.id, nextCompleted)
+      )
+    );
+    const savedById = new Map(saved.map((destination) => [destination.id, destination]));
+    setDestinations((current) => current.map((destination) => savedById.get(destination.id) ?? destination));
+  } catch (error) {
+    setDestinations(previousDestinations);
+    setProgressError(getErrorMessage(error, nextCompleted ? 'Routeを完了できませんでした。' : 'Routeの完了を解除できませんでした。'));
+  } finally {
+    setRouteCompleteSaving(false);
+  }
+};
+
 const toggleDestinationCompleted = async (destination: DestinationSummary) => {
-  if (progressSavingId) return;
+  if (progressSavingId || routeCompleteSaving) return;
 
   const nextCompleted = !destination.completedAt;
   setProgressSavingId(destination.id);
@@ -853,6 +887,23 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
           <div className="v2-latest-message is-empty"><div className="v2-empty-message-copy"><strong>まだ連絡はありません。</strong><p>必要な連絡があればChatで共有できます。</p></div></div>
         )}
       </article>
+
+      {!participantView ? (
+        <section className="v2-admin-zone" aria-label="Route管理">
+          <p>Routeの管理</p>
+          <button
+            type="button"
+            className={`v2-complete-button${routeAllCompleted ? ' is-completed' : ''}`}
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={() => void toggleRouteCompleted()}
+            disabled={routeCompleteSaving || Boolean(progressSavingId) || destinations.length === 0}
+            aria-pressed={routeAllCompleted}
+          >
+            {routeCompleteSaving ? '保存中…' : routeAllCompleted ? 'Routeの完了を解除' : 'Routeを完了する'}
+          </button>
+          <small>{destinations.length === 0 ? '完了できる予定がありません。' : routeAllCompleted ? 'すべての予定を未完了へ戻します。' : 'Route内のすべての予定を完了にします。'}</small>
+        </section>
+      ) : null}
     </>
   );
 }
@@ -927,11 +978,6 @@ export function RouteDetailPage() {
 
             <PhaseDashboard routeId={routeId ?? route.id} participantView={ownMember?.role === 'member'} memberUserId={ownMember?.userId ?? null} />
 
-            {ownMember?.role !== 'member' ? <section className="v2-admin-zone" aria-label="Route管理">
-              <p>Routeの管理</p>
-              <button type="button" className="v2-complete-button">Routeを完了する</button>
-              <small>プロトタイプのため、このボタンはまだ動作しません。</small>
-            </section> : null}
           </>
         )}
       </section>
