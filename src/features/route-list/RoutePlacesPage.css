@@ -1359,3 +1359,14 @@
 @keyframes places-route-soft-reveal{0%{opacity:.18;filter:brightness(.78)}38%{opacity:.62;filter:brightness(.9)}100%{opacity:1;filter:brightness(1)}}
 @keyframes places-route-curtain{0%{opacity:.62}42%{opacity:.28}100%{opacity:0}}
 @media(prefers-reduced-motion:reduce){.places-route-transition{animation:none}.places-route-transition::after{display:none}}
+
+
+/* v2.1.0-p78.9 lightweight Places Route transition */
+.places-route-carousel,.places-route-motion{
+  contain:layout paint style;
+  transform:translate3d(0,0,0);
+  backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
+}
+.places-route-motion{transition:transform 230ms cubic-bezier(.2,.78,.2,1),opacity 150ms ease-out}
+@media(prefers-reduced-motion:reduce){.places-route-carousel,.places-route-motion{transition:none!important}}

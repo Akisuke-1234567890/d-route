@@ -1,3 +1,12 @@
+## v2.1.0-p78.9
+
+- Route切替時の重い暗転・filter演出を撤去
+- Route画面とPlaces画面の本文を切替枠と同じtransformへ追従
+- スワイプ中はGPU合成しやすいtranslate3dのみで移動
+- 指を離した後は短い慣性移動で旧Routeを送り出し、新Routeを反対側から表示
+- 再描画時の負荷を抑えるcontain / backface-visibilityを追加
+- DB変更なし
+
 ## v2.1.0-p78.8
 
 - Route切替時に横スライドへ短いフェードアウト／フェードイン演出を追加
