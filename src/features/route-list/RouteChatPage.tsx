@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
-import { RefreshButton } from '../../shared/ui/RefreshButton';
+import { GlobalHeader } from '../../shared/ui/GlobalHeader';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import {
   formatChatTime,
@@ -176,13 +176,7 @@ export function RouteChatPage() {
 
   return (
     <main className="app-shell chat-page-shell">
-      <header className="global-header">
-        <div className="header-brand"><BrandMark size={34} /><strong>D Route</strong></div>
-        <div className="header-actions">
-          <Link className="icon-button header-link" to={`/routes/${routeId}`}>Routeへ戻る</Link>
-          <RefreshButton placement="header" />
-        </div>
-      </header>
+      <GlobalHeader backTo={`/routes/${routeId}`} backLabel="Routeへ戻る" />
 
       <section className="chat-page" aria-labelledby="chat-title">
         <div className="chat-page-heading">

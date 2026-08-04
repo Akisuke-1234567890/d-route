@@ -1,7 +1,7 @@
 import { FormEvent, PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
-import { RefreshButton } from '../../shared/ui/RefreshButton';
+import { GlobalHeader } from '../../shared/ui/GlobalHeader';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { getSupabaseClient } from '../../shared/api/supabase';
 import { MY_MEMBER_COLOR_KEYS, createMyMember, deleteMyMember, listMyMembers, updateMyMember, type MyMember, type MyMemberColorKey } from '../my-members/myMembers';
@@ -241,10 +241,7 @@ export function RouteMembersPage() {
   }
 
   return <main className="app-shell route-tab-shell">
-    <header className="global-header">
-      <div className="header-brand"><BrandMark size={34} /><strong>D Route</strong></div>
-      <div className="header-actions"><Link className="icon-button header-link" to="/routes">一覧へ戻る</Link><RefreshButton placement="header" /></div>
-    </header>
+    <GlobalHeader />
 
     <section className="page-content route-tab-content members-hub" aria-labelledby="members-title">
       <div className="members-view-tabs" role="tablist" aria-label="メンバー表示切替">

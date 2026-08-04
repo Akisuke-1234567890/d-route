@@ -1,7 +1,7 @@
 import { FormEvent, PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
-import { RefreshButton } from '../../shared/ui/RefreshButton';
+import { GlobalHeader } from '../../shared/ui/GlobalHeader';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import './RoutePlacesPage.css';
 import { useBodyScrollLock } from '../../shared/hooks/useBodyScrollLock';
@@ -1321,13 +1321,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
 
   return (
     <main className="app-shell route-tab-shell">
-      <header className="global-header">
-        <div className="header-brand"><BrandMark size={34} /><strong>D Route</strong></div>
-        <div className="header-actions">
-          <Link className="icon-button header-link" to="/routes">一覧へ戻る</Link>
-          <RefreshButton placement="header" />
-        </div>
-      </header>
+      <GlobalHeader />
 
       <section className="page-content route-tab-content" aria-labelledby="places-title">
         <section ref={placesRouteCarouselRef} className="places-route-carousel" aria-label="編集するRouteを選択" onTouchStart={handlePlacesRouteTouchStart} onTouchMove={handlePlacesRouteTouchMove} onTouchEnd={handlePlacesRouteTouchEnd} onTouchCancel={handlePlacesRouteTouchEnd}>

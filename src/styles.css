@@ -3733,3 +3733,66 @@ body,
   font-weight:850;
 }
 .phase-delete-button:active{background:rgba(255,111,126,.14)}
+
+/* v2.1.0-p83.4 shared workspace chrome and component rhythm */
+.global-header{
+  min-height:78px;
+  padding:calc(14px + env(safe-area-inset-top)) 18px 14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  border-bottom:1px solid var(--dr-border);
+  background:rgba(11,16,37,.96)!important;
+}
+.header-brand{display:flex;align-items:center;gap:10px;min-width:0}
+.header-brand strong{font-size:1.05rem;line-height:1;letter-spacing:.01em;white-space:nowrap}
+.header-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0}
+.header-actions .header-link{min-height:42px;padding:0 15px;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
+.header-actions .refresh-button{width:42px;height:42px;min-width:42px}
+
+/* Workspace pages always reserve the same space for persistent navigation. */
+.route-workspace-layout{min-height:100dvh;background:var(--dr-canvas-deep)}
+.route-workspace-layout>.route-page-transition,
+.route-workspace-layout>.app-shell{min-height:100dvh}
+.route-workspace-layout>.route-bottom-nav{position:fixed;left:max(0px,env(safe-area-inset-left));right:max(0px,env(safe-area-inset-right));bottom:0}
+.route-tab-content,.route-detail-content,.chat-page{padding-bottom:max(118px,calc(96px + env(safe-area-inset-bottom)))!important}
+
+/* Shared card rhythm: semantic accents may differ, structure does not. */
+.places-phase-section,
+.v2-phase-panel,
+.v2-alternate-route-panel,
+.v2-participant-route,
+.chat-page-log,
+.members-overview,
+.member-page-row,
+.route-menu-item,
+.my-member-card,
+.route-card{
+  border-radius:var(--dr-radius-card)!important;
+  border:1px solid var(--dr-border)!important;
+  box-shadow:0 12px 28px rgba(0,0,0,.16)!important;
+}
+
+/* Input and editing surfaces use one modal spacing model. */
+.route-modal,
+.places-add-sheet,
+.alternate-route-manage-modal,
+.my-member-modal{
+  padding:20px;
+}
+.route-modal .modal-header,
+.places-add-sheet .modal-header,
+.alternate-route-manage-modal .modal-header,
+.my-member-modal .modal-header{
+  margin-bottom:16px;
+}
+.modal-actions{display:grid;gap:10px;margin-top:18px}
+.modal-actions>button{min-height:48px;border-radius:var(--dr-radius-control)}
+
+@media(max-width:420px){
+  .global-header{min-height:72px;padding-inline:14px;gap:10px}
+  .header-brand strong{font-size:1rem}
+  .header-actions .header-link{padding-inline:12px;font-size:.75rem}
+  .route-modal,.places-add-sheet,.alternate-route-manage-modal,.my-member-modal{padding:18px}
+}

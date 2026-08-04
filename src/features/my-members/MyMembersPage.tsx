@@ -1,7 +1,6 @@
 import { FormEvent, PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
-import { RefreshButton } from '../../shared/ui/RefreshButton';
+import { GlobalHeader } from '../../shared/ui/GlobalHeader';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { MY_MEMBER_COLOR_KEYS, createMyMember, deleteMyMember, listMyMembers, updateMyMember, type MyMember, type MyMemberColorKey } from './myMembers';
 
@@ -111,10 +110,7 @@ export function MyMembersPage() {
   }
 
   return <main className="app-shell my-members-shell">
-    <header className="global-header">
-      <div className="header-brand"><BrandMark size={34} /><strong>D Route</strong></div>
-      <div className="header-actions"><Link className="icon-button header-link" to="/routes">Route一覧</Link><RefreshButton placement="header" /></div>
-    </header>
+    <GlobalHeader backLabel="Route一覧" />
     <section className="page-content my-members-content">
       <div className="route-tab-heading my-members-heading"><div><p className="eyebrow">MY MEMBERS</p><h1>My Members</h1><p>よく一緒に行動する人を登録し、今後サブRouteへ割り当てられます。</p></div><button className="primary-button" type="button" onClick={openCreate}>＋ 追加</button></div>
       {loading ? <section className="route-loading"><span className="route-loading-spinner"/><p>読み込んでいます</p></section>

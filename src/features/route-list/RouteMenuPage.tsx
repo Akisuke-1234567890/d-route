@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
-import { RefreshButton } from '../../shared/ui/RefreshButton';
+import { GlobalHeader } from '../../shared/ui/GlobalHeader';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { getSupabaseClient } from '../../shared/api/supabase';
 import { duplicateOwnedRoute, getRoute, updateOwnedRouteSettings, type RouteSummary } from './routes';
@@ -120,7 +120,7 @@ async function handleDuplicateRoute() {
 
 
   return <main className="app-shell route-tab-shell">
-    <header className="global-header"><div className="header-brand"><BrandMark size={34} /><strong>D Route</strong></div><div className="header-actions"><Link className="icon-button header-link" to="/routes">一覧へ戻る</Link><RefreshButton placement="header" /></div></header>
+    <GlobalHeader />
 
     <section className="page-content route-tab-content" aria-labelledby="menu-title">
       <div className="route-tab-heading"><div><p className="eyebrow">ROUTE SETTINGS</p><h1 id="menu-title">Route設定</h1><p>現在のRouteの名前・説明・複製を管理します。</p></div></div>
