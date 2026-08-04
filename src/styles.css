@@ -3324,3 +3324,12 @@ a { color: inherit; }
 .my-member-swipe-panel{position:relative;z-index:1;transition:transform 190ms cubic-bezier(.22,.72,.22,1);will-change:transform;touch-action:pan-y}
 .my-member-swipe-shell.is-open .my-member-swipe-panel{box-shadow:-10px 0 22px rgba(0,0,0,.18)}
 .my-member-delete-link{display:none!important}
+
+
+/* v2.1.0-p80.5 My Members swipe opacity fix */
+.my-member-swipe-shell{background:transparent}
+.my-member-swipe-delete{opacity:0;pointer-events:none;transition:opacity 120ms ease}
+.my-member-swipe-shell.is-open .my-member-swipe-delete{opacity:1;pointer-events:auto}
+.my-member-card.my-member-swipe-panel{background:#151b3d}
+.my-member-card.my-member-swipe-panel:active{background:#1d2552}
+.my-member-swipe-shell.is-open .my-member-swipe-panel{background:#151b3d}
