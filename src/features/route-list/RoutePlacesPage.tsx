@@ -1,8 +1,7 @@
 import { FormEvent, PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
-import { GlobalHeader } from '../../shared/ui/GlobalHeader';
-import { VersionBadge } from '../../shared/ui/VersionBadge';
+import { RouteWorkspacePage } from '../../shared/ui/RouteWorkspacePage';
 import './RoutePlacesPage.css';
 import { useBodyScrollLock } from '../../shared/hooks/useBodyScrollLock';
 import {
@@ -1320,8 +1319,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
   }
 
   return (
-    <main className="app-shell route-tab-shell">
-      <GlobalHeader />
+    <RouteWorkspacePage footerLabel="Planning Core">
 
       <section className="page-content route-tab-content" aria-labelledby="places-title">
         <section ref={placesRouteCarouselRef} className="places-route-carousel" aria-label="編集するRouteを選択" onTouchStart={handlePlacesRouteTouchStart} onTouchMove={handlePlacesRouteTouchMove} onTouchEnd={handlePlacesRouteTouchEnd} onTouchCancel={handlePlacesRouteTouchEnd}>
@@ -1472,7 +1470,6 @@ function requestDestinationDelete(destination: DestinationSummary) {
         );
       })()}
 
-      <footer className="app-footer"><VersionBadge /><span>Planning Core</span></footer>
 
       {addMenuOpen && (
         <div
@@ -1945,6 +1942,6 @@ function requestDestinationDelete(destination: DestinationSummary) {
           </section>
         </div>
       ) : null}
-    </main>
+    </RouteWorkspacePage>
   );
 }

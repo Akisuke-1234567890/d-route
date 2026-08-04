@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
-import { GlobalHeader } from '../../shared/ui/GlobalHeader';
-import { VersionBadge } from '../../shared/ui/VersionBadge';
+import { RouteWorkspacePage } from '../../shared/ui/RouteWorkspacePage';
 import { getSupabaseClient } from '../../shared/api/supabase';
 import { duplicateOwnedRoute, getRoute, updateOwnedRouteSettings, type RouteSummary } from './routes';
 import { useBodyScrollLock } from '../../shared/hooks/useBodyScrollLock';
@@ -119,8 +118,7 @@ async function handleDuplicateRoute() {
 
 
 
-  return <main className="app-shell route-tab-shell">
-    <GlobalHeader />
+  return <RouteWorkspacePage footerLabel="Route Workspace">
 
     <section className="page-content route-tab-content" aria-labelledby="menu-title">
       <div className="route-tab-heading"><div><p className="eyebrow">ROUTE SETTINGS</p><h1 id="menu-title">Route設定</h1><p>現在のRouteの名前・説明・複製を管理します。</p></div></div>
@@ -142,7 +140,6 @@ async function handleDuplicateRoute() {
       {errorMessage && <div className="route-inline-error" role="alert">{errorMessage}</div>}
     </section>
 
-    <footer className="app-footer"><VersionBadge/><span>Route Workspace</span></footer>
 
     {settingsOpen && route && isOwner && (
       <div className="modal-backdrop route-menu-centered-backdrop" role="presentation">
@@ -213,5 +210,5 @@ async function handleDuplicateRoute() {
     )}
 
 
-  </main>;
+  </RouteWorkspacePage>;
 }

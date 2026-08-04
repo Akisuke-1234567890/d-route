@@ -1,8 +1,7 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
-import { GlobalHeader } from '../../shared/ui/GlobalHeader';
-import { VersionBadge } from '../../shared/ui/VersionBadge';
+import { RouteWorkspacePage } from '../../shared/ui/RouteWorkspacePage';
 import {
   formatChatTime,
   getCurrentUserId,
@@ -175,8 +174,7 @@ export function RouteChatPage() {
   }
 
   return (
-    <main className="app-shell chat-page-shell">
-      <GlobalHeader backTo={`/routes/${routeId}`} backLabel="Routeへ戻る" />
+    <RouteWorkspacePage shellClassName="chat-page-shell" footerLabel="Route Workspace" backTo={`/routes/${routeId}`} backLabel="Routeへ戻る">
 
       <section className="chat-page" aria-labelledby="chat-title">
         <div className="chat-page-heading">
@@ -301,7 +299,6 @@ export function RouteChatPage() {
         </div>
       </section>
 
-      <footer className="app-footer"><VersionBadge/><span>Route Workspace</span></footer>
-    </main>
+    </RouteWorkspacePage>
   );
 }

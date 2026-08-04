@@ -1,3 +1,10 @@
+## 2.1.0-p84 RC1
+
+- Route / Places / Chat / Members / Menuのページ外枠を`RouteWorkspacePage`へ共通化。
+- HeaderとFooterを各画面から撤去し、共通フレーム側で一元管理。
+- 固定下帯のための本文・Footer余白を共通化し、画面追加時のレイアウト差を防止。
+- 既存機能、DB、ルーティング、モーダル処理には変更なし。
+
 ## 2.1.0-p83.4
 
 - GlobalHeaderを共通コンポーネント化し、Route / Places / Chat / Members / Menuのヘッダー寸法と操作位置を統一。

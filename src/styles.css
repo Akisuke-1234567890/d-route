@@ -3796,3 +3796,29 @@ body,
   .header-actions .header-link{padding-inline:12px;font-size:.75rem}
   .route-modal,.places-add-sheet,.alternate-route-manage-modal,.my-member-modal{padding:18px}
 }
+
+
+/* v2.1.0-p84 RC1 shared workspace page frame */
+.route-workspace-page{
+  min-height:100dvh;
+  display:flex;
+  flex-direction:column;
+  background:transparent!important;
+}
+.route-workspace-page>.page-content,
+.route-workspace-page>.chat-page{
+  flex:1 0 auto;
+  width:100%;
+}
+.route-workspace-footer{
+  margin-top:auto;
+  padding-bottom:max(116px,calc(94px + env(safe-area-inset-bottom)));
+}
+.route-workspace-page .global-header{
+  flex:0 0 auto;
+}
+@media(max-width:420px){
+  .route-workspace-footer{
+    padding-bottom:max(108px,calc(88px + env(safe-area-inset-bottom)));
+  }
+}

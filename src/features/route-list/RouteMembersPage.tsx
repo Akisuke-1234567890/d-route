@@ -1,8 +1,7 @@
 import { FormEvent, PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
-import { GlobalHeader } from '../../shared/ui/GlobalHeader';
-import { VersionBadge } from '../../shared/ui/VersionBadge';
+import { RouteWorkspacePage } from '../../shared/ui/RouteWorkspacePage';
 import { getSupabaseClient } from '../../shared/api/supabase';
 import { MY_MEMBER_COLOR_KEYS, createMyMember, deleteMyMember, listMyMembers, updateMyMember, type MyMember, type MyMemberColorKey } from '../my-members/myMembers';
 import { getRoute } from './routes';
@@ -240,8 +239,7 @@ export function RouteMembersPage() {
     openMyEdit(member);
   }
 
-  return <main className="app-shell route-tab-shell">
-    <GlobalHeader />
+  return <RouteWorkspacePage footerLabel={activeView === 'my' ? 'Personal Directory' : 'Shared Members Beta'}>
 
     <section className="page-content route-tab-content members-hub" aria-labelledby="members-title">
       <div className="members-view-tabs" role="tablist" aria-label="メンバー表示切替">
@@ -280,10 +278,9 @@ export function RouteMembersPage() {
       </>}
     </section>
 
-    <footer className="app-footer"><VersionBadge/><span>{activeView === 'my' ? 'Personal Directory' : 'Shared Members Beta'}</span></footer>
 
     {myFormOpen && <div className="modal-backdrop is-centered-choice" onMouseDown={(event) => { if (event.target === event.currentTarget) closeMyForm(); }}><form className="route-modal my-member-modal my-member-modal-compact" onSubmit={saveMyMember}><div className="modal-header"><div><p className="eyebrow">MY MEMBER</p><h2>{myEditing ? '名前を編集' : 'My Memberを追加'}</h2></div><button className="modal-close-button" type="button" onClick={closeMyForm}>×</button></div><label className="route-settings-field"><span>名前</span><input value={myName} maxLength={30} autoFocus onChange={(event) => setMyName(event.target.value)} placeholder="例：妻、長男、Aさん"/><small>{myName.length}/30</small></label><fieldset className="my-member-color-field"><legend>識別色</legend><div className="my-member-color-options">{MY_MEMBER_COLOR_KEYS.map((key) => <button key={key} className={`my-member-color-option is-color-${key}${myColorKey === key ? ' is-selected' : ''}`} type="button" aria-label={`${key}を選択`} aria-pressed={myColorKey === key} onClick={() => setMyColorKey(key)}><span aria-hidden="true"/></button>)}</div></fieldset>{myFormError ? <div className="route-inline-error" role="alert">{myFormError}</div> : null}<div className="modal-actions"><button className="secondary-button" type="button" onClick={closeMyForm}>キャンセル</button><button className="primary-button" type="submit" disabled={mySaving || !myName.trim()}>{mySaving ? '保存中…' : '保存'}</button></div></form></div>}
 
     {myDeleteTarget ? <div className="modal-backdrop is-centered-choice" onMouseDown={(event) => { if (event.target === event.currentTarget && !myDeleting) setMyDeleteTarget(null); }}><section className="route-modal my-member-delete-modal"><h2>削除しますか？</h2><p>「{myDeleteTarget.name}」をMy Membersから削除します。</p><div className="modal-actions"><button className="secondary-button" type="button" onClick={() => setMyDeleteTarget(null)} disabled={myDeleting}>キャンセル</button><button className="route-list-delete-confirm" type="button" onClick={() => void removeMyMember()} disabled={myDeleting}>{myDeleting ? '削除中…' : '削除する'}</button></div></section></div> : null}
-  </main>;
+  </RouteWorkspacePage>;
 }

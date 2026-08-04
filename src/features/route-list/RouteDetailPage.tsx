@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type TouchEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
-import { GlobalHeader } from '../../shared/ui/GlobalHeader';
-import { VersionBadge } from '../../shared/ui/VersionBadge';
+import { RouteWorkspacePage } from '../../shared/ui/RouteWorkspacePage';
 import { getRoute, type RouteSummary } from './routes';
 import { getRoutePhases, type PhaseSummary } from './phases';
 import { getRouteDestinations, setRouteDestinationCompleted, type DestinationSummary } from './destinations';
@@ -978,8 +977,7 @@ export function RouteDetailPage() {
   }, [routeId]);
 
   return (
-    <main className="app-shell v2-dashboard-shell">
-      <GlobalHeader />
+    <RouteWorkspacePage shellClassName="v2-dashboard-shell" footerLabel="Route / Current Phase">
 
       <section className="page-content route-detail-content v2-dashboard-content" aria-labelledby="route-detail-title">
         {loading ? (
@@ -1011,7 +1009,6 @@ export function RouteDetailPage() {
         )}
       </section>
 
-      <footer className="app-footer"><VersionBadge /><span>Route / Current Phase</span></footer>
-    </main>
+    </RouteWorkspacePage>
   );
 }
