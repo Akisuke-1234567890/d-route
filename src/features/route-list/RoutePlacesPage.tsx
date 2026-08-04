@@ -18,6 +18,7 @@ import {
 import { createRoutePhase, deleteRoutePhase, getRoutePhases, updateRoutePhase, type PhaseSummary } from './phases';
 import { createAlternateRoute, configureAlternateRoute, deleteAlternateRoute, listRouteBranches, listAlternateRouteDestinations, saveAlternateRouteDestination, deleteAlternateRouteDestination, listRouteBranchAssignments, assignMemberToBranch, clearMemberBranch, type AlternateRouteConnectionType, type RouteBranch, type AlternateRouteDestination, type RouteBranchAssignment } from './branches';
 import { listRouteMembers, type RouteMember } from './members';
+import { listMyMembers, listRouteBranchMyMemberAssignments, replaceRouteBranchMyMembers, type MyMember, type RouteBranchMyMemberAssignment } from '../my-members/myMembers';
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error && error.message) return error.message;
@@ -186,6 +187,9 @@ export function RoutePlacesPage() {
   const [alternateRouteAssignments, setAlternateRouteAssignments] = useState<RouteBranchAssignment[]>([]);
   const [alternateRouteSelectedMemberIds, setAlternateRouteSelectedMemberIds] = useState<string[]>([]);
   const [alternateRouteMembersLoading, setAlternateRouteMembersLoading] = useState(false);
+  const [alternateRouteMyMembers, setAlternateRouteMyMembers] = useState<MyMember[]>([]);
+  const [alternateRouteMyMemberAssignments, setAlternateRouteMyMemberAssignments] = useState<RouteBranchMyMemberAssignment[]>([]);
+  const [alternateRouteSelectedMyMemberIds, setAlternateRouteSelectedMyMemberIds] = useState<string[]>([]);
   const [alternateRouteDestinations, setAlternateRouteDestinations] = useState<AlternateRouteDestination[]>([]);
   const [alternateDestinationEditing, setAlternateDestinationEditing] = useState<AlternateRouteDestination | null>(null);
   const [alternateDestinationName, setAlternateDestinationName] = useState('');
@@ -309,6 +313,31 @@ export function RoutePlacesPage() {
     return `${time ? `${time} ` : ''}${destination.name}`;
   }
 
+  async function loadAlternateRouteMyMemberSelection(branchId: string | null) {
+    const [membersResult, assignmentsResult] = await Promise.allSettled([
+      listMyMembers(),
+      listRouteBranchMyMemberAssignments(routeId),
+    ]);
+    if (membersResult.status === 'fulfilled') setAlternateRouteMyMembers(membersResult.value);
+    else { setAlternateRouteMyMembers([]); setAlternateRouteError(getErrorMessage(membersResult.reason, 'My Membersを読み込めませんでした。')); }
+    if (assignmentsResult.status === 'fulfilled') {
+      setAlternateRouteMyMemberAssignments(assignmentsResult.value);
+      setAlternateRouteSelectedMyMemberIds(branchId
+        ? assignmentsResult.value.filter((assignment) => assignment.branchId === branchId).map((assignment) => assignment.myMemberId)
+        : []);
+    } else {
+      setAlternateRouteMyMemberAssignments([]);
+      setAlternateRouteSelectedMyMemberIds([]);
+      setAlternateRouteError((current) => current ?? getErrorMessage(assignmentsResult.reason, 'My Membersの担当設定を読み込めませんでした。'));
+    }
+  }
+
+  function toggleAlternateRouteMyMember(myMemberId: string) {
+    setAlternateRouteSelectedMyMemberIds((current) => current.includes(myMemberId)
+      ? current.filter((id) => id !== myMemberId)
+      : [...current, myMemberId]);
+  }
+
   async function loadAlternateRouteMemberSelection(branchId: string | null) {
     setAlternateRouteMembersLoading(true);
     const [membersResult, assignmentsResult] = await Promise.allSettled([
@@ -372,6 +401,7 @@ export function RoutePlacesPage() {
     setAlternateRouteAssignments([]);
     setAlternateRouteSelectedMemberIds([]);
     void loadAlternateRouteMemberSelection(null);
+    void loadAlternateRouteMyMemberSelection(null);
     setAlternateRouteOpen(true);
   }
 
@@ -386,6 +416,7 @@ export function RoutePlacesPage() {
     setAlternateRouteEndId(route.endDestinationId ?? '');
     setAlternateRouteError(null);
     void loadAlternateRouteMemberSelection(route.id);
+    void loadAlternateRouteMyMemberSelection(route.id);
     setAlternateRouteOpen(true);
   }
 
@@ -462,6 +493,7 @@ export function RoutePlacesPage() {
         : await createAlternateRoute(input);
       try {
         await saveAlternateRouteMemberSelection(saved.id);
+        await replaceRouteBranchMyMembers(routeId, saved.id, alternateRouteSelectedMyMemberIds);
       } catch (memberError) {
         setAlternateRouteEditing(saved);
         setAlternateRoutes((current) => current.some((item) => item.id === saved.id)
@@ -1602,6 +1634,22 @@ function requestDestinationDelete(destination: DestinationSummary) {
               {alternateRouteType !== 'leave' ? <div className="field-group"><label htmlFor="alternate-route-end">合流する場所</label><select id="alternate-route-end" value={alternateRouteEndId} onChange={(event) => setAlternateRouteEndId(event.target.value)} disabled={alternateRouteSaving || alternateRouteDeleting}><option value="">メインの予定から選択</option>{timedDestinations.map((destination) => <option key={destination.id} value={destination.id}>{destinationLabel(destination.id)}</option>)}</select></div> : null}
               {timedDestinations.length === 0 ? <p className="form-error">接続先に使える予定がありません。先にメインの予定へ時間を設定してください。</p> : null}
               <div className="field-group"><label htmlFor="alternate-route-description">説明 <span className="field-optional">任意</span></label><textarea id="alternate-route-description" value={alternateRouteDescription} onChange={(event) => setAlternateRouteDescription(event.target.value)} maxLength={200} rows={3} disabled={alternateRouteSaving || alternateRouteDeleting} /></div>
+              <section className="alternate-route-member-editor alternate-route-my-member-editor" aria-labelledby="alternate-route-my-members-title">
+                <div className="alternate-route-member-heading"><div><strong id="alternate-route-my-members-title">My Membersの担当</strong><small>{alternateRouteSelectedMyMemberIds.length}人を選択中</small></div></div>
+                {alternateRouteMyMembers.length ? (
+                  <div className="alternate-route-member-list">{alternateRouteMyMembers.map((member) => {
+                    const selected = alternateRouteSelectedMyMemberIds.includes(member.id);
+                    const assignedElsewhere = alternateRouteMyMemberAssignments.some((assignment) => assignment.myMemberId === member.id && assignment.branchId !== alternateRouteEditing?.id);
+                    return <label className={`alternate-route-member-option${selected ? ' is-selected' : ''}`} key={member.id}>
+                      <input type="checkbox" checked={selected} onChange={() => toggleAlternateRouteMyMember(member.id)} disabled={alternateRouteSaving || alternateRouteDeleting} />
+                      <span className="alternate-route-member-avatar" aria-hidden="true">{member.name.slice(0, 2).toUpperCase()}</span>
+                      <span><strong>{member.name}</strong><small>{assignedElsewhere ? '別のサブRouteにも設定中' : 'My Member'}</small></span>
+                      <span className="alternate-route-member-check" aria-hidden="true">{selected ? '✓' : ''}</span>
+                    </label>;
+                  })}</div>
+                ) : <p className="route-tab-demo-note">My Membersが未登録です。Members画面から同行者を追加できます。</p>}
+                <p className="field-hint">招待なしで使える同行者名簿です。複数のサブRouteへ同じ人を設定できます。</p>
+              </section>
               <section className="alternate-route-member-editor" aria-labelledby="alternate-route-members-title">
                 <div className="alternate-route-member-heading"><div><strong id="alternate-route-members-title">この別行動に参加する人</strong><small>{alternateRouteSelectedMemberIds.length}人を選択中</small></div></div>
                 {alternateRouteMembersLoading ? <p className="route-tab-demo-note">参加メンバーを読み込んでいます。</p> : alternateRouteMembers.length ? (

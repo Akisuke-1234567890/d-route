@@ -3333,3 +3333,8 @@ a { color: inherit; }
 .my-member-card.my-member-swipe-panel{background:#151b3d}
 .my-member-card.my-member-swipe-panel:active{background:#1d2552}
 .my-member-swipe-shell.is-open .my-member-swipe-panel{background:#151b3d}
+
+
+/* v2.1.0-p81.0 My Members assignment for sub routes */
+.alternate-route-my-member-editor{border-color:rgba(126,231,197,.22);background:rgba(52,193,151,.055)}
+.alternate-route-my-member-editor .alternate-route-member-avatar{background:linear-gradient(145deg,rgba(69,215,166,.28),rgba(93,111,255,.26));border-color:rgba(126,231,197,.28)}
