@@ -142,6 +142,9 @@ export function RoutePlacesPage() {
   const [phaseStartTime, setPhaseStartTime] = useState('');
   const [phaseSaving, setPhaseSaving] = useState(false);
   const [phaseError, setPhaseError] = useState<string | null>(null);
+  const [phaseDeleteTarget, setPhaseDeleteTarget] = useState<PhaseSummary | null>(null);
+  const [phaseDeleting, setPhaseDeleting] = useState(false);
+  const [phaseDeleteError, setPhaseDeleteError] = useState<string | null>(null);
   const [swipedDestinationId, setSwipedDestinationId] = useState<string | null>(null);
   const [destinationSwipeOffset, setDestinationSwipeOffset] = useState(0);
   const destinationSwipeStartXRef = useRef(0);
@@ -239,7 +242,7 @@ export function RoutePlacesPage() {
   const nameInputRef = useRef<HTMLInputElement>(null);
   const editNameInputRef = useRef<HTMLInputElement>(null);
 
-  useBodyScrollLock(createOpen || Boolean(editing) || Boolean(deleteTarget) || phaseCreateOpen || Boolean(phaseEditing) || alternateRouteOpen || addMenuOpen || alternateRouteManageOpen || Boolean(alternateRouteDeleteTarget));
+  useBodyScrollLock(createOpen || Boolean(editing) || Boolean(deleteTarget) || phaseCreateOpen || Boolean(phaseEditing) || Boolean(phaseDeleteTarget) || alternateRouteOpen || addMenuOpen || alternateRouteManageOpen || Boolean(alternateRouteDeleteTarget));
 
   async function loadPlanning() {
     setLoading(true);
@@ -807,6 +810,37 @@ function requestDestinationDelete(destination: DestinationSummary) {
     } catch (err) {
       setPhaseError(getErrorMessage(err, 'Phaseを更新できませんでした。'));
     } finally { setPhaseSaving(false); }
+  }
+
+
+  function requestPhaseDelete() {
+    if (!phaseEditing || phaseSaving || phaseDeleting) return;
+    setPhaseDeleteError(null);
+    setPhaseDeleteTarget(phaseEditing);
+  }
+
+  async function handlePhaseDelete() {
+    if (!phaseDeleteTarget || phaseDeleting) return;
+    setPhaseDeleting(true);
+    setPhaseDeleteError(null);
+    try {
+      await deleteRoutePhase(routeId, phaseDeleteTarget.id, activeBranchId);
+      const [nextPhases, nextDestinations] = await Promise.all([
+        getRoutePhases(routeId, activeBranchId),
+        getRouteDestinations(routeId, activeBranchId),
+      ]);
+      setPhases(nextPhases);
+      setDestinations(nextDestinations);
+      setPhaseDeleteTarget(null);
+      setPhaseEditing(null);
+      setPhaseCreateOpen(false);
+      setToast('Phaseを削除しました。');
+      placesPlanningCacheRef.current.set(activeBranchId ?? 'main', { phases: nextPhases, destinations: nextDestinations });
+    } catch (err) {
+      setPhaseDeleteError(getErrorMessage(err, 'Phaseを削除できませんでした。'));
+    } finally {
+      setPhaseDeleting(false);
+    }
   }
 
   function askDeleteDestination() {
@@ -1899,10 +1933,24 @@ function requestDestinationDelete(destination: DestinationSummary) {
               <div className="field-group"><label htmlFor="phase-description">メモ <span className="field-optional">任意</span></label><textarea id="phase-description" value={phaseDescription} onChange={(event) => setPhaseDescription(event.target.value)} maxLength={200} rows={3} disabled={phaseSaving} /></div>
               {phaseError && <p className="form-error" role="alert">{phaseError}</p>}
               <div className="modal-actions"><button className="secondary-button" type="button" disabled={phaseSaving} onClick={() => { setPhaseCreateOpen(false); setPhaseEditing(null); }}>キャンセル</button><button className="primary-button" type="submit" disabled={phaseSaving || (!phaseEditing?.isDefault && !phaseName.trim())}>{phaseSaving ? '保存中…' : phaseEditing ? '保存' : '追加'}</button></div>
+              {phaseEditing ? <button className="phase-delete-button" type="button" onClick={requestPhaseDelete} disabled={phaseSaving || phaseDeleting}>このPhaseを削除</button> : null}
             </form>
           </section>
         </div>
       )}
+
+      {phaseDeleteTarget ? (
+        <div className="modal-backdrop centered-confirm-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !phaseDeleting) setPhaseDeleteTarget(null); }}>
+          <section className="route-modal centered-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="phase-delete-title">
+            <div className="route-list-delete-icon" aria-hidden="true">!</div>
+            <h2 id="phase-delete-title">Phaseを削除しますか？</h2>
+            <p className="route-list-delete-name">「{phaseDeleteTarget.name || '名前未設定のPhase'}」</p>
+            <p className="route-list-delete-copy">このPhase内の予定は、残っている別のPhaseへ移動します。最後のPhaseは削除できません。</p>
+            {phaseDeleteError ? <div className="route-inline-error" role="alert">{phaseDeleteError}</div> : null}
+            <div className="modal-actions"><button className="secondary-button" type="button" onClick={() => setPhaseDeleteTarget(null)} disabled={phaseDeleting}>キャンセル</button><button className="route-list-delete-confirm" type="button" onClick={() => void handlePhaseDelete()} disabled={phaseDeleting}>{phaseDeleting ? '削除中…' : '削除する'}</button></div>
+          </section>
+        </div>
+      ) : null}
     </main>
   );
 }

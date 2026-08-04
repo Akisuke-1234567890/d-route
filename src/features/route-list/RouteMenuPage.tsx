@@ -10,7 +10,6 @@ import { useBodyScrollLock } from '../../shared/hooks/useBodyScrollLock';
 const items = [
   { key:'settings', icon:'⚙️', title:'Route設定', description:'名前と説明を変更' },
   { key:'duplicate', icon:'📄', title:'Routeを複製', description:'内容を引き継いだ新しいRouteを作成' },
-  { key:'my-members', icon:'👤', title:'My Members', description:'Membersからも開ける同行者名簿' },
 ] as const;
 
 
@@ -134,10 +133,9 @@ async function handleDuplicateRoute() {
           onClick={() => {
             if (item.key === 'settings') openRouteSettings();
             else if (item.key === 'duplicate') openDuplicateRoute();
-            else navigate('/my-members');
           }}
-          disabled={item.key !== 'my-members' && !isOwner}
-          title={item.key !== 'my-members' && !isOwner ? 'この操作はリーダーのみ利用できます。' : undefined}
+          disabled={!isOwner}
+          title={!isOwner ? 'この操作はリーダーのみ利用できます。' : undefined}
         ><span className="route-menu-icon" aria-hidden="true">{item.icon}</span><span><strong>{item.title}</strong><small>{item.description}</small></span><span aria-hidden="true">›</span></button>;
       })}</div>
 
@@ -147,7 +145,7 @@ async function handleDuplicateRoute() {
     <footer className="app-footer"><VersionBadge/><span>Route Workspace</span></footer>
 
     {settingsOpen && route && isOwner && (
-      <div className="modal-backdrop" role="presentation">
+      <div className="modal-backdrop route-menu-centered-backdrop" role="presentation">
         <section className="route-modal route-settings-modal" role="dialog" aria-modal="true" aria-labelledby="route-settings-title">
           <div className="modal-header">
             <div>
@@ -182,7 +180,7 @@ async function handleDuplicateRoute() {
     )}
 
     {duplicateOpen && route && isOwner && (
-      <div className="modal-backdrop" role="presentation">
+      <div className="modal-backdrop route-menu-centered-backdrop" role="presentation">
         <section className="route-modal route-duplicate-modal" role="dialog" aria-modal="true" aria-labelledby="duplicate-route-title">
           <div className="modal-header">
             <div>

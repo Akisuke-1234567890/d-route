@@ -3707,3 +3707,29 @@ body,
     padding-inline:16px;
   }
 }
+
+
+/* v2.1.0-p83.3 centered Route utilities and Phase delete */
+.route-menu-centered-backdrop{
+  align-items:center;
+  padding-top:max(18px,env(safe-area-inset-top));
+  padding-bottom:max(18px,env(safe-area-inset-bottom));
+}
+.route-menu-centered-backdrop .route-settings-modal,
+.route-menu-centered-backdrop .route-duplicate-modal{
+  margin-block:auto;
+  max-height:calc(100dvh - max(36px,env(safe-area-inset-top)) - max(36px,env(safe-area-inset-bottom)));
+  overflow:auto;
+}
+.phase-delete-button{
+  width:100%;
+  min-height:46px;
+  margin-top:12px;
+  border:1px solid rgba(255,111,126,.38);
+  border-radius:var(--dr-radius-control,14px);
+  background:rgba(255,111,126,.08);
+  color:var(--dr-danger,#ff6f7e);
+  font:inherit;
+  font-weight:850;
+}
+.phase-delete-button:active{background:rgba(255,111,126,.14)}

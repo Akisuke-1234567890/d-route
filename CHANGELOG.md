@@ -1,3 +1,9 @@
+# D Route v2.1.0-p83.3
+
+- Route設定とRoute複製モーダルを画面中央へ配置。
+- Menuから重複していたMy Members入口を削除し、Membersは固定下帯から開く導線へ統一。
+- Phase編集画面に「このPhaseを削除」を追加し、中央確認後に削除。予定は残存Phaseへ移動。
+
 # D Route Changelog
 
 ## 2.1.0-p83.2
