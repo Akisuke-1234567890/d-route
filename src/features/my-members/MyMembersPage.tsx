@@ -63,12 +63,12 @@ export function MyMembersPage() {
       {loading ? <section className="route-loading"><span className="route-loading-spinner"/><p>読み込んでいます</p></section>
       : error ? <section className="empty-state" role="alert"><h2>読み込めませんでした</h2><p>{error}</p><button className="secondary-button" type="button" onClick={() => void load()}>再読み込み</button></section>
       : members.length === 0 ? <section className="empty-state"><div className="empty-orbit"><BrandMark size={58}/></div><h2>まだ登録されていません</h2><p>家族や友人など、よく使う同行者を追加してください。</p><button className="primary-button" type="button" onClick={openCreate}>My Memberを追加</button></section>
-      : <div className="my-members-list">{members.map((member) => <article className="my-member-card" key={member.id}><div className="my-member-avatar" aria-hidden="true">👤</div><div className="my-member-copy"><strong>{member.name}</strong><small>未連携</small></div><button className="secondary-button my-member-edit" type="button" onClick={() => openEdit(member)}>編集</button></article>)}</div>}
+      : <div className="my-members-list">{members.map((member) => <button className="my-member-card" type="button" key={member.id} onClick={() => openEdit(member)}><div className="my-member-avatar" aria-hidden="true">👤</div><div className="my-member-copy"><strong>{member.name}</strong><small><span className="my-member-status-dot" aria-hidden="true"/>未連携</small></div><span className="my-member-chevron" aria-hidden="true">›</span></button>)}</div>}
     </section>
     <footer className="app-footer"><VersionBadge/><span>Personal Directory</span></footer>
 
     {formOpen && <div className="modal-backdrop is-centered-choice" onMouseDown={(event) => { if (event.target === event.currentTarget) closeForm(); }}>
-      <form className="route-modal my-member-modal" onSubmit={handleSave}>
+      <form className="route-modal my-member-modal my-member-modal-compact" onSubmit={handleSave}>
         <div className="modal-header"><div><p className="eyebrow">MY MEMBER</p><h2>{editing ? '名前を編集' : 'My Memberを追加'}</h2></div><button className="modal-close-button" type="button" onClick={closeForm}>×</button></div>
         <label className="route-settings-field"><span>名前</span><input value={name} maxLength={30} autoFocus onChange={(event) => setName(event.target.value)} placeholder="例：妻、長男、Aさん"/><small>{name.length}/30</small></label>
         {formError && <div className="route-inline-error" role="alert">{formError}</div>}
