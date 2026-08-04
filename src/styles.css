@@ -3265,3 +3265,19 @@ a { color: inherit; }
 .my-member-delete-link{width:100%;margin-top:14px;border:0;background:transparent;color:#ff8d8d;font:inherit;font-size:.72rem;font-weight:800}
 .my-member-delete-modal{text-align:center}.my-member-delete-modal p{color:rgba(221,225,244,.66);line-height:1.7}
 @media(max-width:420px){.my-members-heading{align-items:stretch}.my-members-heading .primary-button{align-self:flex-end}.my-member-card{padding:12px}}
+
+
+/* v2.1.0-p80.1 My Members / shared Members separation */
+.route-bottom-nav-label { display: inline-flex; align-items: center; gap: 3px; }
+.route-bottom-nav-beta {
+  display: inline-grid; place-items: center; min-width: 15px; height: 15px; padding: 0 4px;
+  border-radius: 999px; background: rgba(255, 181, 74, .18); color: #ffd08a;
+  border: 1px solid rgba(255, 181, 74, .28); font-size: .52rem; font-weight: 800; line-height: 1;
+}
+.members-title-line { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.members-title-line h1 { margin: 0; }
+.feature-beta-badge {
+  display: inline-flex; align-items: center; min-height: 26px; padding: 4px 10px;
+  border-radius: 999px; background: rgba(255, 181, 74, .14); color: #ffd08a;
+  border: 1px solid rgba(255, 181, 74, .28); font-size: .68rem; font-weight: 800; letter-spacing: .03em;
+}

@@ -1,5 +1,5 @@
-import { useEffect, useState, type MouseEvent } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { NavLink } from 'react-router-dom';
 import { getOwnRouteMember, type RouteMemberRole } from './members';
 
 type RouteBottomNavProps = { routeId: string };
@@ -8,7 +8,7 @@ const ownerTabs = [
   { key: 'route', label: 'Route', icon: '🗺️', path: '' },
   { key: 'places', label: 'Places', icon: '📍', path: '/places' },
   { key: 'chat', label: 'Chat', icon: '💬', path: '/chat' },
-  { key: 'members', label: 'Members', icon: '👥', path: '/members' },
+  { key: 'members', label: 'Members', icon: '👥', path: '/members', beta: true },
   { key: 'menu', label: 'Menu', icon: '☰', path: '/menu' },
 ] as const;
 
@@ -16,8 +16,6 @@ const participantTabs = ownerTabs.filter((tab) => tab.key === 'route' || tab.key
 
 export function RouteBottomNav({ routeId }: RouteBottomNavProps) {
   const [role, setRole] = useState<RouteMemberRole | null>(null);
-  const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
     let active = true;
@@ -26,14 +24,6 @@ export function RouteBottomNav({ routeId }: RouteBottomNavProps) {
       .catch(() => { if (active) setRole(null); });
     return () => { active = false; };
   }, [routeId]);
-
-
-  const handleTabClick = (event: MouseEvent<HTMLAnchorElement>, target: string) => {
-    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-    if (location.pathname === target) return;
-    event.preventDefault();
-    navigate(target);
-  };
 
   const tabs = role === 'member' ? participantTabs : ownerTabs;
   const base = `/routes/${routeId}`;
@@ -46,10 +36,9 @@ export function RouteBottomNav({ routeId }: RouteBottomNavProps) {
           to={`${base}${tab.path}`}
           end={tab.path === ''}
           className={({ isActive }) => `route-bottom-nav-item${isActive ? ' is-active' : ''}`}
-          onClick={(event) => handleTabClick(event, `${base}${tab.path}`)}
         >
           <span className="route-bottom-nav-icon" aria-hidden="true">{tab.icon}</span>
-          <span>{tab.label}</span>
+          <span className="route-bottom-nav-label">{tab.label}{'beta' in tab && tab.beta ? <small className="route-bottom-nav-beta">β</small> : null}</span>
         </NavLink>
       ))}
     </nav>

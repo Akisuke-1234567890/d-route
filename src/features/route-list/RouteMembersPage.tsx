@@ -104,7 +104,7 @@ async function answerInvite(status: 'participating' | 'declined') {
     <header className="global-header"><div className="header-brand"><BrandMark size={34} /><strong>D Route</strong></div><div className="header-actions"><Link className="icon-button header-link" to="/routes">一覧へ戻る</Link><RefreshButton placement="header" /></div></header>
     <section className="page-content route-tab-content" aria-labelledby="members-title">
       <div className="route-tab-heading">
-        <div><p className="eyebrow">MEMBERS</p><h1 id="members-title">参加メンバー</h1><p>このRouteへの参加可否を確認します。</p></div>
+        <div><p className="eyebrow">SHARED MEMBERS</p><div className="members-title-line"><h1 id="members-title">共有メンバー</h1><span className="feature-beta-badge">β 改善中</span></div><p>D Routeアカウントを招待し、このRouteの参加状況を共有します。</p></div>
         {isRouteOwner ? <button className="primary-button route-tab-action" type="button" onClick={() => { setInviteError(''); setInviteOpen(true); }}>＋ 招待</button> : null}
       </div>
       {inviteOpen ? (
@@ -149,7 +149,7 @@ async function answerInvite(status: 'participating' | 'declined') {
         <div className="members-page-list">{members.map((member) => <article className="member-row member-page-row" key={member.id}><div className="member-avatar" aria-hidden="true">{member.displayName.slice(0,2).toUpperCase()}</div><div className="member-copy"><div className="member-name-line"><h2>{member.displayName}</h2><span className="member-role">{member.role === 'owner' ? 'リーダー' : 'メンバー'}</span></div><p className={`member-status member-status-${member.status}`}><span aria-hidden="true"/>{labels[member.status]}</p></div></article>)}</div>
         {members.length === 0 ? <p className="route-tab-demo-note">参加メンバーはいません。</p> : null}
       </> : null}
-      <p className="route-tab-demo-note">Membersでは招待と参加状況のみを扱います。別行動への割り振りはPlacesの別行動編集から設定します。</p>
+      <p className="route-tab-demo-note">共有メンバーは現在β版です。招待と参加状況を扱い、別行動への割り振りはPlacesから設定します。名前だけで管理する同行者はMenuの「My Members」を使用してください。</p>
     </section>
     <footer className="app-footer"><VersionBadge/><span>Route Workspace</span></footer>
   </main>;

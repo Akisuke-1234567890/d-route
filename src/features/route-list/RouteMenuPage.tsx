@@ -10,7 +10,7 @@ import { useBodyScrollLock } from '../../shared/hooks/useBodyScrollLock';
 const items = [
   { key:'settings', icon:'⚙️', title:'Route設定', description:'名前と説明を変更' },
   { key:'duplicate', icon:'📄', title:'Routeを複製', description:'内容を引き継いだ新しいRouteを作成' },
-  { key:'my-members', icon:'👤', title:'My Members', description:'自分用の同行者名簿を管理' },
+  { key:'my-members', icon:'👤', title:'My Members', description:'招待なしで使える自分用の同行者名簿' },
 ] as const;
 
 
