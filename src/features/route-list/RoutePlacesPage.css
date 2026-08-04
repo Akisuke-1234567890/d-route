@@ -1457,3 +1457,30 @@
 .alternate-route-manage-card{position:relative;z-index:1;width:100%;min-height:64px;padding:12px 14px;border:1px solid rgba(196,203,255,.14);border-radius:15px;background:linear-gradient(145deg,#151d46,#0c1233);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;font:inherit;transition:transform .2s cubic-bezier(.22,.72,.22,1)}
 .alternate-route-manage-card>span:first-child{min-width:0;display:grid;gap:4px}.alternate-route-manage-card strong{font-size:.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.alternate-route-manage-card small{color:rgba(211,216,241,.58);font-size:.61rem}.alternate-route-manage-card>span:last-child{font-size:1.1rem;color:#8fe9df}
 @media(max-width:420px){.alternate-route-manage-modal{width:calc(100vw - 28px);padding:18px 16px}}
+
+/* v2.1.0-p83.2 Places canvas hard unification
+   RoutePlacesPage.css is loaded after the shared stylesheet, so the Places
+   workspace explicitly inherits the same neutral app canvas here. */
+.route-tab-shell{
+  background-color:var(--dr-canvas-deep,#090d20)!important;
+  background-image:
+    radial-gradient(circle at 82% 8%,rgba(139,120,255,.075),transparent 32%),
+    linear-gradient(180deg,var(--dr-canvas,#0b1025) 0%,var(--dr-canvas-deep,#090d20) 100%)!important;
+  background-attachment:fixed!important;
+}
+.route-tab-shell>.route-tab-content,
+.route-tab-content,
+.places-route-content-buffer,
+.places-route-motion,
+.phase-planning-list{
+  background:transparent!important;
+  background-image:none!important;
+}
+.route-tab-shell::before,
+.route-tab-shell::after,
+.route-tab-content::before,
+.route-tab-content::after{
+  content:none!important;
+  display:none!important;
+  background:none!important;
+}

@@ -1,3 +1,13 @@
+# D Route Changelog
+
+## 2.1.0-p83.2
+
+### Design fix
+- Placesに残っていたページ固有の青紫背景を撤去しました。
+- Route・Chat・Members・Menuと同じ共通キャンバスを、Places側の後読みCSSでも明示的に適用しました。
+- Places本文・切替バッファ・Phase一覧の背景を透明化し、画面の土台色が二重にならないようにしました。
+- 機能・DB・カードの意味色には変更ありません。
+
 # 2.1.0-p83.1
 
 - Route / Places / Chat / Members / Menu の画面背景を共通キャンバスへ統一。
