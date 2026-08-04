@@ -18,7 +18,7 @@ import {
 import { createRoutePhase, deleteRoutePhase, getRoutePhases, updateRoutePhase, type PhaseSummary } from './phases';
 import { createAlternateRoute, configureAlternateRoute, deleteAlternateRoute, listRouteBranches, listAlternateRouteDestinations, saveAlternateRouteDestination, deleteAlternateRouteDestination, listRouteBranchAssignments, assignMemberToBranch, clearMemberBranch, type AlternateRouteConnectionType, type RouteBranch, type AlternateRouteDestination, type RouteBranchAssignment } from './branches';
 import { listRouteMembers, type RouteMember } from './members';
-import { listMyMembers, listRouteBranchMyMemberAssignments, replaceRouteBranchMyMembers, type MyMember, type RouteBranchMyMemberAssignment } from '../my-members/myMembers';
+import { listMyMembers, listRouteBranchMyMemberAssignments, replaceRouteBranchMyMembers, listRouteDestinationMyMemberAssignments, replaceRouteDestinationMyMembers, type MyMember, type RouteBranchMyMemberAssignment, type DestinationMyMemberAssignment } from '../my-members/myMembers';
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error && error.message) return error.message;
@@ -159,6 +159,8 @@ export function RoutePlacesPage() {
   const [timeType, setTimeType] = useState<DestinationTimeType>('none');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
+  const [assignmentMode, setAssignmentMode] = useState<'inherit'|'override'>('inherit');
+  const [selectedDestinationMyMemberIds, setSelectedDestinationMyMemberIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -170,6 +172,8 @@ export function RoutePlacesPage() {
   const [editTimeType, setEditTimeType] = useState<DestinationTimeType>('none');
   const [editStartTime, setEditStartTime] = useState('');
   const [editEndTime, setEditEndTime] = useState('');
+  const [editAssignmentMode, setEditAssignmentMode] = useState<'inherit'|'override'>('inherit');
+  const [editSelectedDestinationMyMemberIds, setEditSelectedDestinationMyMemberIds] = useState<string[]>([]);
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [alternateRoutes, setAlternateRoutes] = useState<RouteBranch[]>([]);
@@ -198,6 +202,7 @@ export function RoutePlacesPage() {
   const [alternateRouteMembersLoading, setAlternateRouteMembersLoading] = useState(false);
   const [alternateRouteMyMembers, setAlternateRouteMyMembers] = useState<MyMember[]>([]);
   const [alternateRouteMyMemberAssignments, setAlternateRouteMyMemberAssignments] = useState<RouteBranchMyMemberAssignment[]>([]);
+  const [destinationMyMemberAssignments, setDestinationMyMemberAssignments] = useState<DestinationMyMemberAssignment[]>([]);
   const [alternateRouteSelectedMyMemberIds, setAlternateRouteSelectedMyMemberIds] = useState<string[]>([]);
   const [alternateRouteDestinations, setAlternateRouteDestinations] = useState<AlternateRouteDestination[]>([]);
   const [alternateDestinationEditing, setAlternateDestinationEditing] = useState<AlternateRouteDestination | null>(null);
@@ -240,18 +245,20 @@ export function RoutePlacesPage() {
     setLoading(true);
     setError(null);
     try {
-      const [nextPhases, nextDestinations, nextAlternateRoutes, nextMyMembers, nextMyMemberAssignments] = await Promise.all([
+      const [nextPhases, nextDestinations, nextAlternateRoutes, nextMyMembers, nextMyMemberAssignments, nextDestinationAssignments] = await Promise.all([
         getRoutePhases(routeId, activeBranchId),
         getRouteDestinations(routeId, activeBranchId),
         listRouteBranches(routeId),
         listMyMembers(),
         listRouteBranchMyMemberAssignments(routeId),
+        listRouteDestinationMyMemberAssignments(routeId),
       ]);
       setPhases(nextPhases);
       setDestinations(nextDestinations);
       setAlternateRoutes(nextAlternateRoutes);
       setAlternateRouteMyMembers(nextMyMembers);
       setAlternateRouteMyMemberAssignments(nextMyMemberAssignments);
+      setDestinationMyMemberAssignments(nextDestinationAssignments);
       placesPlanningCacheRef.current.set(activeBranchId ?? 'main', { phases: nextPhases, destinations: nextDestinations });
     } catch (err) {
       setError(getErrorMessage(err, 'Placesを読み込めませんでした。'));
@@ -611,6 +618,8 @@ export function RoutePlacesPage() {
     setDescription('');
     setImportance('must');
     setTimeType('none'); setStartTime(''); setEndTime('');
+    setAssignmentMode(activeBranchId ? 'inherit' : 'override');
+    setSelectedDestinationMyMemberIds([]);
     setFormError(null);
     setCreateOpen(true);
   }
@@ -630,8 +639,15 @@ export function RoutePlacesPage() {
       const fallbackPhaseId = selectedPhaseId || phases[0]?.id || '';
       const created = await createRouteDestination(routeId, {
         phaseId: timeType === 'none' ? fallbackPhaseId : (autoPhase?.id ?? fallbackPhaseId), branchId: activeBranchId, name, locationName, description, importance,
-        timeType, startTime: timeType === 'none' ? null : startTime, endTime: timeType === 'none' ? null : (endTime || null),
+        timeType, startTime: timeType === 'none' ? null : startTime, endTime: timeType === 'none' ? null : (endTime || null), assignmentMode,
       });
+      if (assignmentMode === 'override') {
+        await replaceRouteDestinationMyMembers(routeId, created.id, selectedDestinationMyMemberIds);
+        setDestinationMyMemberAssignments((current) => [
+          ...current.filter((item) => item.destinationId !== created.id),
+          ...selectedDestinationMyMemberIds.map((myMemberId) => ({ routeId, destinationId: created.id, myMemberId, assignedAt: new Date().toISOString() })),
+        ]);
+      }
       setDestinations((current) => [...current, created].sort((a, b) => a.orderValue - b.orderValue));
       setCreateOpen(false);
     } catch (err) {
@@ -650,6 +666,8 @@ export function RoutePlacesPage() {
     setEditDescription(destination.description ?? '');
     setEditImportance(destination.importance === 'optional' ? 'optional' : 'must');
     setEditTimeType(destination.timeType); setEditStartTime(destination.startTime?.slice(0,5) ?? ''); setEditEndTime(destination.endTime?.slice(0,5) ?? '');
+    setEditAssignmentMode(destination.assignmentMode);
+    setEditSelectedDestinationMyMemberIds(destinationMyMemberAssignments.filter((item) => item.destinationId === destination.id).map((item) => item.myMemberId));
     setEditError(null);
   }
 
@@ -668,8 +686,13 @@ export function RoutePlacesPage() {
       const fallbackPhaseId = editPhaseId || editing.phaseId || phases[0]?.id || '';
       const updated = await updateRouteDestination(routeId, editing.id, {
         phaseId: editTimeType === 'none' ? fallbackPhaseId : (autoPhase?.id ?? fallbackPhaseId), branchId: activeBranchId, name: editName, locationName: editLocationName, description: editDescription, importance: editImportance,
-        timeType: editTimeType, startTime: editTimeType === 'none' ? null : editStartTime, endTime: editTimeType === 'none' ? null : (editEndTime || null),
+        timeType: editTimeType, startTime: editTimeType === 'none' ? null : editStartTime, endTime: editTimeType === 'none' ? null : (editEndTime || null), assignmentMode: editAssignmentMode,
       });
+      await replaceRouteDestinationMyMembers(routeId, updated.id, editAssignmentMode === 'override' ? editSelectedDestinationMyMemberIds : []);
+      setDestinationMyMemberAssignments((current) => [
+        ...current.filter((item) => item.destinationId !== updated.id),
+        ...(editAssignmentMode === 'override' ? editSelectedDestinationMyMemberIds.map((myMemberId) => ({ routeId, destinationId: updated.id, myMemberId, assignedAt: new Date().toISOString() })) : []),
+      ]);
       setDestinations((current) =>
         current.map((item) => item.id === updated.id ? updated : item)
       );
@@ -1230,6 +1253,20 @@ function requestDestinationDelete(destination: DestinationSummary) {
     return 0;
   }
 
+  function resolvedDestinationMyMembers(destination: DestinationSummary): MyMember[] {
+    const memberIds = destination.assignmentMode === 'override'
+      ? destinationMyMemberAssignments.filter((item) => item.destinationId === destination.id).map((item) => item.myMemberId)
+      : destination.branchId
+        ? alternateRouteMyMemberAssignments.filter((item) => item.branchId === destination.branchId).map((item) => item.myMemberId)
+        : [];
+    return memberIds.map((id) => alternateRouteMyMembers.find((member) => member.id === id)).filter((member): member is MyMember => Boolean(member));
+  }
+
+  function toggleDestinationMember(id: string, editingMode = false) {
+    const setter = editingMode ? setEditSelectedDestinationMyMemberIds : setSelectedDestinationMyMemberIds;
+    setter((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+  }
+
   async function handleDeleteDestination() {
     if (!deleteTarget || deleting) return;
 
@@ -1327,6 +1364,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
                             {destination.locationName ? <div className="place-location-line">{destination.locationName}</div> : null}
                             <h2>{destination.name}</h2>
                             <p>{destination.description ?? '説明はまだありません。'}</p>
+                            {resolvedDestinationMyMembers(destination).length > 0 ? <div className="destination-assignees" aria-label={`担当 ${resolvedDestinationMyMembers(destination).map((member) => member.name).join('、')}`}>{resolvedDestinationMyMembers(destination).map((member) => <span className={`is-color-${member.colorKey}`} key={member.id}><i aria-hidden="true"/>{member.name}</span>)}</div> : null}
                             {!activeBranchId && (mainConnectionsByDestination.get(destination.id)?.length ?? 0) > 0 ? (
                               <div className="place-route-connections">
                                 {mainConnectionsByDestination.get(destination.id)?.map((connection) => (
@@ -1489,7 +1527,9 @@ function requestDestinationDelete(destination: DestinationSummary) {
               <div className="field-group compact-time-type">
                 <span className="field-label">時間</span>
                 <div className="time-type-segment" role="group" aria-label="時間">
-                  <button className={`time-type-option ${timeType === 'none' ? 'is-active' : ''}`} type="button" onClick={() => { setTimeType('none'); setStartTime(''); setEndTime(''); setFormError(null); }} disabled={saving} aria-pressed={timeType === 'none'}>なし</button>
+                  <button className={`time-type-option ${timeType === 'none' ? 'is-active' : ''}`} type="button" onClick={() => { setTimeType('none'); setStartTime(''); setEndTime('');
+    setAssignmentMode(activeBranchId ? 'inherit' : 'override');
+    setSelectedDestinationMyMemberIds([]); setFormError(null); }} disabled={saving} aria-pressed={timeType === 'none'}>なし</button>
                   <button className={`time-type-option ${timeType === 'fixed' ? 'is-active' : ''}`} type="button" onClick={() => setTimeType('fixed')} disabled={saving} aria-pressed={timeType === 'fixed'}>確定</button>
                   <button className={`time-type-option ${timeType === 'approx' ? 'is-active' : ''}`} type="button" onClick={() => setTimeType('approx')} disabled={saving} aria-pressed={timeType === 'approx'}>目安</button>
                 </div>
@@ -1558,6 +1598,14 @@ function requestDestinationDelete(destination: DestinationSummary) {
                   placeholder="例：改札を出て右側に集合" maxLength={200} rows={3} disabled={saving} />
                 <p className="field-hint">任意・200文字まで</p>
               </div>
+
+
+              <section className="destination-assignment-field" aria-labelledby="destination-assignment-title">
+                <div className="destination-assignment-heading"><strong id="destination-assignment-title">担当</strong><small>{activeBranchId ? 'サブRoute担当を継承できます' : '必要なメンバーだけ選択'}</small></div>
+                {activeBranchId ? <label className="assignment-inherit-option"><input type="radio" name="assignment-mode" checked={assignmentMode === 'inherit'} onChange={() => setAssignmentMode('inherit')} disabled={saving}/><span>サブRouteの担当を継承</span></label> : null}
+                <label className="assignment-inherit-option"><input type="radio" name="assignment-mode" checked={assignmentMode === 'override'} onChange={() => setAssignmentMode('override')} disabled={saving}/><span>{activeBranchId ? 'この予定だけ個別指定' : '担当を個別指定'}</span></label>
+                {assignmentMode === 'override' ? <div className="destination-assignment-list">{alternateRouteMyMembers.length ? alternateRouteMyMembers.map((member) => <label key={member.id}><input type="checkbox" checked={selectedDestinationMyMemberIds.includes(member.id)} onChange={() => toggleDestinationMember(member.id)} disabled={saving}/><i className={`is-color-${member.colorKey}`} aria-hidden="true"/><span>{member.name}</span></label>) : <small>My Membersに同行者を追加すると選択できます。</small>}</div> : null}
+              </section>
 
               {formError && <p className="form-error" role="alert">{formError}</p>}
 
@@ -1660,6 +1708,14 @@ function requestDestinationDelete(destination: DestinationSummary) {
                   maxLength={200} rows={2} disabled={editSaving} />
                 <p className="field-hint">任意・200文字まで</p>
               </div>
+
+
+              <section className="destination-assignment-field" aria-labelledby="edit-destination-assignment-title">
+                <div className="destination-assignment-heading"><strong id="edit-destination-assignment-title">担当</strong><small>{activeBranchId ? 'サブRoute担当を継承できます' : '必要なメンバーだけ選択'}</small></div>
+                {activeBranchId ? <label className="assignment-inherit-option"><input type="radio" name="edit-assignment-mode" checked={editAssignmentMode === 'inherit'} onChange={() => setEditAssignmentMode('inherit')} disabled={editSaving}/><span>サブRouteの担当を継承</span></label> : null}
+                <label className="assignment-inherit-option"><input type="radio" name="edit-assignment-mode" checked={editAssignmentMode === 'override'} onChange={() => setEditAssignmentMode('override')} disabled={editSaving}/><span>{activeBranchId ? 'この予定だけ個別指定' : '担当を個別指定'}</span></label>
+                {editAssignmentMode === 'override' ? <div className="destination-assignment-list">{alternateRouteMyMembers.length ? alternateRouteMyMembers.map((member) => <label key={member.id}><input type="checkbox" checked={editSelectedDestinationMyMemberIds.includes(member.id)} onChange={() => toggleDestinationMember(member.id, true)} disabled={editSaving}/><i className={`is-color-${member.colorKey}`} aria-hidden="true"/><span>{member.name}</span></label>) : <small>My Membersに同行者を追加すると選択できます。</small>}</div> : null}
+              </section>
 
               {editError && <p className="form-error" role="alert">{editError}</p>}
 

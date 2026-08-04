@@ -74,3 +74,27 @@ export async function replaceRouteBranchMyMembers(routeId: string, branchId: str
   );
   if (insertError) throw insertError;
 }
+
+
+export type DestinationMyMemberAssignment = { routeId: string; destinationId: string; myMemberId: string; assignedAt: string };
+const destinationAssignmentColumns = 'route_id,destination_id,my_member_id,assigned_at';
+function mapDestinationAssignment(row: any): DestinationMyMemberAssignment {
+  return { routeId: row.route_id, destinationId: row.destination_id, myMemberId: row.my_member_id, assignedAt: row.assigned_at };
+}
+export async function listRouteDestinationMyMemberAssignments(routeId: string): Promise<DestinationMyMemberAssignment[]> {
+  const { data, error } = await requireSupabase().from('route_destination_my_members')
+    .select(destinationAssignmentColumns).eq('route_id', routeId);
+  if (error) throw error;
+  return (data ?? []).map(mapDestinationAssignment);
+}
+export async function replaceRouteDestinationMyMembers(routeId: string, destinationId: string, myMemberIds: string[]): Promise<void> {
+  const client = requireSupabase();
+  const { error: deleteError } = await client.from('route_destination_my_members')
+    .delete().eq('route_id', routeId).eq('destination_id', destinationId);
+  if (deleteError) throw deleteError;
+  if (myMemberIds.length === 0) return;
+  const { error: insertError } = await client.from('route_destination_my_members').insert(
+    myMemberIds.map((myMemberId) => ({ route_id: routeId, destination_id: destinationId, my_member_id: myMemberId }))
+  );
+  if (insertError) throw insertError;
+}
