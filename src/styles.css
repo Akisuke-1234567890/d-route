@@ -3281,3 +3281,27 @@ a { color: inherit; }
   border-radius: 999px; background: rgba(255, 181, 74, .14); color: #ffd08a;
   border: 1px solid rgba(255, 181, 74, .28); font-size: .68rem; font-weight: 800; letter-spacing: .03em;
 }
+
+/* v2.1.0-p80.2 Members hub */
+.members-hub{padding-top:18px}
+.members-view-tabs{
+  display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:5px;margin:0 0 22px;
+  border:1px solid rgba(190,199,255,.15);border-radius:18px;background:rgba(10,15,40,.52);
+}
+.members-view-tabs button{
+  min-height:46px;border:0;border-radius:14px;background:transparent;color:rgba(215,220,245,.62);
+  font:inherit;font-size:.78rem;font-weight:850;letter-spacing:.01em;
+}
+.members-view-tabs button.is-active{
+  color:#fff;background:linear-gradient(135deg,rgba(126,111,255,.36),rgba(88,209,215,.14));
+  box-shadow:inset 0 0 0 1px rgba(167,156,255,.24),0 8px 22px rgba(0,0,0,.16);
+}
+.members-view-tabs button span{
+  display:inline-grid;place-items:center;min-width:17px;height:17px;margin-left:4px;padding:0 4px;
+  border-radius:999px;background:rgba(255,181,74,.16);color:#ffd08a;font-size:.54rem;vertical-align:1px;
+}
+.members-hub .my-members-heading{margin-bottom:4px}
+@media(max-width:420px){
+  .members-view-tabs{margin-bottom:18px}
+  .members-view-tabs button{font-size:.72rem}
+}

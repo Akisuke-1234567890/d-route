@@ -8,7 +8,7 @@ const ownerTabs = [
   { key: 'route', label: 'Route', icon: '🗺️', path: '' },
   { key: 'places', label: 'Places', icon: '📍', path: '/places' },
   { key: 'chat', label: 'Chat', icon: '💬', path: '/chat' },
-  { key: 'members', label: 'Members', icon: '👥', path: '/members', beta: true },
+  { key: 'members', label: 'Members', icon: '👥', path: '/members' },
   { key: 'menu', label: 'Menu', icon: '☰', path: '/menu' },
 ] as const;
 
@@ -38,7 +38,7 @@ export function RouteBottomNav({ routeId }: RouteBottomNavProps) {
           className={({ isActive }) => `route-bottom-nav-item${isActive ? ' is-active' : ''}`}
         >
           <span className="route-bottom-nav-icon" aria-hidden="true">{tab.icon}</span>
-          <span className="route-bottom-nav-label">{tab.label}{'beta' in tab && tab.beta ? <small className="route-bottom-nav-beta">β</small> : null}</span>
+          <span className="route-bottom-nav-label">{tab.label}</span>
         </NavLink>
       ))}
     </nav>

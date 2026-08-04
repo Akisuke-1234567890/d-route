@@ -4,13 +4,32 @@ import { BrandMark } from '../../shared/ui/BrandMark';
 import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { getSupabaseClient } from '../../shared/api/supabase';
+import { createMyMember, deleteMyMember, listMyMembers, updateMyMember, type MyMember } from '../my-members/myMembers';
 import { getRoute } from './routes';
 import { getOwnRouteMember, inviteRouteMemberByLoginId, listRouteMembers, respondToRouteInvite, type RouteMember, type RouteMemberStatus } from './members';
 
-const labels: Record<RouteMemberStatus,string> = { participating:'参加', unanswered:'未回答', declined:'不参加' };
+const labels: Record<RouteMemberStatus, string> = { participating: '参加', unanswered: '未回答', declined: '不参加' };
+type MembersView = 'my' | 'shared';
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
 
 export function RouteMembersPage() {
   const { routeId = '' } = useParams<{ routeId: string }>();
+  const [activeView, setActiveView] = useState<MembersView>('my');
+
+  const [myMembers, setMyMembers] = useState<MyMember[]>([]);
+  const [myLoading, setMyLoading] = useState(true);
+  const [myError, setMyError] = useState('');
+  const [myEditing, setMyEditing] = useState<MyMember | null>(null);
+  const [myFormOpen, setMyFormOpen] = useState(false);
+  const [myName, setMyName] = useState('');
+  const [mySaving, setMySaving] = useState(false);
+  const [myFormError, setMyFormError] = useState('');
+  const [myDeleteTarget, setMyDeleteTarget] = useState<MyMember | null>(null);
+  const [myDeleting, setMyDeleting] = useState(false);
+
   const [members, setMembers] = useState<RouteMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -23,14 +42,25 @@ export function RouteMembersPage() {
   const [responseSaving, setResponseSaving] = useState(false);
   const [responseError, setResponseError] = useState('');
 
+  async function loadMyMembers() {
+    setMyLoading(true);
+    setMyError('');
+    try {
+      setMyMembers(await listMyMembers());
+    } catch (caught) {
+      setMyError(getErrorMessage(caught, 'My Membersを読み込めませんでした。'));
+    } finally {
+      setMyLoading(false);
+    }
+  }
+
+  useEffect(() => { void loadMyMembers(); }, []);
 
   useEffect(() => {
     let active = true;
     setLoading(true);
     setError('');
 
-    // Members本体と自分の権限判定は、Branch情報とは独立して読み込む。
-    // BranchテーブルやRLSの取得に失敗しても、Members画面全体を閉じない。
     const supabase = getSupabaseClient();
     const ownerCheck = supabase
       ? Promise.all([getRoute(routeId), supabase.auth.getUser()]).then(([route, authResult]) => {
@@ -39,118 +69,162 @@ export function RouteMembersPage() {
         })
       : Promise.reject(new Error('Supabaseの環境変数が設定されていません。'));
 
-    // Members行が欠けている既存Routeでも、routes.owner_user_idから作成者を判定する。
     void Promise.allSettled([listRouteMembers(routeId), getOwnRouteMember(routeId), ownerCheck])
       .then(([membersResult, ownResult, ownerResult]) => {
         if (!active) return;
-
-        if (membersResult.status === 'fulfilled') {
-          setMembers(membersResult.value);
-        } else {
+        if (membersResult.status === 'fulfilled') setMembers(membersResult.value);
+        else {
           setMembers([]);
-          setError(membersResult.reason instanceof Error ? membersResult.reason.message : 'Membersを読み込めませんでした。');
+          setError(getErrorMessage(membersResult.reason, 'Membersを読み込めませんでした。'));
         }
-
         const own = ownResult.status === 'fulfilled' ? ownResult.value : null;
         const ownerByRoute = ownerResult.status === 'fulfilled' && ownerResult.value;
         setOwnMember(own);
         setIsRouteOwner(own?.role === 'owner' || ownerByRoute);
-
       })
       .finally(() => { if (active) setLoading(false); });
-
 
     return () => { active = false; };
   }, [routeId]);
 
-
-
-
-async function submitInvite(event: FormEvent<HTMLFormElement>) {
-  event.preventDefault();
-  if (inviteSaving) return;
-  setInviteSaving(true);
-  setInviteError('');
-  try {
-    const invited = await inviteRouteMemberByLoginId(routeId, inviteLoginId);
-    setMembers((current) => {
-      const exists = current.some((member) => member.id === invited.id || member.userId === invited.userId);
-      return exists ? current.map((member) => member.userId === invited.userId ? invited : member) : [...current, invited];
-    });
-    setInviteLoginId('');
-    setInviteOpen(false);
-  } catch (caught) {
-    setInviteError(caught instanceof Error ? caught.message : '招待できませんでした。');
-  } finally {
-    setInviteSaving(false);
+  function openMyCreate() {
+    setMyEditing(null);
+    setMyName('');
+    setMyFormError('');
+    setMyFormOpen(true);
   }
-}
 
+  function openMyEdit(member: MyMember) {
+    setMyEditing(member);
+    setMyName(member.name);
+    setMyFormError('');
+    setMyFormOpen(true);
+  }
 
-async function answerInvite(status: 'participating' | 'declined') {
-  if (responseSaving) return;
-  setResponseSaving(true); setResponseError('');
-  try {
-    const updated = await respondToRouteInvite(routeId, status);
-    setOwnMember(updated);
-    setMembers((current) => current.map((member) => member.userId === updated.userId ? updated : member));
-  } catch (caught) {
-    setResponseError(caught instanceof Error ? caught.message : '参加回答を保存できませんでした。');
-  } finally { setResponseSaving(false); }
-}
+  function closeMyForm() {
+    if (mySaving) return;
+    setMyEditing(null);
+    setMyName('');
+    setMyFormError('');
+    setMyFormOpen(false);
+  }
 
-  const answered = members.filter((m) => m.status !== 'unanswered').length;
+  async function saveMyMember(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (mySaving) return;
+    setMySaving(true);
+    setMyFormError('');
+    try {
+      const saved = myEditing ? await updateMyMember(myEditing.id, myName) : await createMyMember(myName);
+      setMyMembers((current) => myEditing
+        ? current.map((item) => item.id === saved.id ? saved : item)
+        : [...current, saved]);
+      closeMyForm();
+    } catch (caught) {
+      setMyFormError(getErrorMessage(caught, 'My Memberを保存できませんでした。'));
+    } finally {
+      setMySaving(false);
+    }
+  }
+
+  async function removeMyMember() {
+    if (!myDeleteTarget || myDeleting) return;
+    setMyDeleting(true);
+    try {
+      await deleteMyMember(myDeleteTarget.id);
+      setMyMembers((current) => current.filter((item) => item.id !== myDeleteTarget.id));
+      setMyDeleteTarget(null);
+    } catch (caught) {
+      setMyError(getErrorMessage(caught, 'My Memberを削除できませんでした。'));
+    } finally {
+      setMyDeleting(false);
+    }
+  }
+
+  async function submitInvite(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (inviteSaving) return;
+    setInviteSaving(true);
+    setInviteError('');
+    try {
+      const invited = await inviteRouteMemberByLoginId(routeId, inviteLoginId);
+      setMembers((current) => {
+        const exists = current.some((member) => member.id === invited.id || member.userId === invited.userId);
+        return exists ? current.map((member) => member.userId === invited.userId ? invited : member) : [...current, invited];
+      });
+      setInviteLoginId('');
+      setInviteOpen(false);
+    } catch (caught) {
+      setInviteError(getErrorMessage(caught, '招待できませんでした。'));
+    } finally {
+      setInviteSaving(false);
+    }
+  }
+
+  async function answerInvite(status: 'participating' | 'declined') {
+    if (responseSaving) return;
+    setResponseSaving(true);
+    setResponseError('');
+    try {
+      const updated = await respondToRouteInvite(routeId, status);
+      setOwnMember(updated);
+      setMembers((current) => current.map((member) => member.userId === updated.userId ? updated : member));
+    } catch (caught) {
+      setResponseError(getErrorMessage(caught, '参加回答を保存できませんでした。'));
+    } finally {
+      setResponseSaving(false);
+    }
+  }
+
+  const answered = members.filter((member) => member.status !== 'unanswered').length;
+
   return <main className="app-shell route-tab-shell">
-    <header className="global-header"><div className="header-brand"><BrandMark size={34} /><strong>D Route</strong></div><div className="header-actions"><Link className="icon-button header-link" to="/routes">一覧へ戻る</Link><RefreshButton placement="header" /></div></header>
-    <section className="page-content route-tab-content" aria-labelledby="members-title">
-      <div className="route-tab-heading">
-        <div><p className="eyebrow">SHARED MEMBERS</p><div className="members-title-line"><h1 id="members-title">共有メンバー</h1><span className="feature-beta-badge">β 改善中</span></div><p>D Routeアカウントを招待し、このRouteの参加状況を共有します。</p></div>
-        {isRouteOwner ? <button className="primary-button route-tab-action" type="button" onClick={() => { setInviteError(''); setInviteOpen(true); }}>＋ 招待</button> : null}
+    <header className="global-header">
+      <div className="header-brand"><BrandMark size={34} /><strong>D Route</strong></div>
+      <div className="header-actions"><Link className="icon-button header-link" to="/routes">一覧へ戻る</Link><RefreshButton placement="header" /></div>
+    </header>
+
+    <section className="page-content route-tab-content members-hub" aria-labelledby="members-title">
+      <div className="members-view-tabs" role="tablist" aria-label="メンバー表示切替">
+        <button type="button" role="tab" aria-selected={activeView === 'my'} className={activeView === 'my' ? 'is-active' : ''} onClick={() => setActiveView('my')}>My Members</button>
+        <button type="button" role="tab" aria-selected={activeView === 'shared'} className={activeView === 'shared' ? 'is-active' : ''} onClick={() => setActiveView('shared')}>共有メンバー <span>β</span></button>
       </div>
-      {inviteOpen ? (
-        <div className="member-invite-panel">
-          <div className="member-invite-heading">
-            <div><p className="eyebrow">INVITE</p><h2>ログインIDで招待</h2></div>
-            <button className="member-invite-close" type="button" aria-label="閉じる" onClick={() => setInviteOpen(false)}>×</button>
-          </div>
-          <form className="member-invite-form" onSubmit={submitInvite}>
-            <input
-              value={inviteLoginId}
-              onChange={(event) => setInviteLoginId(event.target.value)}
-              placeholder="login_id"
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-              maxLength={24}
-            />
-            <button className="primary-button" type="submit" disabled={!inviteLoginId.trim() || inviteSaving}>
-              {inviteSaving ? '招待中' : '招待する'}
-            </button>
-          </form>
-          <p className="member-invite-help">相手のD RouteログインIDを入力します。</p>
-          {inviteError ? <p className="member-invite-error" role="alert">{inviteError}</p> : null}
+
+      {activeView === 'my' ? <>
+        <div className="route-tab-heading my-members-heading">
+          <div><p className="eyebrow">MY MEMBERS</p><h1 id="members-title">同行者</h1><p>招待なしで使える、自分専用の同行者名簿です。</p></div>
+          <button className="primary-button route-tab-action" type="button" onClick={openMyCreate}>＋ 追加</button>
         </div>
-      ) : null}
-      {ownMember?.role === 'member' ? (
-        <div className="member-response-panel">
-          <div><p className="eyebrow">YOUR RESPONSE</p><h2>このRouteに参加しますか？</h2>
-          <p>{ownMember.status === 'unanswered' ? '招待への回答を選択してください。' : `現在の回答：${labels[ownMember.status]}`}</p></div>
-          <div className="member-response-actions">
-            <button className={`primary-button${ownMember.status === 'participating' ? ' is-selected' : ''}`} type="button" disabled={responseSaving} onClick={() => void answerInvite('participating')}>参加する</button>
-            <button className={`secondary-button${ownMember.status === 'declined' ? ' is-selected' : ''}`} type="button" disabled={responseSaving} onClick={() => void answerInvite('declined')}>参加しない</button>
-          </div>
-          {responseError ? <p className="member-invite-error" role="alert">{responseError}</p> : null}
+
+        {myLoading ? <section className="route-loading"><span className="route-loading-spinner"/><p>読み込んでいます</p></section>
+        : myError ? <section className="empty-state" role="alert"><h2>読み込めませんでした</h2><p>{myError}</p><button className="secondary-button" type="button" onClick={() => void loadMyMembers()}>再読み込み</button></section>
+        : myMembers.length === 0 ? <section className="empty-state"><div className="empty-orbit"><BrandMark size={58}/></div><h2>まだ登録されていません</h2><p>家族や友人など、よく使う同行者を追加してください。</p><button className="primary-button" type="button" onClick={openMyCreate}>My Memberを追加</button></section>
+        : <div className="my-members-list">{myMembers.map((member) => <article className="my-member-card" key={member.id}><div className="my-member-avatar" aria-hidden="true">👤</div><div className="my-member-copy"><strong>{member.name}</strong><small>未連携</small></div><button className="secondary-button my-member-edit" type="button" onClick={() => openMyEdit(member)}>編集</button></article>)}</div>}
+      </> : <>
+        <div className="route-tab-heading">
+          <div><p className="eyebrow">SHARED MEMBERS</p><div className="members-title-line"><h1 id="members-title">共有メンバー</h1><span className="feature-beta-badge">β 改善中</span></div><p>D Routeアカウントを招待し、このRouteの参加状況を共有します。</p></div>
+          {isRouteOwner ? <button className="primary-button route-tab-action" type="button" onClick={() => { setInviteError(''); setInviteOpen(true); }}>＋ 招待</button> : null}
         </div>
-      ) : null}
-      {loading ? <p className="route-tab-demo-note">Membersを読み込んでいます。</p> : null}
-      {error ? <p className="route-tab-demo-note" role="alert">{error}</p> : null}
-      {!loading && !error ? <>
-        <div className="members-overview"><strong>{answered}/{members.length}</strong><span>回答済み</span><div><span>参加 {members.filter(m=>m.status==='participating').length}</span><span>未回答 {members.filter(m=>m.status==='unanswered').length}</span><span>不参加 {members.filter(m=>m.status==='declined').length}</span></div></div>
-        <div className="members-page-list">{members.map((member) => <article className="member-row member-page-row" key={member.id}><div className="member-avatar" aria-hidden="true">{member.displayName.slice(0,2).toUpperCase()}</div><div className="member-copy"><div className="member-name-line"><h2>{member.displayName}</h2><span className="member-role">{member.role === 'owner' ? 'リーダー' : 'メンバー'}</span></div><p className={`member-status member-status-${member.status}`}><span aria-hidden="true"/>{labels[member.status]}</p></div></article>)}</div>
-        {members.length === 0 ? <p className="route-tab-demo-note">参加メンバーはいません。</p> : null}
-      </> : null}
-      <p className="route-tab-demo-note">共有メンバーは現在β版です。招待と参加状況を扱い、別行動への割り振りはPlacesから設定します。名前だけで管理する同行者はMenuの「My Members」を使用してください。</p>
+
+        {inviteOpen ? <div className="member-invite-panel">
+          <div className="member-invite-heading"><div><p className="eyebrow">INVITE</p><h2>ログインIDで招待</h2></div><button className="member-invite-close" type="button" aria-label="閉じる" onClick={() => setInviteOpen(false)}>×</button></div>
+          <form className="member-invite-form" onSubmit={submitInvite}><input value={inviteLoginId} onChange={(event) => setInviteLoginId(event.target.value)} placeholder="login_id" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={24}/><button className="primary-button" type="submit" disabled={!inviteLoginId.trim() || inviteSaving}>{inviteSaving ? '招待中' : '招待する'}</button></form>
+          <p className="member-invite-help">相手のD RouteログインIDを入力します。</p>{inviteError ? <p className="member-invite-error" role="alert">{inviteError}</p> : null}
+        </div> : null}
+
+        {ownMember?.role === 'member' ? <div className="member-response-panel"><div><p className="eyebrow">YOUR RESPONSE</p><h2>このRouteに参加しますか？</h2><p>{ownMember.status === 'unanswered' ? '招待への回答を選択してください。' : `現在の回答：${labels[ownMember.status]}`}</p></div><div className="member-response-actions"><button className={`primary-button${ownMember.status === 'participating' ? ' is-selected' : ''}`} type="button" disabled={responseSaving} onClick={() => void answerInvite('participating')}>参加する</button><button className={`secondary-button${ownMember.status === 'declined' ? ' is-selected' : ''}`} type="button" disabled={responseSaving} onClick={() => void answerInvite('declined')}>参加しない</button></div>{responseError ? <p className="member-invite-error" role="alert">{responseError}</p> : null}</div> : null}
+
+        {loading ? <p className="route-tab-demo-note">共有メンバーを読み込んでいます。</p> : null}
+        {error ? <p className="route-tab-demo-note" role="alert">{error}</p> : null}
+        {!loading && !error ? <><div className="members-overview"><strong>{answered}/{members.length}</strong><span>回答済み</span><div><span>参加 {members.filter((member) => member.status === 'participating').length}</span><span>未回答 {members.filter((member) => member.status === 'unanswered').length}</span><span>不参加 {members.filter((member) => member.status === 'declined').length}</span></div></div><div className="members-page-list">{members.map((member) => <article className="member-row member-page-row" key={member.id}><div className="member-avatar" aria-hidden="true">{member.displayName.slice(0, 2).toUpperCase()}</div><div className="member-copy"><div className="member-name-line"><h2>{member.displayName}</h2><span className="member-role">{member.role === 'owner' ? 'リーダー' : 'メンバー'}</span></div><p className={`member-status member-status-${member.status}`}><span aria-hidden="true"/>{labels[member.status]}</p></div></article>)}</div>{members.length === 0 ? <p className="route-tab-demo-note">共有メンバーはいません。</p> : null}</> : null}
+        <p className="route-tab-demo-note">共有・同期機能は現在β版です。名前だけで管理する同行者は「My Members」を使用してください。</p>
+      </>}
     </section>
-    <footer className="app-footer"><VersionBadge/><span>Route Workspace</span></footer>
+
+    <footer className="app-footer"><VersionBadge/><span>{activeView === 'my' ? 'Personal Directory' : 'Shared Members Beta'}</span></footer>
+
+    {myFormOpen && <div className="modal-backdrop is-centered-choice" onMouseDown={(event) => { if (event.target === event.currentTarget) closeMyForm(); }}><form className="route-modal my-member-modal" onSubmit={saveMyMember}><div className="modal-header"><div><p className="eyebrow">MY MEMBER</p><h2>{myEditing ? '名前を編集' : 'My Memberを追加'}</h2></div><button className="modal-close-button" type="button" onClick={closeMyForm}>×</button></div><label className="route-settings-field"><span>名前</span><input value={myName} maxLength={30} autoFocus onChange={(event) => setMyName(event.target.value)} placeholder="例：妻、長男、Aさん"/><small>{myName.length}/30</small></label>{myFormError ? <div className="route-inline-error" role="alert">{myFormError}</div> : null}<div className="modal-actions"><button className="secondary-button" type="button" onClick={closeMyForm}>キャンセル</button><button className="primary-button" type="submit" disabled={mySaving || !myName.trim()}>{mySaving ? '保存中…' : '保存'}</button></div>{myEditing ? <button className="my-member-delete-link" type="button" onClick={() => { setMyDeleteTarget(myEditing); setMyEditing(null); setMyName(''); setMyFormOpen(false); }}>このMy Memberを削除</button> : null}</form></div>}
+
+    {myDeleteTarget ? <div className="modal-backdrop is-centered-choice" onMouseDown={(event) => { if (event.target === event.currentTarget && !myDeleting) setMyDeleteTarget(null); }}><section className="route-modal my-member-delete-modal"><h2>削除しますか？</h2><p>「{myDeleteTarget.name}」をMy Membersから削除します。</p><div className="modal-actions"><button className="secondary-button" type="button" onClick={() => setMyDeleteTarget(null)} disabled={myDeleting}>キャンセル</button><button className="route-list-delete-confirm" type="button" onClick={() => void removeMyMember()} disabled={myDeleting}>{myDeleting ? '削除中…' : '削除する'}</button></div></section></div> : null}
   </main>;
 }
