@@ -3338,3 +3338,16 @@ a { color: inherit; }
 /* v2.1.0-p81.0 My Members assignment for sub routes */
 .alternate-route-my-member-editor{border-color:rgba(126,231,197,.22);background:rgba(52,193,151,.055)}
 .alternate-route-my-member-editor .alternate-route-member-avatar{background:linear-gradient(145deg,rgba(69,215,166,.28),rgba(93,111,255,.26));border-color:rgba(126,231,197,.28)}
+
+
+/* v2.1.0-p81.3 My Members assignee visibility */
+.route-assignee-line{
+  max-width:min(220px,58vw);display:inline-flex!important;align-items:center;justify-content:center;gap:5px;
+  color:rgba(210,235,230,.82)!important;font-size:.61rem!important;font-weight:780;line-height:1.2;
+}
+.route-assignee-avatar{flex:0 0 auto;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;background:rgba(69,215,166,.15);font-size:.62rem}
+.route-assignee-names{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.alternate-route-assignees{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.alternate-route-assignees span{display:inline-flex;align-items:center;gap:4px;max-width:170px;padding:4px 8px;border:1px solid rgba(126,231,197,.20);border-radius:999px;background:rgba(52,193,151,.07);color:rgba(220,241,236,.82);font-size:.64rem;font-weight:760}
+.alternate-route-assignees i{font-style:normal;font-size:.65rem}
+@media(max-width:420px){.route-assignee-line{max-width:52vw}.alternate-route-assignees span{max-width:140px}}

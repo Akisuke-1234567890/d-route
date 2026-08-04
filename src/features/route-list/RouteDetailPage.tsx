@@ -16,6 +16,12 @@ import {
   type RouteBranch,
   type AlternateRouteDestination,
 } from './branches';
+import {
+  listMyMembers,
+  listRouteBranchMyMemberAssignments,
+  type MyMember,
+  type RouteBranchMyMemberAssignment,
+} from '../my-members/myMembers';
 
 function timeToMinutes(value: string | null | undefined): number | null {
   if (!value) return null;
@@ -108,6 +114,8 @@ function PhaseDashboard({ routeId, participantView, memberUserId }: { routeId: s
   const [alternateLoading, setAlternateLoading] = useState(true);
   const [alternateError, setAlternateError] = useState<string | null>(null);
   const [assignedAlternateRouteId, setAssignedAlternateRouteId] = useState<string | null>(null);
+  const [myMembers, setMyMembers] = useState<MyMember[]>([]);
+  const [myMemberAssignments, setMyMemberAssignments] = useState<RouteBranchMyMemberAssignment[]>([]);
   const [routePageIndex, setRoutePageIndex] = useState(0);
   const [routePageDirection, setRoutePageDirection] = useState<'next' | 'previous'>('next');
   const [routePageAnimationId, setRoutePageAnimationId] = useState(0);
@@ -177,8 +185,10 @@ function PhaseDashboard({ routeId, participantView, memberUserId }: { routeId: s
     void Promise.all([
       listRouteBranches(routeId),
       memberUserId ? listRouteBranchAssignments(routeId) : Promise.resolve([]),
+      listMyMembers(),
+      listRouteBranchMyMemberAssignments(routeId),
     ])
-      .then(async ([routes, assignments]) => {
+      .then(async ([routes, assignments, nextMyMembers, nextMyMemberAssignments]) => {
         const configured = routes.filter((item) => item.connectionType);
         const assignedId = memberUserId
           ? assignments.find((item) => item.memberUserId === memberUserId)?.branchId ?? null
@@ -192,6 +202,8 @@ function PhaseDashboard({ routeId, participantView, memberUserId }: { routeId: s
         ] as const));
         if (!active) return;
         setAssignedAlternateRouteId(assignedId);
+        setMyMembers(nextMyMembers);
+        setMyMemberAssignments(nextMyMemberAssignments);
         setAlternateRoutes(ordered);
         setAlternateDestinations(Object.fromEntries(pairs));
         setRoutePageIndex((current) => {
@@ -446,6 +458,12 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
   const activeAlternateDestinations = activeAlternateRoute
     ? alternateDestinations[activeAlternateRoute.id] ?? []
     : [];
+  const activeAlternateMyMembers = activeAlternateRoute
+    ? myMemberAssignments
+      .filter((assignment) => assignment.branchId === activeAlternateRoute.id)
+      .map((assignment) => myMembers.find((member) => member.id === assignment.myMemberId))
+      .filter((member): member is MyMember => Boolean(member))
+    : [];
 
   const destinationLabelById = (destinationId: string | null) => {
     if (!destinationId) return null;
@@ -575,6 +593,12 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
       <div className="v2-route-page-title">
         <small>{routePageIndex === 0 ? 'メインRoute' : activeAlternateRoute ? alternateRouteCategory(activeAlternateRoute.connectionType) : '別行動Route'}</small>
         <strong>{routePageIndex === 0 ? 'メインの予定' : activeAlternateRoute?.name ?? '別行動'}{activeAlternateRoute?.id === assignedAlternateRouteId ? <em className="v2-route-page-own">あなたのRoute</em> : null}</strong>
+        {activeAlternateMyMembers.length > 0 ? (
+          <span className="route-assignee-line" aria-label={`担当 ${activeAlternateMyMembers.map((member) => member.name).join('、')}`}>
+            <span className="route-assignee-avatar" aria-hidden="true">👤</span>
+            <span className="route-assignee-names">{activeAlternateMyMembers.map((member) => member.name).join('・')}</span>
+          </span>
+        ) : null}
         <span>{routePageIndex + 1} / {routePageCount}</span>
       </div>
       <button type="button" onClick={showNextRoutePage} disabled={routePageIndex >= routePageCount - 1} aria-label="次のRouteを見る">›</button>
@@ -597,6 +621,11 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
             <div>
               <p className="eyebrow">{alternateRouteCategory(activeAlternateRoute.connectionType)}</p>
               <h2>{activeAlternateRoute.name}</h2>
+              {activeAlternateMyMembers.length > 0 ? (
+                <div className="alternate-route-assignees" aria-label={`担当 ${activeAlternateMyMembers.map((member) => member.name).join('、')}`}>
+                  {activeAlternateMyMembers.map((member) => <span key={member.id}><i aria-hidden="true">👤</i>{member.name}</span>)}
+                </div>
+              ) : null}
             </div>
             <span className="v2-alternate-route-badge">{activeAlternateRoute.id === assignedAlternateRouteId ? 'あなたの別行動' : alternateTypeLabel(activeAlternateRoute.connectionType)}</span>
           </div>

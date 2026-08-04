@@ -231,10 +231,18 @@ export function RoutePlacesPage() {
     setLoading(true);
     setError(null);
     try {
-      const [nextPhases, nextDestinations, nextAlternateRoutes] = await Promise.all([getRoutePhases(routeId, activeBranchId), getRouteDestinations(routeId, activeBranchId), listRouteBranches(routeId)]);
+      const [nextPhases, nextDestinations, nextAlternateRoutes, nextMyMembers, nextMyMemberAssignments] = await Promise.all([
+        getRoutePhases(routeId, activeBranchId),
+        getRouteDestinations(routeId, activeBranchId),
+        listRouteBranches(routeId),
+        listMyMembers(),
+        listRouteBranchMyMemberAssignments(routeId),
+      ]);
       setPhases(nextPhases);
       setDestinations(nextDestinations);
       setAlternateRoutes(nextAlternateRoutes);
+      setAlternateRouteMyMembers(nextMyMembers);
+      setAlternateRouteMyMemberAssignments(nextMyMemberAssignments);
       placesPlanningCacheRef.current.set(activeBranchId ?? 'main', { phases: nextPhases, destinations: nextDestinations });
     } catch (err) {
       setError(getErrorMessage(err, 'Placesを読み込めませんでした。'));
@@ -975,6 +983,12 @@ function requestDestinationDelete(destination: DestinationSummary) {
   const activePlacesRouteIndex = Math.max(0, placesRouteIds.findIndex((id) => id === activeBranchId));
   const activePlacesRoute = activeBranchId ? alternateRoutes.find((route) => route.id === activeBranchId) ?? null : null;
   const placesRouteCategory = !activePlacesRoute ? 'メインRoute' : activePlacesRoute.connectionType === 'split_merge' ? '分岐Route' : activePlacesRoute.connectionType === 'join' ? '合流Route' : activePlacesRoute.connectionType === 'leave' ? '離脱Route' : '別行動Route';
+  const activePlacesRouteMyMembers = activePlacesRoute
+    ? alternateRouteMyMemberAssignments
+      .filter((assignment) => assignment.branchId === activePlacesRoute.id)
+      .map((assignment) => alternateRouteMyMembers.find((member) => member.id === assignment.myMemberId))
+      .filter((member): member is MyMember => Boolean(member))
+    : [];
 
   function clearPlacesRouteSettleTimer() {
     if (placesRouteSettleTimerRef.current !== null) {
@@ -1186,6 +1200,12 @@ function requestDestinationDelete(destination: DestinationSummary) {
           <div className="places-route-carousel-title">
             <small>{placesRouteCategory}</small>
             <strong>{activePlacesRoute?.name ?? 'メインの予定'}</strong>
+            {activePlacesRouteMyMembers.length > 0 ? (
+              <span className="route-assignee-line" aria-label={`担当 ${activePlacesRouteMyMembers.map((member) => member.name).join('、')}`}>
+                <span className="route-assignee-avatar" aria-hidden="true">👤</span>
+                <span className="route-assignee-names">{activePlacesRouteMyMembers.map((member) => member.name).join('・')}</span>
+              </span>
+            ) : null}
             <span>{activePlacesRouteIndex + 1} / {placesRouteIds.length}</span>
           </div>
           <button type="button" className="places-route-arrow" onClick={() => void movePlacesRoute(activePlacesRouteIndex + 1)} disabled={activePlacesRouteIndex >= placesRouteIds.length - 1} aria-label="次のRouteを見る">›</button>
