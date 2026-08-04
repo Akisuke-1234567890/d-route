@@ -183,6 +183,15 @@ export function RoutePlacesPage() {
   const [alternateRouteSaving, setAlternateRouteSaving] = useState(false);
   const [alternateRouteError, setAlternateRouteError] = useState<string | null>(null);
   const [alternateRouteDeleting, setAlternateRouteDeleting] = useState(false);
+  const [alternateRouteManageOpen, setAlternateRouteManageOpen] = useState(false);
+  const [alternateRouteDeleteTarget, setAlternateRouteDeleteTarget] = useState<RouteBranch | null>(null);
+  const [swipedAlternateRouteId, setSwipedAlternateRouteId] = useState<string | null>(null);
+  const [alternateRouteSwipeOffset, setAlternateRouteSwipeOffset] = useState(0);
+  const alternateRouteSwipeStartXRef = useRef(0);
+  const alternateRouteSwipeStartYRef = useRef(0);
+  const alternateRouteSwipeStartOffsetRef = useRef(0);
+  const activeAlternateRouteSwipeIdRef = useRef<string | null>(null);
+  const alternateRouteSwipeAxisRef = useRef<'pending' | 'horizontal' | 'vertical'>('pending');
   const [alternateRouteMembers, setAlternateRouteMembers] = useState<RouteMember[]>([]);
   const [alternateRouteAssignments, setAlternateRouteAssignments] = useState<RouteBranchAssignment[]>([]);
   const [alternateRouteSelectedMemberIds, setAlternateRouteSelectedMemberIds] = useState<string[]>([]);
@@ -225,7 +234,7 @@ export function RoutePlacesPage() {
   const nameInputRef = useRef<HTMLInputElement>(null);
   const editNameInputRef = useRef<HTMLInputElement>(null);
 
-  useBodyScrollLock(createOpen || Boolean(editing) || Boolean(deleteTarget) || phaseCreateOpen || Boolean(phaseEditing) || alternateRouteOpen || addMenuOpen);
+  useBodyScrollLock(createOpen || Boolean(editing) || Boolean(deleteTarget) || phaseCreateOpen || Boolean(phaseEditing) || alternateRouteOpen || addMenuOpen || alternateRouteManageOpen || Boolean(alternateRouteDeleteTarget));
 
   async function loadPlanning() {
     setLoading(true);
@@ -459,20 +468,75 @@ export function RoutePlacesPage() {
     catch(err){ setAlternateRouteError(getErrorMessage(err,'別行動の予定を削除できませんでした。')); }
   }
 
+  const ALTERNATE_ROUTE_DELETE_REVEAL_WIDTH = 92;
+
+  function closeAlternateRouteSwipe() {
+    setSwipedAlternateRouteId(null);
+    setAlternateRouteSwipeOffset(0);
+    activeAlternateRouteSwipeIdRef.current = null;
+    alternateRouteSwipeAxisRef.current = 'pending';
+  }
+
+  function handleAlternateRoutePointerDown(event: ReactPointerEvent<HTMLElement>, branchId: string) {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    event.stopPropagation();
+    if (swipedAlternateRouteId && swipedAlternateRouteId !== branchId) closeAlternateRouteSwipe();
+    activeAlternateRouteSwipeIdRef.current = branchId;
+    alternateRouteSwipeStartXRef.current = event.clientX;
+    alternateRouteSwipeStartYRef.current = event.clientY;
+    alternateRouteSwipeStartOffsetRef.current = swipedAlternateRouteId === branchId ? alternateRouteSwipeOffset : 0;
+    alternateRouteSwipeAxisRef.current = 'pending';
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function handleAlternateRoutePointerMove(event: ReactPointerEvent<HTMLElement>, branchId: string) {
+    if (activeAlternateRouteSwipeIdRef.current !== branchId) return;
+    const deltaX = event.clientX - alternateRouteSwipeStartXRef.current;
+    const deltaY = event.clientY - alternateRouteSwipeStartYRef.current;
+    if (alternateRouteSwipeAxisRef.current === 'pending' && (Math.abs(deltaX) > 8 || Math.abs(deltaY) > 8)) {
+      alternateRouteSwipeAxisRef.current = Math.abs(deltaX) > Math.abs(deltaY) * 1.12 ? 'horizontal' : 'vertical';
+    }
+    if (alternateRouteSwipeAxisRef.current !== 'horizontal') return;
+    event.preventDefault();
+    event.stopPropagation();
+    const nextOffset = Math.max(-ALTERNATE_ROUTE_DELETE_REVEAL_WIDTH, Math.min(0, alternateRouteSwipeStartOffsetRef.current + deltaX));
+    setSwipedAlternateRouteId(branchId);
+    setAlternateRouteSwipeOffset(nextOffset);
+  }
+
+  function handleAlternateRoutePointerEnd(event: ReactPointerEvent<HTMLElement>, branchId: string) {
+    if (activeAlternateRouteSwipeIdRef.current !== branchId) return;
+    event.stopPropagation();
+    try { event.currentTarget.releasePointerCapture(event.pointerId); } catch { /* released */ }
+    const horizontal = alternateRouteSwipeAxisRef.current === 'horizontal';
+    const shouldOpen = horizontal && alternateRouteSwipeOffset <= -(ALTERNATE_ROUTE_DELETE_REVEAL_WIDTH * 0.52);
+    setSwipedAlternateRouteId(shouldOpen ? branchId : null);
+    setAlternateRouteSwipeOffset(shouldOpen ? -ALTERNATE_ROUTE_DELETE_REVEAL_WIDTH : 0);
+    activeAlternateRouteSwipeIdRef.current = null;
+    alternateRouteSwipeAxisRef.current = 'pending';
+  }
+
+  function requestAlternateRouteDelete(route: RouteBranch) {
+    closeAlternateRouteSwipe();
+    setAlternateRouteDeleteTarget(route);
+  }
+
   async function handleAlternateRouteDelete() {
-    if (!alternateRouteEditing || alternateRouteDeleting || alternateRouteSaving) return;
-    const confirmed = window.confirm(`「${alternateRouteEditing.name}」を削除しますか？\n割り振り情報も解除されます。`);
-    if (!confirmed) return;
+    const target = alternateRouteDeleteTarget ?? alternateRouteEditing;
+    if (!target || alternateRouteDeleting || alternateRouteSaving) return;
     setAlternateRouteDeleting(true);
     setAlternateRouteError(null);
     try {
-      await deleteAlternateRoute(alternateRouteEditing.id, routeId);
-      setAlternateRoutes((current) => current.filter((item) => item.id !== alternateRouteEditing.id));
+      await deleteAlternateRoute(target.id, routeId);
+      setAlternateRoutes((current) => current.filter((item) => item.id !== target.id));
+      if (activeBranchId === target.id) setActiveBranchId(null);
+      setAlternateRouteDeleteTarget(null);
+      setAlternateRouteManageOpen(false);
       setAlternateRouteOpen(false);
       setAlternateRouteEditing(null);
-      setToast('別行動を削除しました。');
+      setToast('サブRouteを削除しました。');
     } catch (err) {
-      setAlternateRouteError(getErrorMessage(err, '別行動を削除できませんでした。'));
+      setAlternateRouteError(getErrorMessage(err, 'サブRouteを削除できませんでした。'));
     } finally {
       setAlternateRouteDeleting(false);
     }
@@ -1356,11 +1420,53 @@ function requestDestinationDelete(destination: DestinationSummary) {
             <button type="button" onClick={() => { setAddMenuOpen(false); openCreateModal(); }}>予定を追加</button>
             <button type="button" onClick={() => { setAddMenuOpen(false); openPhaseCreate(); }}>Phaseを追加</button>
             {!activePlacesRoute ? (
-              <button type="button" onClick={() => { setAddMenuOpen(false); openAlternateRouteCreate(); }}>別行動を追加</button>
+              <button type="button" onClick={() => { setAddMenuOpen(false); openAlternateRouteCreate(); }}>サブRouteを追加</button>
             ) : (
               <button type="button" onClick={() => { setAddMenuOpen(false); openAlternateRouteEdit(activePlacesRoute); }}>接続設定を開く</button>
             )}
+            {alternateRoutes.length > 0 ? <button type="button" onClick={() => { setAddMenuOpen(false); closeAlternateRouteSwipe(); setAlternateRouteManageOpen(true); }}>サブRouteを管理</button> : null}
             <button className="is-cancel" type="button" onClick={() => setAddMenuOpen(false)}>キャンセル</button>
+          </section>
+        </div>
+      )}
+
+      {alternateRouteManageOpen && (
+        <div className="modal-backdrop alternate-route-manage-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) { closeAlternateRouteSwipe(); setAlternateRouteManageOpen(false); } }}>
+          <section className="route-modal alternate-route-manage-modal" role="dialog" aria-modal="true" aria-labelledby="alternate-route-manage-title">
+            <div className="modal-header"><div><p className="eyebrow">SUB ROUTES</p><h2 id="alternate-route-manage-title">サブRouteを管理</h2></div><button className="modal-close-button" type="button" onClick={() => { closeAlternateRouteSwipe(); setAlternateRouteManageOpen(false); }} aria-label="閉じる">×</button></div>
+            <div className="alternate-route-manage-list">
+              {alternateRoutes.map((route) => (
+                <div className={`alternate-route-manage-swipe-shell${swipedAlternateRouteId === route.id ? ' is-open' : ''}`} key={route.id}>
+                  <button className="alternate-route-manage-delete" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => requestAlternateRouteDelete(route)}>削除</button>
+                  <button
+                    className="alternate-route-manage-card"
+                    type="button"
+                    style={{ transform: `translateX(${swipedAlternateRouteId === route.id ? alternateRouteSwipeOffset : 0}px)` }}
+                    onPointerDown={(event) => handleAlternateRoutePointerDown(event, route.id)}
+                    onPointerMove={(event) => handleAlternateRoutePointerMove(event, route.id)}
+                    onPointerUp={(event) => handleAlternateRoutePointerEnd(event, route.id)}
+                    onPointerCancel={(event) => handleAlternateRoutePointerEnd(event, route.id)}
+                    onClick={() => { if (swipedAlternateRouteId === route.id) { closeAlternateRouteSwipe(); return; } setAlternateRouteManageOpen(false); openAlternateRouteEdit(route); }}
+                  >
+                    <span><strong>{route.name}</strong><small>{alternateRouteTypeLabel(route.connectionType)}</small></span><span aria-hidden="true">›</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+            <p className="field-hint">左へスワイプすると削除できます。カードを押すと編集できます。</p>
+          </section>
+        </div>
+      )}
+
+      {alternateRouteDeleteTarget && (
+        <div className="modal-backdrop centered-confirm-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !alternateRouteDeleting) setAlternateRouteDeleteTarget(null); }}>
+          <section className="route-modal centered-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="alternate-route-delete-title">
+            <div className="route-list-delete-icon" aria-hidden="true">!</div>
+            <h2 id="alternate-route-delete-title">サブRouteを削除しますか？</h2>
+            <p className="route-list-delete-name">「{alternateRouteDeleteTarget.name}」</p>
+            <p className="route-list-delete-copy">このサブRoute内のPhase・予定・担当設定も削除されます。</p>
+            {alternateRouteError ? <div className="route-inline-error" role="alert">{alternateRouteError}</div> : null}
+            <div className="modal-actions"><button className="secondary-button" type="button" onClick={() => setAlternateRouteDeleteTarget(null)} disabled={alternateRouteDeleting}>キャンセル</button><button className="route-list-delete-confirm" type="button" onClick={() => void handleAlternateRouteDelete()} disabled={alternateRouteDeleting}>{alternateRouteDeleting ? '削除中…' : '削除する'}</button></div>
           </section>
         </div>
       )}
@@ -1693,7 +1799,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
               </section> : <p className="route-tab-demo-note">別行動を一度保存すると、その中の予定を追加できます。</p>}
               {alternateRouteError ? <p className="form-error" role="alert">{alternateRouteError}</p> : null}
               <div className="modal-actions"><button className="secondary-button" type="button" onClick={closeAlternateRouteModal} disabled={alternateRouteSaving || alternateRouteDeleting}>キャンセル</button><button className="primary-button" type="submit" disabled={alternateRouteSaving || alternateRouteDeleting || !alternateRouteName.trim() || timedDestinations.length === 0}>{alternateRouteSaving ? '保存中…' : alternateRouteEditing ? '保存' : '追加'}</button></div>
-              {alternateRouteEditing ? <button className="alternate-route-delete-button" type="button" onClick={() => void handleAlternateRouteDelete()} disabled={alternateRouteSaving || alternateRouteDeleting}>{alternateRouteDeleting ? '削除中…' : 'この別行動を削除'}</button> : null}
+              {alternateRouteEditing ? <button className="alternate-route-delete-button" type="button" onClick={() => alternateRouteEditing && requestAlternateRouteDelete(alternateRouteEditing)} disabled={alternateRouteSaving || alternateRouteDeleting}>{alternateRouteDeleting ? '削除中…' : 'この別行動を削除'}</button> : null}
             </form>
           </section>
         </div>
