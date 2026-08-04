@@ -193,7 +193,7 @@ async function handleDuplicateRoute() {
           </div>
 
           <p className="route-duplicate-description">
-            PhaseとDestinationを新しいRouteへコピーします。完了状態・Chat・Membersは引き継ぎません。
+            Phaseと予定を新しいRouteへコピーします。完了状態・Chat・Membersは引き継ぎません。
           </p>
 
           <label className="route-settings-field">

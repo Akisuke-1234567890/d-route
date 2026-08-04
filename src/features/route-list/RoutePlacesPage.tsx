@@ -563,7 +563,7 @@ export function RoutePlacesPage() {
       setDestinations((current) => [...current, created].sort((a, b) => a.orderValue - b.orderValue));
       setCreateOpen(false);
     } catch (err) {
-      setFormError(getErrorMessage(err, '目的地を追加できませんでした。'));
+      setFormError(getErrorMessage(err, '予定を追加できませんでした。'));
     } finally {
       setSaving(false);
     }
@@ -603,7 +603,7 @@ export function RoutePlacesPage() {
       );
       setEditing(null);
     } catch (err) {
-      setEditError(getErrorMessage(err, '目的地を更新できませんでした。'));
+      setEditError(getErrorMessage(err, '予定を更新できませんでした。'));
     } finally {
       setEditSaving(false);
     }
@@ -1162,9 +1162,9 @@ function requestDestinationDelete(destination: DestinationSummary) {
       setDestinations((current) => current.filter((item) => item.id !== deleteTarget.id));
       setDeleteTarget(null);
       setEditing(null);
-      setToast('目的地を削除しました');
+      setToast('予定を削除しました');
     } catch (err) {
-      setDeleteError(getErrorMessage(err, '目的地を削除できませんでした。'));
+      setDeleteError(getErrorMessage(err, '予定を削除できませんでした。'));
     } finally {
       setDeleting(false);
     }
@@ -1195,7 +1195,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
         <div className="route-tab-heading places-compact-heading">
           <div>
             <p className="eyebrow">{activeBranchId ? 'SUB ROUTE' : 'PLACES'}</p>
-            <h1 id="places-title">{activeBranchId ? (alternateRoutes.find((route) => route.id === activeBranchId)?.name ?? 'サブRoute') : '目的地'}</h1>
+            <h1 id="places-title">{activeBranchId ? (alternateRoutes.find((route) => route.id === activeBranchId)?.name ?? 'サブRoute') : '予定'}</h1>
           </div>
           <button
             className="primary-button places-add-menu-button"
@@ -1224,17 +1224,17 @@ function requestDestinationDelete(destination: DestinationSummary) {
                       <div className="places-phase-titleline"><h2>{phase.name || 'Phase'}</h2>{!phase.name && <span className="phase-unnamed-badge">名前未設定</span>}{phase.startTime && <span className="phase-start-badge">{phase.startTime.slice(0, 5)}〜</span>}</div>
                       {phase.description && <p>{phase.description}</p>}
                     </div>
-                    <div className="places-phase-actions"><button className="phase-edit-button" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeDestinationSwipe(); openPhaseEdit(phase); }}>編集</button><button className="phase-add-place-button" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeDestinationSwipe(); openCreateModal(phase.id); }}>＋ 目的地</button></div>
+                    <div className="places-phase-actions"><button className="phase-edit-button" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeDestinationSwipe(); openPhaseEdit(phase); }}>編集</button><button className="phase-add-place-button" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeDestinationSwipe(); openCreateModal(phase.id); }}>＋ 予定</button></div>
                   </header>
                   {phaseDestinations.length === 0 ? (
-                    <button className="phase-empty-add" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeDestinationSwipe(); openCreateModal(phase.id); }}>このPhaseに最初の目的地を追加</button>
+                    <button className="phase-empty-add" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeDestinationSwipe(); openCreateModal(phase.id); }}>このPhaseに最初の予定を追加</button>
                   ) : (
                     <div className="places-list">
                       {phaseDestinations.map((destination, index) => { const dragShift = getDestinationDragShift(index); return (
                         <div data-destination-interaction="true" className={`places-destination-swipe-shell${swipedDestinationId === destination.id ? ' is-open' : ''}`} key={destination.id} style={dragShift !== 0 ? { transform: `translateY(${dragShift}px)` } : undefined} onTouchStart={(event) => event.stopPropagation()} onTouchEnd={(event) => event.stopPropagation()}>
                           <button className="places-destination-swipe-delete" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => requestDestinationDelete(destination)}>削除</button>
                           <article className={`place-card places-destination-swipe-panel${reorderingId === destination.id ? ' is-drag-placeholder' : ''}${dragShift !== 0 ? ' is-reorder-shifting' : ''}${reorderingId && reorderOverId === destination.id && reorderingId !== destination.id ? ' is-reorder-over' : ''}`} data-destination-id={destination.id} data-phase-id={phase.id} data-draggable={destination.timeType === 'none' ? 'true' : 'false'} style={{ transform: `translateX(${swipedDestinationId === destination.id ? destinationSwipeOffset : 0}px)` }} onPointerDown={(event) => handleDestinationPointerDown(event, destination.id)} onPointerMove={(event) => handleDestinationPointerMove(event, destination.id)} onPointerUp={(event) => handleDestinationPointerEnd(event, destination.id)} onPointerCancel={(event) => handleDestinationPointerEnd(event, destination.id)}>
-                          <div className="place-order" aria-label={`${index + 1}番目`}>{index + 1}</div><div className="place-icon" aria-hidden="true">📍</div>
+                          <div className="place-order" aria-label={`${index + 1}番目`}>{index + 1}</div><div className="place-icon" aria-hidden="true">🗓️</div>
                           <div className="place-copy">
                             <div className="place-meta">
                               {destination.importance === 'must' ? <span className="place-required-mark" aria-label="必須" title="必須">★</span> : null}
@@ -1303,7 +1303,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
             }}
           >
             <div className="place-order">{destinations.findIndex((item) => item.id === dragged.id) + 1}</div>
-            <div className="place-icon">📍</div>
+            <div className="place-icon">🗓️</div>
             <div className="place-copy">
               <div className="place-meta">
                 <span>{getImportanceLabel(dragged.importance)}</span>
@@ -1333,7 +1333,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
         >
           <section className="places-add-sheet" role="dialog" aria-modal="true" aria-label="追加する項目を選択">
             <div className="places-add-sheet-handle" aria-hidden="true" />
-            <button type="button" onClick={() => { setAddMenuOpen(false); openCreateModal(); }}>目的地を追加</button>
+            <button type="button" onClick={() => { setAddMenuOpen(false); openCreateModal(); }}>予定を追加</button>
             <button type="button" onClick={() => { setAddMenuOpen(false); openPhaseCreate(); }}>Phaseを追加</button>
             {!activePlacesRoute ? (
               <button type="button" onClick={() => { setAddMenuOpen(false); openAlternateRouteCreate(); }}>別行動を追加</button>
@@ -1352,8 +1352,8 @@ function requestDestinationDelete(destination: DestinationSummary) {
           <section className="route-modal place-scroll-modal" role="dialog" aria-modal="true" aria-labelledby="create-destination-title">
             <div className="modal-header">
               <div>
-                <p className="eyebrow">NEW PLACE</p>
-                <h2 id="create-destination-title">目的地を追加</h2>
+                <p className="eyebrow">NEW SCHEDULE</p>
+                <h2 id="create-destination-title">予定を追加</h2>
               </div>
               <button className="modal-close-button" type="button" onClick={closeCreateModal} aria-label="閉じる" disabled={saving}>×</button>
             </div>
@@ -1411,7 +1411,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
               </label>
 
               <div className="field-group">
-                <label htmlFor="destination-name">目的地名</label>
+                <label htmlFor="destination-name">予定名</label>
                 <input ref={nameInputRef} id="destination-name" value={name}
                   onChange={(event) => setName(event.target.value)}
                   placeholder="例：大観山展望台" maxLength={40} autoComplete="off" disabled={saving} required />
@@ -1454,8 +1454,8 @@ function requestDestinationDelete(destination: DestinationSummary) {
           <section className="route-modal edit-place-modal place-scroll-modal" role="dialog" aria-modal="true" aria-labelledby="edit-destination-title">
             <div className="modal-header">
               <div>
-                <p className="eyebrow">EDIT PLACE</p>
-                <h2 id="edit-destination-title">目的地を編集</h2>
+                <p className="eyebrow">EDIT SCHEDULE</p>
+                <h2 id="edit-destination-title">予定を編集</h2>
               </div>
               <button className="modal-close-button" type="button" onClick={closeEditModal} aria-label="閉じる" disabled={editSaving}>×</button>
             </div>
@@ -1513,7 +1513,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
               </label>
 
               <div className="field-group">
-                <label htmlFor="edit-destination-name">目的地名</label>
+                <label htmlFor="edit-destination-name">予定名</label>
                 <input ref={editNameInputRef} id="edit-destination-name" value={editName}
                   onChange={(event) => setEditName(event.target.value)}
                   maxLength={40} autoComplete="off" disabled={editSaving} required />
@@ -1552,7 +1552,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
                 onClick={askDeleteDestination}
                 disabled={editSaving}
               >
-                この目的地を削除
+                この予定を削除
               </button>
               </div>
             </form>
@@ -1577,8 +1577,8 @@ function requestDestinationDelete(destination: DestinationSummary) {
           >
             <div className="modal-header">
               <div>
-                <p className="eyebrow route-danger-eyebrow">DELETE PLACE</p>
-                <h2 id="delete-destination-title">この目的地を削除しますか？</h2>
+                <p className="eyebrow route-danger-eyebrow">DELETE SCHEDULE</p>
+                <h2 id="delete-destination-title">この予定を削除しますか？</h2>
               </div>
               <button
                 className="modal-close-button"
@@ -1612,7 +1612,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
                 onClick={() => void handleDeleteDestination()}
                 disabled={deleting}
               >
-                {deleting ? '削除中…' : '目的地を削除'}
+                {deleting ? '削除中…' : '予定を削除'}
               </button>
             </div>
           </section>

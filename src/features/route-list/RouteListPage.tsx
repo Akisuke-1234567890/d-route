@@ -27,7 +27,7 @@ const builtInTemplates: Array<{
   name: string;
   description: string;
 }> = [
-  { key:'touring', icon:'🏍️', name:'ツーリング', description:'集合・休憩・食事・給油・目的地・帰路' },
+  { key:'touring', icon:'🏍️', name:'ツーリング', description:'集合・休憩・食事・給油・立ち寄り・帰路' },
   { key:'day_drive', icon:'🚗', name:'日帰りドライブ', description:'出発・立ち寄り・昼食・観光・帰宅' },
   { key:'day_trip', icon:'🧳', name:'旅行・お出かけ', description:'集合・午前・昼食・午後・宿泊または帰宅' },
   { key:'event', icon:'🎫', name:'イベント参加', description:'集合・入場・メイン予定・食事・解散' },
@@ -295,7 +295,7 @@ async function handleDeleteRoute() {
           <section className="home-empty-state">
             <div className="empty-orbit" aria-hidden="true"><BrandMark size={58} /></div>
             <h2>{showArchived ? 'アーカイブはありません' : 'Routeがまだありません'}</h2>
-            <p>{showArchived ? '終了したRouteをアーカイブすると、ここに表示されます。' : '最初のRouteを作って、みんなで目的地と順番を共有しましょう。'}</p>
+            <p>{showArchived ? '終了したRouteをアーカイブすると、ここに表示されます。' : '最初のRouteを作って、予定と順番を整理しましょう。'}</p>
             {showArchived ? (
               <button className="secondary-button" type="button" onClick={() => setShowArchived(false)}>使用中のRouteへ戻る</button>
             ) : (
@@ -462,7 +462,7 @@ async function handleDeleteRoute() {
             <h2 id="route-list-delete-title">本当に削除しますか？</h2>
             <p className="route-list-delete-name">「{deleteTarget.name}」</p>
             <p className="route-list-delete-copy">
-              このRouteに含まれるPhase・Destination・Chat・メンバー情報も利用できなくなります。
+              このRouteに含まれるPhase・予定・Chat・メンバー情報も利用できなくなります。
             </p>
             <div className="modal-actions">
               <button className="secondary-button" type="button" onClick={closeDeleteConfirmation} disabled={isDeletingRoute}>
@@ -498,7 +498,7 @@ async function handleDeleteRoute() {
                 >
                   <span aria-hidden="true">＋</span>
                   <strong>空のRoute</strong>
-                  <small>PhaseやDestinationを一から作る</small>
+                  <small>Phaseや予定を一から作る</small>
                 </button>
                 <button
                   className={`route-create-method${createMode === 'template' ? ' is-selected' : ''}`}

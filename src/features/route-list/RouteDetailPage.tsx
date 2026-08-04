@@ -737,7 +737,7 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
           </div>
         ) : currentDestinations.length === 0 ? (
           <div className="v2-phase-empty">
-            <p>このPhaseには目的地がまだありません。</p>
+            <p>このPhaseには予定がまだありません。</p>
             <Link className="v2-text-link" to={`/routes/${routeId}/places`}>Placesで追加する ›</Link>
           </div>
         ) : (

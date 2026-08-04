@@ -35,7 +35,7 @@ export function SignInPage() {
       <section className="auth-card" aria-labelledby="signin-title">
         <header className="brand-header">
           <BrandMark size={54} />
-          <div><div className="brand-wordmark small">D Route</div><p>目的地とRouteを、みんなで共有。</p></div>
+          <div><div className="brand-wordmark small">D Route</div><p>予定とRouteを、わかりやすく管理。</p></div>
         </header>
         <div className="auth-copy">
           <p className="eyebrow">WELCOME BACK</p>
