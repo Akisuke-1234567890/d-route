@@ -1600,11 +1600,15 @@ function requestDestinationDelete(destination: DestinationSummary) {
               </div>
 
 
-              <section className="destination-assignment-field" aria-labelledby="destination-assignment-title">
-                <div className="destination-assignment-heading"><strong id="destination-assignment-title">担当</strong><small>{activeBranchId ? 'サブRoute担当を継承できます' : '必要なメンバーだけ選択'}</small></div>
-                {activeBranchId ? <label className="assignment-inherit-option"><input type="radio" name="assignment-mode" checked={assignmentMode === 'inherit'} onChange={() => setAssignmentMode('inherit')} disabled={saving}/><span>サブRouteの担当を継承</span></label> : null}
-                <label className="assignment-inherit-option"><input type="radio" name="assignment-mode" checked={assignmentMode === 'override'} onChange={() => setAssignmentMode('override')} disabled={saving}/><span>{activeBranchId ? 'この予定だけ個別指定' : '担当を個別指定'}</span></label>
-                {assignmentMode === 'override' ? <div className="destination-assignment-list">{alternateRouteMyMembers.length ? alternateRouteMyMembers.map((member) => <label key={member.id}><input type="checkbox" checked={selectedDestinationMyMemberIds.includes(member.id)} onChange={() => toggleDestinationMember(member.id)} disabled={saving}/><i className={`is-color-${member.colorKey}`} aria-hidden="true"/><span>{member.name}</span></label>) : <small>My Membersに同行者を追加すると選択できます。</small>}</div> : null}
+              <section className="destination-assignment-field is-compact" aria-labelledby="destination-assignment-title">
+                <div className="destination-assignment-topline">
+                  <strong id="destination-assignment-title">担当</strong>
+                  <div className="assignment-mode-segment" role="radiogroup" aria-label="担当設定">
+                    {activeBranchId ? <label className={assignmentMode === 'inherit' ? 'is-active' : ''}><input type="radio" name="assignment-mode" checked={assignmentMode === 'inherit'} onChange={() => setAssignmentMode('inherit')} disabled={saving}/><span>継承</span></label> : null}
+                    <label className={assignmentMode === 'override' ? 'is-active' : ''}><input type="radio" name="assignment-mode" checked={assignmentMode === 'override'} onChange={() => setAssignmentMode('override')} disabled={saving}/><span>個別指定</span></label>
+                  </div>
+                </div>
+                {assignmentMode === 'override' ? <div className="destination-assignment-list is-compact">{alternateRouteMyMembers.length ? alternateRouteMyMembers.map((member) => <label className={selectedDestinationMyMemberIds.includes(member.id) ? `is-selected is-color-${member.colorKey}` : `is-color-${member.colorKey}`} key={member.id}><input type="checkbox" checked={selectedDestinationMyMemberIds.includes(member.id)} onChange={() => toggleDestinationMember(member.id)} disabled={saving}/><i aria-hidden="true"/><span>{member.name}</span></label>) : <small>My Membersに同行者を追加すると選択できます。</small>}</div> : <small className="assignment-inherit-note">サブRouteの担当を使用します。</small>}
               </section>
 
               {formError && <p className="form-error" role="alert">{formError}</p>}
@@ -1710,11 +1714,15 @@ function requestDestinationDelete(destination: DestinationSummary) {
               </div>
 
 
-              <section className="destination-assignment-field" aria-labelledby="edit-destination-assignment-title">
-                <div className="destination-assignment-heading"><strong id="edit-destination-assignment-title">担当</strong><small>{activeBranchId ? 'サブRoute担当を継承できます' : '必要なメンバーだけ選択'}</small></div>
-                {activeBranchId ? <label className="assignment-inherit-option"><input type="radio" name="edit-assignment-mode" checked={editAssignmentMode === 'inherit'} onChange={() => setEditAssignmentMode('inherit')} disabled={editSaving}/><span>サブRouteの担当を継承</span></label> : null}
-                <label className="assignment-inherit-option"><input type="radio" name="edit-assignment-mode" checked={editAssignmentMode === 'override'} onChange={() => setEditAssignmentMode('override')} disabled={editSaving}/><span>{activeBranchId ? 'この予定だけ個別指定' : '担当を個別指定'}</span></label>
-                {editAssignmentMode === 'override' ? <div className="destination-assignment-list">{alternateRouteMyMembers.length ? alternateRouteMyMembers.map((member) => <label key={member.id}><input type="checkbox" checked={editSelectedDestinationMyMemberIds.includes(member.id)} onChange={() => toggleDestinationMember(member.id, true)} disabled={editSaving}/><i className={`is-color-${member.colorKey}`} aria-hidden="true"/><span>{member.name}</span></label>) : <small>My Membersに同行者を追加すると選択できます。</small>}</div> : null}
+              <section className="destination-assignment-field is-compact" aria-labelledby="edit-destination-assignment-title">
+                <div className="destination-assignment-topline">
+                  <strong id="edit-destination-assignment-title">担当</strong>
+                  <div className="assignment-mode-segment" role="radiogroup" aria-label="担当設定">
+                    {activeBranchId ? <label className={editAssignmentMode === 'inherit' ? 'is-active' : ''}><input type="radio" name="edit-assignment-mode" checked={editAssignmentMode === 'inherit'} onChange={() => setEditAssignmentMode('inherit')} disabled={editSaving}/><span>継承</span></label> : null}
+                    <label className={editAssignmentMode === 'override' ? 'is-active' : ''}><input type="radio" name="edit-assignment-mode" checked={editAssignmentMode === 'override'} onChange={() => setEditAssignmentMode('override')} disabled={editSaving}/><span>個別指定</span></label>
+                  </div>
+                </div>
+                {editAssignmentMode === 'override' ? <div className="destination-assignment-list is-compact">{alternateRouteMyMembers.length ? alternateRouteMyMembers.map((member) => <label className={editSelectedDestinationMyMemberIds.includes(member.id) ? `is-selected is-color-${member.colorKey}` : `is-color-${member.colorKey}`} key={member.id}><input type="checkbox" checked={editSelectedDestinationMyMemberIds.includes(member.id)} onChange={() => toggleDestinationMember(member.id, true)} disabled={editSaving}/><i aria-hidden="true"/><span>{member.name}</span></label>) : <small>My Membersに同行者を追加すると選択できます。</small>}</div> : <small className="assignment-inherit-note">サブRouteの担当を使用します。</small>}
               </section>
 
               {editError && <p className="form-error" role="alert">{editError}</p>}
