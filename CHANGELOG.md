@@ -1,3 +1,11 @@
+## 2.1.0-p84.1 RC1 Phase fix
+
+- 最後のPhase削除時にSupabaseの英語エラーとコードを表示せず、「最後のPhaseは削除できません。」へ変換。
+- Phase追加・開始時刻編集後、開始時刻の早い順へ自動整列。時刻未設定は時刻設定済みPhaseの後へ配置。
+- 同時刻は既存順を維持し、並び確定後にorder_valueを1000刻みで再採番。
+- Phase削除後もorder_valueを再採番し、Route／Places間で順序を統一。
+- DBスキーマ変更なし。
+
 ## 2.1.0-p84 RC1
 
 - Route / Places / Chat / Members / Menuのページ外枠を`RouteWorkspacePage`へ共通化。

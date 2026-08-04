@@ -729,8 +729,10 @@ export function RoutePlacesPage() {
     setPhaseSaving(true);
     setPhaseError(null);
     try {
-      const created = await createRoutePhase(routeId, { name: phaseName, description: phaseDescription, startTime: phaseStartTime || null }, activeBranchId);
-      setPhases((current) => [...current, created].sort((a, b) => a.orderValue - b.orderValue));
+      await createRoutePhase(routeId, { name: phaseName, description: phaseDescription, startTime: phaseStartTime || null }, activeBranchId);
+      const nextPhases = await getRoutePhases(routeId, activeBranchId);
+      setPhases(nextPhases);
+      placesPlanningCacheRef.current.set(activeBranchId ?? 'main', { phases: nextPhases, destinations });
       setPhaseCreateOpen(false);
     } catch (err) {
       setPhaseError(getErrorMessage(err, 'Phaseを追加できませんでした。'));
@@ -803,8 +805,10 @@ function requestDestinationDelete(destination: DestinationSummary) {
     setPhaseSaving(true);
     setPhaseError(null);
     try {
-      const updated = await updateRoutePhase(routeId, phaseEditing.id, { name: phaseName, description: phaseDescription, startTime: phaseStartTime || null }, activeBranchId);
-      setPhases((current) => current.map((phase) => phase.id === updated.id ? updated : phase));
+      await updateRoutePhase(routeId, phaseEditing.id, { name: phaseName, description: phaseDescription, startTime: phaseStartTime || null }, activeBranchId);
+      const nextPhases = await getRoutePhases(routeId, activeBranchId);
+      setPhases(nextPhases);
+      placesPlanningCacheRef.current.set(activeBranchId ?? 'main', { phases: nextPhases, destinations });
       setPhaseEditing(null);
     } catch (err) {
       setPhaseError(getErrorMessage(err, 'Phaseを更新できませんでした。'));
