@@ -3440,3 +3440,196 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
     transition-duration:.01ms!important;
   }
 }
+
+/* v2.1.0-p83 D Route Design System foundation */
+:root{
+  /* Brand and semantic colors */
+  --dr-bg:#090d20;
+  --dr-bg-deep:#070b1b;
+  --dr-surface:#151b3d;
+  --dr-surface-raised:#1b234c;
+  --dr-surface-soft:rgba(21,27,61,.72);
+  --dr-border:rgba(196,203,255,.18);
+  --dr-border-strong:rgba(196,203,255,.28);
+  --dr-primary:#8b78ff;
+  --dr-primary-strong:#6959e8;
+  --dr-primary-soft:rgba(139,120,255,.14);
+  --dr-info:#58b8ff;
+  --dr-success:#48d6a1;
+  --dr-warning:#ffad52;
+  --dr-danger:#ff6f7e;
+  --dr-beta:#ffd06f;
+  --dr-text:#f7f8ff;
+  --dr-muted:#aeb6d8;
+  --dr-radius-card:18px;
+  --dr-radius-control:14px;
+  --dr-radius-modal:26px;
+  --dr-space-1:8px;
+  --dr-space-2:12px;
+  --dr-space-3:16px;
+  --dr-space-4:24px;
+  --dr-motion-fast:160ms;
+  --dr-motion-normal:220ms;
+  --dr-ease:cubic-bezier(.22,.72,.22,1);
+
+  /* Keep existing components compatible with the unified system. */
+  --bg:var(--dr-bg);
+  --bg-elevated:var(--dr-surface-soft);
+  --surface:var(--dr-surface-soft);
+  --line:var(--dr-border);
+  --text:var(--dr-text);
+  --muted:var(--dr-muted);
+  --accent:var(--dr-primary);
+  --accent-strong:var(--dr-primary-strong);
+  --danger:var(--dr-danger);
+  --success:var(--dr-success);
+  --radius-lg:var(--dr-radius-modal);
+  --radius-md:var(--dr-radius-card);
+}
+
+/* Same-level screens share one background. Meaningful states use accents, not unrelated page colors. */
+body,
+.app-shell,
+.route-tab-shell{
+  background:
+    radial-gradient(circle at 12% 2%,rgba(72,214,161,.075),transparent 29%),
+    radial-gradient(circle at 88% 12%,rgba(139,120,255,.18),transparent 35%),
+    linear-gradient(160deg,var(--dr-bg-deep) 0%,#121036 48%,var(--dr-bg) 100%);
+  color:var(--dr-text);
+}
+.global-header{
+  background:rgba(9,13,32,.86);
+  border-bottom-color:var(--dr-border);
+}
+
+/* Shared card language */
+.route-card,
+.route-detail-card,
+.places-phase-section,
+.place-card,
+.my-member-card,
+.alternate-route-manage-card,
+.members-panel,
+.route-settings-card,
+.empty-state,
+.route-loading{
+  border-color:var(--dr-border);
+  border-radius:var(--dr-radius-card);
+  background:linear-gradient(150deg,rgba(27,35,76,.88),rgba(13,18,47,.94));
+  box-shadow:0 14px 34px rgba(0,0,0,.18);
+}
+
+/* Controls: one visual grammar for primary, secondary, and danger actions. */
+.primary-button,
+.compact-primary-button,
+.places-add-menu-button{
+  border:0;
+  border-radius:var(--dr-radius-control);
+  color:#fff;
+  background:linear-gradient(135deg,var(--dr-primary),var(--dr-primary-strong));
+  box-shadow:0 10px 24px rgba(83,68,199,.24);
+  transition:transform var(--dr-motion-fast) var(--dr-ease),filter var(--dr-motion-fast) ease;
+}
+.secondary-button,
+.icon-button,
+.phase-edit-button,
+.place-edit-button{
+  border-color:var(--dr-border);
+  border-radius:var(--dr-radius-control);
+  background:rgba(255,255,255,.025);
+  color:var(--dr-text);
+}
+.primary-button:active,
+.compact-primary-button:active,
+.places-add-menu-button:active,
+.secondary-button:active,
+.icon-button:active{
+  transform:scale(.985);
+}
+.danger-button,
+.route-delete-confirm-button,
+.my-member-swipe-delete,
+.places-destination-swipe-delete{
+  color:#fff;
+  background:linear-gradient(150deg,#ff6f7e,#d92c48);
+}
+
+/* Modal hierarchy: confirmations/choices are centered; editing surfaces retain scroll space. */
+.modal-backdrop,
+.places-add-sheet-backdrop,
+.route-delete-backdrop,
+.alternate-route-manage-backdrop{
+  background:rgba(3,5,17,.74);
+  backdrop-filter:blur(9px);
+}
+.route-modal,
+.places-add-sheet,
+.route-delete-modal,
+.alternate-route-manage-modal,
+.my-member-modal,
+.my-member-delete-modal{
+  border-color:var(--dr-border-strong);
+  border-radius:var(--dr-radius-modal);
+  background:linear-gradient(155deg,rgba(29,37,80,.98),rgba(10,15,39,.99));
+  box-shadow:0 28px 90px rgba(0,0,0,.52);
+}
+
+/* Form meaning: required is purple, optional remains neutral, warnings use orange. */
+.field-group label,
+.field-label,
+.route-settings-field>label{
+  color:rgba(241,242,255,.92);
+}
+.field-group label span,
+.required-mark,
+.place-required-mark{
+  color:var(--dr-primary);
+}
+input,select,textarea{
+  border-color:var(--dr-border);
+  border-radius:var(--dr-radius-control);
+  background:rgba(5,9,28,.72);
+  color:var(--dr-text);
+  transition:border-color var(--dr-motion-fast) ease,box-shadow var(--dr-motion-fast) ease;
+}
+input:focus,select:focus,textarea:focus{
+  border-color:var(--dr-primary);
+  box-shadow:0 0 0 4px var(--dr-primary-soft);
+}
+.field-hint,.optional-label,.helper-text{color:var(--dr-muted)}
+.field-error,.error-text{color:var(--dr-danger)}
+
+/* Semantic badges keep their meaning across every screen. */
+.feature-beta-badge,
+.route-bottom-nav-beta,
+.members-view-tabs button span{
+  color:var(--dr-beta);
+  border-color:rgba(255,208,111,.30);
+  background:rgba(255,208,111,.13);
+}
+.today-status-badge,.success-badge,.is-complete{
+  color:#c9f8e7;
+  border-color:rgba(72,214,161,.32);
+  background:rgba(72,214,161,.12);
+}
+.warning-badge,.phase-unnamed-badge{
+  color:#ffd6a0;
+  border-color:rgba(255,173,82,.30);
+  background:rgba(255,173,82,.12);
+}
+
+/* Motion consistency */
+.route-card,
+.place-card,
+.my-member-card,
+.route-modal,
+.places-add-sheet,
+.route-delete-modal,
+.alternate-route-manage-modal{
+  transition:transform var(--dr-motion-normal) var(--dr-ease),opacity var(--dr-motion-normal) ease,border-color var(--dr-motion-fast) ease;
+}
+
+@media(max-width:420px){
+  .page-content{padding-inline:16px}
+  .route-modal,.places-add-sheet,.route-delete-modal,.alternate-route-manage-modal,.my-member-modal,.my-member-delete-modal{border-radius:22px}
+}
