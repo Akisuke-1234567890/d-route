@@ -1,3 +1,9 @@
+## 2.1.0-p84.2
+- サブRoute名を現在のPlaces画面から直接編集できる導線を追加。
+- サブRoute編集からサブRoute自体を削除可能。
+- サブRouteでは最後のPhaseも削除可能にし、空状態からPhaseを再追加可能。
+- メインRouteの最後のPhase削除禁止は維持。
+
 ## 2.1.0-p84.1 RC1 Phase fix
 
 - 最後のPhase削除時にSupabaseの英語エラーとコードを表示せず、「最後のPhaseは削除できません。」へ変換。

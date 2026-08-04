@@ -1348,6 +1348,8 @@ function requestDestinationDelete(destination: DestinationSummary) {
             <p className="eyebrow">{activeBranchId ? 'SUB ROUTE' : 'PLACES'}</p>
             <h1 id="places-title">{activeBranchId ? (alternateRoutes.find((route) => route.id === activeBranchId)?.name ?? 'サブRoute') : '予定'}</h1>
           </div>
+          <div className="places-heading-actions">
+            {activePlacesRoute ? <button className="secondary-button places-route-edit-button" type="button" onClick={() => openAlternateRouteEdit(activePlacesRoute)}>編集</button> : null}
           <button
             className="primary-button places-add-menu-button"
             type="button"
@@ -1358,6 +1360,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
               setAddMenuOpen(true);
             }}
           >＋ 追加</button>
+          </div>
         </div>
 
         {loading ? (
@@ -1366,6 +1369,13 @@ function requestDestinationDelete(destination: DestinationSummary) {
           <section className="empty-state" role="alert"><div className="empty-orbit" aria-hidden="true"><BrandMark size={58} /></div><h2>Placesを読み込めませんでした</h2><p>{error}</p><button className="secondary-button" type="button" onClick={() => void loadPlanning()}>再読み込み</button></section>
         ) : (
           <div className="phase-planning-list">
+            {phases.length === 0 && activeBranchId ? (
+              <section className="empty-state subroute-phase-empty">
+                <h2>このサブRouteにはPhaseがありません</h2>
+                <p>最初のPhaseを追加して予定を組み立ててください。</p>
+                <button className="primary-button" type="button" onClick={() => openPhaseCreate()}>＋ Phase</button>
+              </section>
+            ) : null}
             {phases.map((phase) => {
               const phaseDestinations = destinationsByPhase.get(phase.id) ?? [];
               return (
@@ -1940,7 +1950,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
             <div className="route-list-delete-icon" aria-hidden="true">!</div>
             <h2 id="phase-delete-title">Phaseを削除しますか？</h2>
             <p className="route-list-delete-name">「{phaseDeleteTarget.name || '名前未設定のPhase'}」</p>
-            <p className="route-list-delete-copy">このPhase内の予定は、残っている別のPhaseへ移動します。最後のPhaseは削除できません。</p>
+            <p className="route-list-delete-copy">{activeBranchId ? 'このPhase内の予定も削除されます。サブRouteでは最後のPhaseも削除できます。' : 'このPhase内の予定は、残っている別のPhaseへ移動します。最後のPhaseは削除できません。'}</p>
             {phaseDeleteError ? <div className="route-inline-error" role="alert">{phaseDeleteError}</div> : null}
             <div className="modal-actions"><button className="secondary-button" type="button" onClick={() => setPhaseDeleteTarget(null)} disabled={phaseDeleting}>キャンセル</button><button className="route-list-delete-confirm" type="button" onClick={() => void handlePhaseDelete()} disabled={phaseDeleting}>{phaseDeleting ? '削除中…' : '削除する'}</button></div>
           </section>
