@@ -3399,3 +3399,44 @@ a { color: inherit; }
 .destination-assignment-list.is-compact input{width:14px;height:14px;margin:0;accent-color:var(--member-color)}
 .destination-assignment-list.is-compact label i{width:7px;height:7px;flex:0 0 7px}
 @media (max-width:390px){.destination-assignment-topline{align-items:flex-start}.assignment-mode-segment label{padding:0 9px}.destination-assignment-list.is-compact label{padding-inline:8px}}
+
+
+/* v2.1.0-p82 v1.0 candidate stability polish */
+:root{
+  -webkit-tap-highlight-color:transparent;
+  text-size-adjust:100%;
+  -webkit-text-size-adjust:100%;
+}
+html{overscroll-behavior-y:none}
+button,a,input,select,textarea{font-family:inherit}
+button,a,[role="button"]{touch-action:manipulation}
+input,select,textarea{font-size:16px}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{
+  outline:2px solid rgba(143,233,223,.92);
+  outline-offset:3px;
+}
+.route-tab-content,.page-content{
+  padding-bottom:max(112px,calc(92px + env(safe-area-inset-bottom)));
+}
+.route-workspace-nav,.route-bottom-nav{
+  padding-bottom:max(8px,env(safe-area-inset-bottom));
+}
+.modal-backdrop,.places-add-sheet-backdrop,.route-delete-backdrop,.alternate-route-manage-backdrop{
+  overscroll-behavior:contain;
+}
+.route-modal,.places-add-sheet,.route-delete-modal,.alternate-route-manage-modal,.my-member-modal,.my-member-delete-modal{
+  max-height:calc(100dvh - max(32px,env(safe-area-inset-top)) - max(32px,env(safe-area-inset-bottom)));
+}
+.route-modal input,.route-modal select,.route-modal textarea,
+.places-add-sheet input,.places-add-sheet select,.places-add-sheet textarea,
+.my-member-modal input,.my-member-modal select,.my-member-modal textarea{
+  font-size:16px;
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    scroll-behavior:auto!important;
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.01ms!important;
+  }
+}
