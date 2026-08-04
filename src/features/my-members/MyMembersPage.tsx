@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
 import { RefreshButton } from '../../shared/ui/RefreshButton';
@@ -20,6 +20,13 @@ export function MyMembersPage() {
   const [formError, setFormError] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<MyMember | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [swipedMemberId, setSwipedMemberId] = useState<string | null>(null);
+  const [memberSwipeOffset, setMemberSwipeOffset] = useState(0);
+  const memberSwipeStartXRef = useRef(0);
+  const memberSwipeStartYRef = useRef(0);
+  const memberSwipeStartOffsetRef = useRef(0);
+  const memberSwipeAxisRef = useRef<'pending' | 'horizontal' | 'vertical'>('pending');
+  const activeMemberSwipeIdRef = useRef<string | null>(null);
 
   async function load() {
     setLoading(true); setError('');
@@ -52,6 +59,55 @@ export function MyMembersPage() {
     finally { setDeleting(false); }
   }
 
+  const MEMBER_DELETE_REVEAL_WIDTH = 88;
+
+  function closeMemberSwipe() {
+    setSwipedMemberId(null);
+    setMemberSwipeOffset(0);
+    activeMemberSwipeIdRef.current = null;
+    memberSwipeAxisRef.current = 'pending';
+  }
+
+  function handleMemberPointerDown(event: ReactPointerEvent<HTMLButtonElement>, memberId: string) {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    if (swipedMemberId && swipedMemberId !== memberId) closeMemberSwipe();
+    activeMemberSwipeIdRef.current = memberId;
+    memberSwipeStartXRef.current = event.clientX;
+    memberSwipeStartYRef.current = event.clientY;
+    memberSwipeStartOffsetRef.current = swipedMemberId === memberId ? memberSwipeOffset : 0;
+    memberSwipeAxisRef.current = 'pending';
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function handleMemberPointerMove(event: ReactPointerEvent<HTMLButtonElement>, memberId: string) {
+    if (activeMemberSwipeIdRef.current !== memberId) return;
+    const deltaX = event.clientX - memberSwipeStartXRef.current;
+    const deltaY = event.clientY - memberSwipeStartYRef.current;
+    if (memberSwipeAxisRef.current === 'pending' && (Math.abs(deltaX) > 7 || Math.abs(deltaY) > 7)) {
+      memberSwipeAxisRef.current = Math.abs(deltaX) > Math.abs(deltaY) * 1.15 ? 'horizontal' : 'vertical';
+    }
+    if (memberSwipeAxisRef.current !== 'horizontal') return;
+    event.preventDefault();
+    const nextOffset = Math.max(-MEMBER_DELETE_REVEAL_WIDTH, Math.min(0, memberSwipeStartOffsetRef.current + deltaX));
+    setSwipedMemberId(memberId);
+    setMemberSwipeOffset(nextOffset);
+  }
+
+  function handleMemberPointerEnd(event: ReactPointerEvent<HTMLButtonElement>, memberId: string) {
+    if (activeMemberSwipeIdRef.current !== memberId) return;
+    try { event.currentTarget.releasePointerCapture(event.pointerId); } catch { /* already released */ }
+    const shouldOpen = memberSwipeAxisRef.current === 'horizontal' && memberSwipeOffset <= -(MEMBER_DELETE_REVEAL_WIDTH * .5);
+    setSwipedMemberId(shouldOpen ? memberId : null);
+    setMemberSwipeOffset(shouldOpen ? -MEMBER_DELETE_REVEAL_WIDTH : 0);
+    activeMemberSwipeIdRef.current = null;
+    memberSwipeAxisRef.current = 'pending';
+  }
+
+  function openMemberFromCard(member: MyMember) {
+    if (memberSwipeAxisRef.current === 'horizontal' || Math.abs(memberSwipeOffset) > 4) return;
+    closeMemberSwipe();
+    openEdit(member);
+  }
 
   return <main className="app-shell my-members-shell">
     <header className="global-header">
@@ -63,7 +119,7 @@ export function MyMembersPage() {
       {loading ? <section className="route-loading"><span className="route-loading-spinner"/><p>読み込んでいます</p></section>
       : error ? <section className="empty-state" role="alert"><h2>読み込めませんでした</h2><p>{error}</p><button className="secondary-button" type="button" onClick={() => void load()}>再読み込み</button></section>
       : members.length === 0 ? <section className="empty-state"><div className="empty-orbit"><BrandMark size={58}/></div><h2>まだ登録されていません</h2><p>家族や友人など、よく使う同行者を追加してください。</p><button className="primary-button" type="button" onClick={openCreate}>My Memberを追加</button></section>
-      : <div className="my-members-list">{members.map((member) => <button className="my-member-card" type="button" key={member.id} onClick={() => openEdit(member)}><div className="my-member-avatar" aria-hidden="true">👤</div><div className="my-member-copy"><strong>{member.name}</strong><small><span className="my-member-status-dot" aria-hidden="true"/>未連携</small></div><span className="my-member-chevron" aria-hidden="true">›</span></button>)}</div>}
+      : <div className="my-members-list">{members.map((member) => <div className={`my-member-swipe-shell${swipedMemberId === member.id ? ' is-open' : ''}`} key={member.id}><button className="my-member-swipe-delete" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeMemberSwipe(); setDeleteTarget(member); }}>削除</button><button className="my-member-card my-member-swipe-panel" type="button" style={{ transform: `translateX(${swipedMemberId === member.id ? memberSwipeOffset : 0}px)` }} onPointerDown={(event) => handleMemberPointerDown(event, member.id)} onPointerMove={(event) => handleMemberPointerMove(event, member.id)} onPointerUp={(event) => handleMemberPointerEnd(event, member.id)} onPointerCancel={(event) => handleMemberPointerEnd(event, member.id)} onClick={() => openMemberFromCard(member)}><div className="my-member-avatar" aria-hidden="true">👤</div><div className="my-member-copy"><strong>{member.name}</strong><small><span className="my-member-status-dot" aria-hidden="true"/>未連携</small></div><span className="my-member-chevron" aria-hidden="true">›</span></button></div>)}</div>}
     </section>
     <footer className="app-footer"><VersionBadge/><span>Personal Directory</span></footer>
 
@@ -73,7 +129,6 @@ export function MyMembersPage() {
         <label className="route-settings-field"><span>名前</span><input value={name} maxLength={30} autoFocus onChange={(event) => setName(event.target.value)} placeholder="例：妻、長男、Aさん"/><small>{name.length}/30</small></label>
         {formError && <div className="route-inline-error" role="alert">{formError}</div>}
         <div className="modal-actions"><button className="secondary-button" type="button" onClick={closeForm}>キャンセル</button><button className="primary-button" type="submit" disabled={saving || !name.trim()}>{saving ? '保存中…' : '保存'}</button></div>
-        {editing && <button className="my-member-delete-link" type="button" onClick={() => { setDeleteTarget(editing); setEditing(null); setName(''); setFormOpen(false); }}>このMy Memberを削除</button>}
       </form>
     </div>}
 

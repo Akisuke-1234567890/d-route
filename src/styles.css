@@ -3316,3 +3316,11 @@ a { color: inherit; }
   .members-view-tabs{margin-bottom:18px}
   .members-view-tabs button{font-size:.72rem}
 }
+
+
+/* v2.1.0-p80.4 My Members swipe delete */
+.my-member-swipe-shell{position:relative;overflow:hidden;border-radius:16px;touch-action:pan-y}
+.my-member-swipe-delete{position:absolute;inset:0 0 0 auto;width:88px;border:0;border-radius:0 16px 16px 0;background:linear-gradient(160deg,#ff514b,#d91f28);color:#fff;font:inherit;font-size:.72rem;font-weight:850;display:grid;place-items:center;z-index:0}
+.my-member-swipe-panel{position:relative;z-index:1;transition:transform 190ms cubic-bezier(.22,.72,.22,1);will-change:transform;touch-action:pan-y}
+.my-member-swipe-shell.is-open .my-member-swipe-panel{box-shadow:-10px 0 22px rgba(0,0,0,.18)}
+.my-member-delete-link{display:none!important}
