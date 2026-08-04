@@ -572,21 +572,33 @@ export function RoutePlacesPage() {
       const saved = alternateRouteEditing
         ? await configureAlternateRoute(alternateRouteEditing.id, input)
         : await createAlternateRoute(input);
+      // サブRoute本体の保存を最優先に確定し、担当設定の失敗で名称変更を巻き戻さない。
+      setAlternateRouteEditing(saved);
+      setAlternateRoutes((current) => current.some((item) => item.id === saved.id)
+        ? current.map((item) => item.id === saved.id ? saved : item)
+        : [...current, saved].sort((a, b) => a.orderValue - b.orderValue));
+
+      let assignmentWarning: string | null = null;
       try {
         await saveAlternateRouteMemberSelection(saved.id);
         await replaceRouteBranchMyMembers(routeId, saved.id, alternateRouteSelectedMyMemberIds);
       } catch (memberError) {
-        setAlternateRouteEditing(saved);
-        setAlternateRoutes((current) => current.some((item) => item.id === saved.id)
-          ? current.map((item) => item.id === saved.id ? saved : item)
-          : [...current, saved].sort((a, b) => a.orderValue - b.orderValue));
-        throw new Error(`別行動は保存しましたが、参加者設定を保存できませんでした。${getErrorMessage(memberError, '')}`);
+        console.error('サブRoute担当設定の保存に失敗しました。', memberError);
+        assignmentWarning = '名称は保存しましたが、担当設定を保存できませんでした。';
       }
-      setAlternateRoutes((current) => alternateRouteEditing
-        ? current.map((item) => item.id === saved.id ? saved : item)
-        : [...current, saved].sort((a, b) => a.orderValue - b.orderValue));
+
+      // DBの確定値を再取得し、Route／Placesの表示を同時に更新する。
+      try {
+        const refreshed = await listRouteBranches(routeId);
+        setAlternateRoutes(refreshed);
+        const refreshedSaved = refreshed.find((item) => item.id === saved.id);
+        if (refreshedSaved) setAlternateRouteEditing(refreshedSaved);
+      } catch (refreshError) {
+        console.error('サブRoute保存後の再取得に失敗しました。', refreshError);
+      }
+
       setAlternateRouteOpen(false);
-      setToast(alternateRouteEditing ? '別行動を更新しました。' : '別行動を追加しました。');
+      setToast(assignmentWarning ?? (alternateRouteEditing ? 'サブRoute名を更新しました。' : 'サブRouteを追加しました。'));
     } catch (err) {
       setAlternateRouteError(getErrorMessage(err, '別Routeを保存できませんでした。'));
     } finally {
@@ -1901,7 +1913,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
                 <div className="alternate-destination-form"><input value={alternateDestinationName} onChange={e=>setAlternateDestinationName(e.target.value)} placeholder="予定名" maxLength={40}/><input value={alternateDestinationLocation} onChange={e=>setAlternateDestinationLocation(e.target.value)} placeholder="場所（任意）" maxLength={80}/><select value={alternateDestinationTimeType} onChange={e=>setAlternateDestinationTimeType(e.target.value as 'none'|'fixed'|'approx')}><option value="none">時間なし</option><option value="fixed">時間を指定</option><option value="approx">目安時間</option></select>{alternateDestinationTimeType!=='none'?<div className="alternate-destination-times"><input type="time" step="300" value={alternateDestinationStart} onChange={e=>setAlternateDestinationStart(e.target.value)}/><input type="time" step="300" value={alternateDestinationEnd} onChange={e=>setAlternateDestinationEnd(e.target.value)}/></div>:null}<textarea value={alternateDestinationDescription} onChange={e=>setAlternateDestinationDescription(e.target.value)} placeholder="メモ（任意）" maxLength={200} rows={2}/><button type="button" className="primary-button" disabled={!alternateDestinationName.trim()||alternateDestinationSaving} onClick={()=>void handleAlternateDestinationSave()}>{alternateDestinationSaving?'保存中…':alternateDestinationEditing?'予定を更新':'予定を追加'}</button></div>
               </section> : <p className="route-tab-demo-note">別行動を一度保存すると、その中の予定を追加できます。</p>}
               {alternateRouteError ? <p className="form-error" role="alert">{alternateRouteError}</p> : null}
-              <div className="modal-actions"><button className="secondary-button" type="button" onClick={closeAlternateRouteModal} disabled={alternateRouteSaving || alternateRouteDeleting}>キャンセル</button><button className="primary-button" type="submit" disabled={alternateRouteSaving || alternateRouteDeleting || !alternateRouteName.trim() || timedDestinations.length === 0}>{alternateRouteSaving ? '保存中…' : alternateRouteEditing ? '保存' : '追加'}</button></div>
+              <div className="modal-actions"><button className="secondary-button" type="button" onClick={closeAlternateRouteModal} disabled={alternateRouteSaving || alternateRouteDeleting}>キャンセル</button><button className="primary-button" type="submit" disabled={alternateRouteSaving || alternateRouteDeleting || !alternateRouteName.trim() || (!alternateRouteEditing && timedDestinations.length === 0)}>{alternateRouteSaving ? '保存中…' : alternateRouteEditing ? '保存' : '追加'}</button></div>
               {alternateRouteEditing ? <button className="alternate-route-delete-button" type="button" onClick={() => alternateRouteEditing && requestAlternateRouteDelete(alternateRouteEditing)} disabled={alternateRouteSaving || alternateRouteDeleting}>{alternateRouteDeleting ? '削除中…' : 'この別行動を削除'}</button> : null}
             </form>
           </section>
