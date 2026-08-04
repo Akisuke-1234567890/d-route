@@ -595,7 +595,7 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
         <strong>{routePageIndex === 0 ? 'メインの予定' : activeAlternateRoute?.name ?? '別行動'}{activeAlternateRoute?.id === assignedAlternateRouteId ? <em className="v2-route-page-own">あなたのRoute</em> : null}</strong>
         {activeAlternateMyMembers.length > 0 ? (
           <span className="route-assignee-line" aria-label={`担当 ${activeAlternateMyMembers.map((member) => member.name).join('、')}`}>
-            <span className="route-assignee-avatar" aria-hidden="true">👤</span>
+            <span className="route-assignee-avatars" aria-hidden="true">{activeAlternateMyMembers.slice(0, 3).map((member) => <i className={`is-color-${member.colorKey}`} key={member.id}/>)}</span>
             <span className="route-assignee-names">{activeAlternateMyMembers.map((member) => member.name).join('・')}</span>
           </span>
         ) : null}
@@ -623,7 +623,7 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
               <h2>{activeAlternateRoute.name}</h2>
               {activeAlternateMyMembers.length > 0 ? (
                 <div className="alternate-route-assignees" aria-label={`担当 ${activeAlternateMyMembers.map((member) => member.name).join('、')}`}>
-                  {activeAlternateMyMembers.map((member) => <span key={member.id}><i aria-hidden="true">👤</i>{member.name}</span>)}
+                  {activeAlternateMyMembers.map((member) => <span className={`is-color-${member.colorKey}`} key={member.id}><i aria-hidden="true"/>{member.name}</span>)}
                 </div>
               ) : null}
             </div>

@@ -1266,7 +1266,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
             <strong>{activePlacesRoute?.name ?? 'メインの予定'}</strong>
             {activePlacesRouteMyMembers.length > 0 ? (
               <span className="route-assignee-line" aria-label={`担当 ${activePlacesRouteMyMembers.map((member) => member.name).join('、')}`}>
-                <span className="route-assignee-avatar" aria-hidden="true">👤</span>
+                <span className="route-assignee-avatars" aria-hidden="true">{activePlacesRouteMyMembers.slice(0, 3).map((member) => <i className={`is-color-${member.colorKey}`} key={member.id}/>)}</span>
                 <span className="route-assignee-names">{activePlacesRouteMyMembers.map((member) => member.name).join('・')}</span>
               </span>
             ) : null}
@@ -1768,7 +1768,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
                     const assignedElsewhere = alternateRouteMyMemberAssignments.some((assignment) => assignment.myMemberId === member.id && assignment.branchId !== alternateRouteEditing?.id);
                     return <label className={`alternate-route-member-option${selected ? ' is-selected' : ''}`} key={member.id}>
                       <input type="checkbox" checked={selected} onChange={() => toggleAlternateRouteMyMember(member.id)} disabled={alternateRouteSaving || alternateRouteDeleting} />
-                      <span className="alternate-route-member-avatar" aria-hidden="true">{member.name.slice(0, 2).toUpperCase()}</span>
+                      <span className={`alternate-route-member-avatar is-color-${member.colorKey}`} aria-hidden="true">{member.name.slice(0, 2).toUpperCase()}</span>
                       <span><strong>{member.name}</strong><small>{assignedElsewhere ? '別のサブRouteにも設定中' : 'My Member'}</small></span>
                       <span className="alternate-route-member-check" aria-hidden="true">{selected ? '✓' : ''}</span>
                     </label>;

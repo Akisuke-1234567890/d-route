@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
 import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
-import { createMyMember, deleteMyMember, listMyMembers, updateMyMember, type MyMember } from './myMembers';
+import { MY_MEMBER_COLOR_KEYS, createMyMember, deleteMyMember, listMyMembers, updateMyMember, type MyMember, type MyMemberColorKey } from './myMembers';
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback;
@@ -16,6 +16,7 @@ export function MyMembersPage() {
   const [editing, setEditing] = useState<MyMember | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [name, setName] = useState('');
+  const [colorKey, setColorKey] = useState<MyMemberColorKey>('purple');
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<MyMember | null>(null);
@@ -36,17 +37,17 @@ export function MyMembersPage() {
   }
   useEffect(() => { void load(); }, []);
 
-  function openCreate() { setEditing(null); setName(''); setFormError(''); setFormOpen(true); }
-  function openEdit(member: MyMember) { setEditing(member); setName(member.name); setFormError(''); setFormOpen(true); }
-  function closeForm() { if (!saving) { setEditing(null); setName(''); setFormError(''); setFormOpen(false); } }
+  function openCreate() { setEditing(null); setName(''); setColorKey('purple'); setFormError(''); setFormOpen(true); }
+  function openEdit(member: MyMember) { setEditing(member); setName(member.name); setColorKey(member.colorKey); setFormError(''); setFormOpen(true); }
+  function closeForm() { if (!saving) { setEditing(null); setName(''); setColorKey('purple'); setFormError(''); setFormOpen(false); } }
 
   async function handleSave(event: FormEvent) {
     event.preventDefault(); if (saving) return;
     setSaving(true); setFormError('');
     try {
-      const saved = editing ? await updateMyMember(editing.id, name) : await createMyMember(name);
+      const saved = editing ? await updateMyMember(editing.id, name, colorKey) : await createMyMember(name, colorKey);
       setMembers((current) => editing ? current.map((item) => item.id === saved.id ? saved : item) : [...current, saved]);
-      setEditing(null); setName(''); setFormError(''); setFormOpen(false);
+      setEditing(null); setName(''); setColorKey('purple'); setFormError(''); setFormOpen(false);
     } catch (caught) { setFormError(getErrorMessage(caught, 'My Memberを保存できませんでした。')); }
     finally { setSaving(false); }
   }
@@ -119,7 +120,7 @@ export function MyMembersPage() {
       {loading ? <section className="route-loading"><span className="route-loading-spinner"/><p>読み込んでいます</p></section>
       : error ? <section className="empty-state" role="alert"><h2>読み込めませんでした</h2><p>{error}</p><button className="secondary-button" type="button" onClick={() => void load()}>再読み込み</button></section>
       : members.length === 0 ? <section className="empty-state"><div className="empty-orbit"><BrandMark size={58}/></div><h2>まだ登録されていません</h2><p>家族や友人など、よく使う同行者を追加してください。</p><button className="primary-button" type="button" onClick={openCreate}>My Memberを追加</button></section>
-      : <div className="my-members-list">{members.map((member) => <div className={`my-member-swipe-shell${swipedMemberId === member.id ? ' is-open' : ''}`} key={member.id}><button className="my-member-swipe-delete" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeMemberSwipe(); setDeleteTarget(member); }}>削除</button><button className="my-member-card my-member-swipe-panel" type="button" style={{ transform: `translateX(${swipedMemberId === member.id ? memberSwipeOffset : 0}px)` }} onPointerDown={(event) => handleMemberPointerDown(event, member.id)} onPointerMove={(event) => handleMemberPointerMove(event, member.id)} onPointerUp={(event) => handleMemberPointerEnd(event, member.id)} onPointerCancel={(event) => handleMemberPointerEnd(event, member.id)} onClick={() => openMemberFromCard(member)}><div className="my-member-avatar" aria-hidden="true">👤</div><div className="my-member-copy"><strong>{member.name}</strong><small><span className="my-member-status-dot" aria-hidden="true"/>未連携</small></div><span className="my-member-chevron" aria-hidden="true">›</span></button></div>)}</div>}
+      : <div className="my-members-list">{members.map((member) => <div className={`my-member-swipe-shell${swipedMemberId === member.id ? ' is-open' : ''}`} key={member.id}><button className="my-member-swipe-delete" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeMemberSwipe(); setDeleteTarget(member); }}>削除</button><button className="my-member-card my-member-swipe-panel" type="button" style={{ transform: `translateX(${swipedMemberId === member.id ? memberSwipeOffset : 0}px)` }} onPointerDown={(event) => handleMemberPointerDown(event, member.id)} onPointerMove={(event) => handleMemberPointerMove(event, member.id)} onPointerUp={(event) => handleMemberPointerEnd(event, member.id)} onPointerCancel={(event) => handleMemberPointerEnd(event, member.id)} onClick={() => openMemberFromCard(member)}><div className={`my-member-avatar is-color-${member.colorKey}`} aria-hidden="true">👤</div><div className="my-member-copy"><strong>{member.name}</strong><small><span className="my-member-status-dot" aria-hidden="true"/>未連携</small></div><span className="my-member-chevron" aria-hidden="true">›</span></button></div>)}</div>}
     </section>
     <footer className="app-footer"><VersionBadge/><span>Personal Directory</span></footer>
 
@@ -127,6 +128,7 @@ export function MyMembersPage() {
       <form className="route-modal my-member-modal my-member-modal-compact" onSubmit={handleSave}>
         <div className="modal-header"><div><p className="eyebrow">MY MEMBER</p><h2>{editing ? '名前を編集' : 'My Memberを追加'}</h2></div><button className="modal-close-button" type="button" onClick={closeForm}>×</button></div>
         <label className="route-settings-field"><span>名前</span><input value={name} maxLength={30} autoFocus onChange={(event) => setName(event.target.value)} placeholder="例：妻、長男、Aさん"/><small>{name.length}/30</small></label>
+        <fieldset className="my-member-color-field"><legend>識別色</legend><div className="my-member-color-options">{MY_MEMBER_COLOR_KEYS.map((key) => <button key={key} className={`my-member-color-option is-color-${key}${colorKey === key ? ' is-selected' : ''}`} type="button" aria-label={`${key}を選択`} aria-pressed={colorKey === key} onClick={() => setColorKey(key)}><span aria-hidden="true"/></button>)}</div></fieldset>
         {formError && <div className="route-inline-error" role="alert">{formError}</div>}
         <div className="modal-actions"><button className="secondary-button" type="button" onClick={closeForm}>キャンセル</button><button className="primary-button" type="submit" disabled={saving || !name.trim()}>{saving ? '保存中…' : '保存'}</button></div>
       </form>

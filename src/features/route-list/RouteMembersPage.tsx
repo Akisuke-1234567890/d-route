@@ -4,7 +4,7 @@ import { BrandMark } from '../../shared/ui/BrandMark';
 import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { getSupabaseClient } from '../../shared/api/supabase';
-import { createMyMember, deleteMyMember, listMyMembers, updateMyMember, type MyMember } from '../my-members/myMembers';
+import { MY_MEMBER_COLOR_KEYS, createMyMember, deleteMyMember, listMyMembers, updateMyMember, type MyMember, type MyMemberColorKey } from '../my-members/myMembers';
 import { getRoute } from './routes';
 import { getOwnRouteMember, inviteRouteMemberByLoginId, listRouteMembers, respondToRouteInvite, type RouteMember, type RouteMemberStatus } from './members';
 
@@ -25,6 +25,7 @@ export function RouteMembersPage() {
   const [myEditing, setMyEditing] = useState<MyMember | null>(null);
   const [myFormOpen, setMyFormOpen] = useState(false);
   const [myName, setMyName] = useState('');
+  const [myColorKey, setMyColorKey] = useState<MyMemberColorKey>('purple');
   const [mySaving, setMySaving] = useState(false);
   const [myFormError, setMyFormError] = useState('');
   const [myDeleteTarget, setMyDeleteTarget] = useState<MyMember | null>(null);
@@ -97,6 +98,7 @@ export function RouteMembersPage() {
   function openMyCreate() {
     setMyEditing(null);
     setMyName('');
+    setMyColorKey('purple');
     setMyFormError('');
     setMyFormOpen(true);
   }
@@ -104,6 +106,7 @@ export function RouteMembersPage() {
   function openMyEdit(member: MyMember) {
     setMyEditing(member);
     setMyName(member.name);
+    setMyColorKey(member.colorKey);
     setMyFormError('');
     setMyFormOpen(true);
   }
@@ -112,6 +115,7 @@ export function RouteMembersPage() {
     if (mySaving) return;
     setMyEditing(null);
     setMyName('');
+    setMyColorKey('purple');
     setMyFormError('');
     setMyFormOpen(false);
   }
@@ -122,7 +126,7 @@ export function RouteMembersPage() {
     setMySaving(true);
     setMyFormError('');
     try {
-      const saved = myEditing ? await updateMyMember(myEditing.id, myName) : await createMyMember(myName);
+      const saved = myEditing ? await updateMyMember(myEditing.id, myName, myColorKey) : await createMyMember(myName, myColorKey);
       setMyMembers((current) => myEditing
         ? current.map((item) => item.id === saved.id ? saved : item)
         : [...current, saved]);
@@ -257,7 +261,7 @@ export function RouteMembersPage() {
         {myLoading ? <section className="route-loading"><span className="route-loading-spinner"/><p>読み込んでいます</p></section>
         : myError ? <section className="empty-state" role="alert"><h2>読み込めませんでした</h2><p>{myError}</p><button className="secondary-button" type="button" onClick={() => void loadMyMembers()}>再読み込み</button></section>
         : myMembers.length === 0 ? <section className="empty-state"><div className="empty-orbit"><BrandMark size={58}/></div><h2>まだ登録されていません</h2><p>家族や友人など、よく使う同行者を追加してください。</p><button className="primary-button" type="button" onClick={openMyCreate}>My Memberを追加</button></section>
-        : <div className="my-members-list">{myMembers.map((member) => <div className={`my-member-swipe-shell${swipedMyMemberId === member.id ? ' is-open' : ''}`} key={member.id}><button className="my-member-swipe-delete" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeMyMemberSwipe(); setMyDeleteTarget(member); }}>削除</button><button className="my-member-card my-member-swipe-panel" type="button" style={{ transform: `translateX(${swipedMyMemberId === member.id ? myMemberSwipeOffset : 0}px)` }} onPointerDown={(event) => handleMyMemberPointerDown(event, member.id)} onPointerMove={(event) => handleMyMemberPointerMove(event, member.id)} onPointerUp={(event) => handleMyMemberPointerEnd(event, member.id)} onPointerCancel={(event) => handleMyMemberPointerEnd(event, member.id)} onClick={() => openMyMemberFromCard(member)}><div className="my-member-avatar" aria-hidden="true">👤</div><div className="my-member-copy"><strong>{member.name}</strong><small><span className="my-member-status-dot" aria-hidden="true"/>未連携</small></div><span className="my-member-chevron" aria-hidden="true">›</span></button></div>)}</div>}
+        : <div className="my-members-list">{myMembers.map((member) => <div className={`my-member-swipe-shell${swipedMyMemberId === member.id ? ' is-open' : ''}`} key={member.id}><button className="my-member-swipe-delete" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeMyMemberSwipe(); setMyDeleteTarget(member); }}>削除</button><button className="my-member-card my-member-swipe-panel" type="button" style={{ transform: `translateX(${swipedMyMemberId === member.id ? myMemberSwipeOffset : 0}px)` }} onPointerDown={(event) => handleMyMemberPointerDown(event, member.id)} onPointerMove={(event) => handleMyMemberPointerMove(event, member.id)} onPointerUp={(event) => handleMyMemberPointerEnd(event, member.id)} onPointerCancel={(event) => handleMyMemberPointerEnd(event, member.id)} onClick={() => openMyMemberFromCard(member)}><div className={`my-member-avatar is-color-${member.colorKey}`} aria-hidden="true">👤</div><div className="my-member-copy"><strong>{member.name}</strong><small><span className="my-member-status-dot" aria-hidden="true"/>未連携</small></div><span className="my-member-chevron" aria-hidden="true">›</span></button></div>)}</div>}
       </> : <>
         <div className="route-tab-heading">
           <div><p className="eyebrow">SHARED MEMBERS</p><div className="members-title-line"><h1 id="members-title">共有メンバー</h1><span className="feature-beta-badge">β 改善中</span></div><p>D Routeアカウントを招待し、このRouteの参加状況を共有します。</p></div>
@@ -281,7 +285,7 @@ export function RouteMembersPage() {
 
     <footer className="app-footer"><VersionBadge/><span>{activeView === 'my' ? 'Personal Directory' : 'Shared Members Beta'}</span></footer>
 
-    {myFormOpen && <div className="modal-backdrop is-centered-choice" onMouseDown={(event) => { if (event.target === event.currentTarget) closeMyForm(); }}><form className="route-modal my-member-modal my-member-modal-compact" onSubmit={saveMyMember}><div className="modal-header"><div><p className="eyebrow">MY MEMBER</p><h2>{myEditing ? '名前を編集' : 'My Memberを追加'}</h2></div><button className="modal-close-button" type="button" onClick={closeMyForm}>×</button></div><label className="route-settings-field"><span>名前</span><input value={myName} maxLength={30} autoFocus onChange={(event) => setMyName(event.target.value)} placeholder="例：妻、長男、Aさん"/><small>{myName.length}/30</small></label>{myFormError ? <div className="route-inline-error" role="alert">{myFormError}</div> : null}<div className="modal-actions"><button className="secondary-button" type="button" onClick={closeMyForm}>キャンセル</button><button className="primary-button" type="submit" disabled={mySaving || !myName.trim()}>{mySaving ? '保存中…' : '保存'}</button></div></form></div>}
+    {myFormOpen && <div className="modal-backdrop is-centered-choice" onMouseDown={(event) => { if (event.target === event.currentTarget) closeMyForm(); }}><form className="route-modal my-member-modal my-member-modal-compact" onSubmit={saveMyMember}><div className="modal-header"><div><p className="eyebrow">MY MEMBER</p><h2>{myEditing ? '名前を編集' : 'My Memberを追加'}</h2></div><button className="modal-close-button" type="button" onClick={closeMyForm}>×</button></div><label className="route-settings-field"><span>名前</span><input value={myName} maxLength={30} autoFocus onChange={(event) => setMyName(event.target.value)} placeholder="例：妻、長男、Aさん"/><small>{myName.length}/30</small></label><fieldset className="my-member-color-field"><legend>識別色</legend><div className="my-member-color-options">{MY_MEMBER_COLOR_KEYS.map((key) => <button key={key} className={`my-member-color-option is-color-${key}${myColorKey === key ? ' is-selected' : ''}`} type="button" aria-label={`${key}を選択`} aria-pressed={myColorKey === key} onClick={() => setMyColorKey(key)}><span aria-hidden="true"/></button>)}</div></fieldset>{myFormError ? <div className="route-inline-error" role="alert">{myFormError}</div> : null}<div className="modal-actions"><button className="secondary-button" type="button" onClick={closeMyForm}>キャンセル</button><button className="primary-button" type="submit" disabled={mySaving || !myName.trim()}>{mySaving ? '保存中…' : '保存'}</button></div></form></div>}
 
     {myDeleteTarget ? <div className="modal-backdrop is-centered-choice" onMouseDown={(event) => { if (event.target === event.currentTarget && !myDeleting) setMyDeleteTarget(null); }}><section className="route-modal my-member-delete-modal"><h2>削除しますか？</h2><p>「{myDeleteTarget.name}」をMy Membersから削除します。</p><div className="modal-actions"><button className="secondary-button" type="button" onClick={() => setMyDeleteTarget(null)} disabled={myDeleting}>キャンセル</button><button className="route-list-delete-confirm" type="button" onClick={() => void removeMyMember()} disabled={myDeleting}>{myDeleting ? '削除中…' : '削除する'}</button></div></section></div> : null}
   </main>;

@@ -1,8 +1,10 @@
 import { getSupabaseClient } from '../../shared/api/supabase';
 
-export type MyMember = { id: string; name: string; createdAt: string; updatedAt: string };
+export type MyMemberColorKey = 'purple' | 'blue' | 'green' | 'orange' | 'red' | 'gray';
+export const MY_MEMBER_COLOR_KEYS: MyMemberColorKey[] = ['purple', 'blue', 'green', 'orange', 'red', 'gray'];
+export type MyMember = { id: string; name: string; colorKey: MyMemberColorKey; createdAt: string; updatedAt: string };
 export type RouteBranchMyMemberAssignment = { routeId: string; branchId: string; myMemberId: string; assignedAt: string };
-const columns = 'id,name,created_at,updated_at';
+const columns = 'id,name,color_key,created_at,updated_at';
 
 function requireSupabase() {
   const supabase = getSupabaseClient();
@@ -15,8 +17,11 @@ function normalizeName(value: string) {
   if (name.length > 30) throw new Error('名前は30文字以内で入力してください。');
   return name;
 }
+function normalizeColorKey(value: string | null | undefined): MyMemberColorKey {
+  return MY_MEMBER_COLOR_KEYS.includes(value as MyMemberColorKey) ? value as MyMemberColorKey : 'purple';
+}
 function mapMember(row: any): MyMember {
-  return { id: row.id, name: row.name, createdAt: row.created_at, updatedAt: row.updated_at };
+  return { id: row.id, name: row.name, colorKey: normalizeColorKey(row.color_key), createdAt: row.created_at, updatedAt: row.updated_at };
 }
 async function getUserId() {
   const { data, error } = await requireSupabase().auth.getUser();
@@ -29,16 +34,16 @@ export async function listMyMembers(): Promise<MyMember[]> {
   if (error) throw error;
   return (data ?? []).map(mapMember);
 }
-export async function createMyMember(nameInput: string): Promise<MyMember> {
+export async function createMyMember(nameInput: string, colorKey: MyMemberColorKey = 'purple'): Promise<MyMember> {
   const ownerUserId = await getUserId();
   const { data, error } = await requireSupabase().from('my_members')
-    .insert({ owner_user_id: ownerUserId, name: normalizeName(nameInput) }).select(columns).single();
+    .insert({ owner_user_id: ownerUserId, name: normalizeName(nameInput), color_key: normalizeColorKey(colorKey) }).select(columns).single();
   if (error) throw error;
   return mapMember(data);
 }
-export async function updateMyMember(id: string, nameInput: string): Promise<MyMember> {
+export async function updateMyMember(id: string, nameInput: string, colorKey: MyMemberColorKey = 'purple'): Promise<MyMember> {
   const { data, error } = await requireSupabase().from('my_members')
-    .update({ name: normalizeName(nameInput), updated_at: new Date().toISOString() }).eq('id', id).select(columns).single();
+    .update({ name: normalizeName(nameInput), color_key: normalizeColorKey(colorKey), updated_at: new Date().toISOString() }).eq('id', id).select(columns).single();
   if (error) throw error;
   return mapMember(data);
 }
