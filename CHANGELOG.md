@@ -1,3 +1,11 @@
+# 2.1.0-p83.1
+
+- Route / Places / Chat / Members / Menu の画面背景を共通キャンバスへ統一。
+- Chat にだけ存在していた全画面パネル背景と外枠を撤去。
+- Dashboard と Route 一覧の独自ページグラデーションを共通背景へ置換。
+- カード・完了・注意・削除・βなど、意味のある差別化色は維持。
+- 共通ヘッダーと固定下部ナビの背景色を統一。
+
 # D Route Changelog
 
 ## 2.1.0-p83 - Design System foundation

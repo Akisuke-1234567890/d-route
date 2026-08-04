@@ -3633,3 +3633,77 @@ input:focus,select:focus,textarea:focus{
   .page-content{padding-inline:16px}
   .route-modal,.places-add-sheet,.route-delete-modal,.alternate-route-manage-modal,.my-member-modal,.my-member-delete-modal{border-radius:22px}
 }
+
+
+/* v2.1.0-p83.1 Background unification
+   Same-level workspace screens use one uninterrupted canvas. Difference is
+   expressed by cards and semantic accents, not by changing the page base. */
+:root{
+  --dr-canvas:#0b1025;
+  --dr-canvas-deep:#090d20;
+}
+
+html,
+body,
+#root{
+  background:var(--dr-canvas-deep) !important;
+}
+
+body,
+.app-shell,
+.home-shell,
+.route-tab-shell,
+.chat-page-shell,
+.my-members-shell,
+.v2-dashboard-shell{
+  background:
+    radial-gradient(circle at 82% 8%,rgba(139,120,255,.075),transparent 32%),
+    linear-gradient(180deg,var(--dr-canvas) 0%,var(--dr-canvas-deep) 100%) !important;
+  background-attachment:fixed !important;
+}
+
+/* Page containers are layout surfaces, not separate colored pages. */
+.page-content,
+.route-detail-content,
+.v2-dashboard-content,
+.members-hub,
+.route-menu-content,
+.home-content{
+  background:transparent !important;
+}
+
+/* Chat previously rendered a second full-page panel. Keep only its real
+   content cards so the workspace canvas matches Route, Places and Members. */
+.chat-page{
+  background:transparent !important;
+  border-color:transparent !important;
+  box-shadow:none !important;
+}
+
+/* Persistent chrome shares the same neutral canvas on every tab. */
+.global-header{
+  background:rgba(11,16,37,.94) !important;
+}
+.route-bottom-nav{
+  background:rgba(9,13,32,.97) !important;
+  border-color:var(--dr-border) !important;
+}
+
+/* Cards remain visibly elevated, but no screen receives its own hue. */
+.chat-page-log,
+.places-phase-section,
+.v2-phase-panel,
+.v2-alternate-route-panel,
+.v2-participant-route,
+.members-panel,
+.route-settings-card,
+.route-menu-item,
+.my-member-card{
+  background-color:var(--dr-surface-soft);
+}
+
+@media(max-width:520px){
+  .chat-page{
+    padding-inline:16px;
+  }
+}
