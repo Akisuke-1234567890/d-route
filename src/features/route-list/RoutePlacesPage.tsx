@@ -1345,7 +1345,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
             <small>{placesRouteCategory}</small>
             <strong>{activePlacesRoute?.name ?? 'メインの予定'}</strong>
             <MemberAssignees members={activePlacesRouteMyMembers} />
-            <span>{activePlacesRouteIndex + 1} / {placesRouteIds.length}</span>
+            <span className="places-route-count">{activePlacesRouteIndex + 1} / {placesRouteIds.length}</span>
           </div>
           <button type="button" className="places-route-arrow" onClick={() => void movePlacesRoute(activePlacesRouteIndex + 1)} disabled={activePlacesRouteIndex >= placesRouteIds.length - 1} aria-label="次のRouteを見る">›</button>
           <div className="places-route-dots">{placesRouteIds.map((id,index)=><button type="button" key={id ?? 'main'} className={index===activePlacesRouteIndex?'is-active':''} onClick={()=>void movePlacesRoute(index)} aria-label={`${index+1}ページ目を見る`}/>)}</div>

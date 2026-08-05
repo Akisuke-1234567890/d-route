@@ -3161,7 +3161,7 @@ a { color: inherit; }
 .v2-route-page-title{
   display:grid!important;
   grid-template-columns:minmax(0,1fr) auto;
-  grid-template-areas:'category count' 'name members';
+  grid-template-areas:'category count' 'name name' 'members members';
   justify-content:stretch!important;
   gap:1px 8px!important;
   text-align:center;
@@ -3174,8 +3174,8 @@ a { color: inherit; }
   letter-spacing:.08em;
 }
 .v2-route-page-title strong{grid-area:name}
-.v2-route-page-title > span:not(.member-assignees){grid-area:count;align-self:center;justify-self:end}
-.v2-route-page-title > .member-assignees{grid-area:members;justify-self:end;align-self:center;max-width:min(190px,42vw)}
+.v2-route-page-title > .v2-route-page-count{grid-area:count;align-self:center;justify-self:end;white-space:nowrap}
+.v2-route-page-title > .member-assignees{grid-area:members;justify-self:end;align-self:start;max-width:min(190px,52vw);margin-top:1px}
 .v2-route-page-motion{will-change:transform,opacity}
 .v2-route-page-motion.is-next{animation:v2-route-page-enter-next .28s cubic-bezier(.22,.75,.28,1) both}
 .v2-route-page-motion.is-previous{animation:v2-route-page-enter-previous .28s cubic-bezier(.22,.75,.28,1) both}
@@ -3217,7 +3217,7 @@ a { color: inherit; }
 /* v2.1.0-p78.7 compact shared Route switcher */
 .v2-route-page-switcher{grid-template-columns:34px minmax(0,1fr) 34px;padding:7px 10px;border-radius:15px;gap:7px;will-change:transform}
 .v2-route-page-switcher>button{width:34px;height:34px;border-radius:11px;font-size:1.18rem}
-.v2-route-page-title small{font-size:.49rem}.v2-route-page-title strong{font-size:.72rem}.v2-route-page-title > span:not(.member-assignees){font-size:.57rem}
+.v2-route-page-title small{font-size:.49rem}.v2-route-page-title strong{font-size:.72rem}.v2-route-page-title > .v2-route-page-count{font-size:.57rem}
 .v2-route-page-dots{margin-top:1px}.v2-route-page-dots button{height:5px!important;width:5px!important}.v2-route-page-dots button.is-active{width:16px!important}
 
 
@@ -4008,3 +4008,7 @@ body,
   .v2-route-page-title>.member-assignees--inline .member-assignee-row,
   .places-route-carousel-title>.member-assignees--inline .member-assignee-row{max-width:108px}
 }
+
+/* v2.1.0-p84.12.1 separate page count from member rows */
+.v2-route-page-title>.v2-route-page-count{position:static!important;grid-area:count!important;z-index:2!important}
+.v2-route-page-title>.member-assignees--inline{grid-area:members!important;position:static!important;width:auto!important;min-width:0!important}

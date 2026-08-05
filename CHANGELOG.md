@@ -1,3 +1,10 @@
+## v2.1.0-p84.12.1 Page count layout hotfix
+
+- Route / Places切替欄のページ数を右上専用領域へ固定。
+- Route名を全幅、担当メンバーを独立した下段へ配置。
+- `2 / 2`が担当メンバー表示へ侵入して重なって見える問題を修正。
+- DB変更なし。
+
 ## v2.1.0-p84.12 Stacked member labels
 
 - Route切替欄とPlaces切替欄の担当メンバーを、色ドット＋氏名の1人1行表示へ変更。

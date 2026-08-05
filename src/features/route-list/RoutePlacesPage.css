@@ -1322,10 +1322,11 @@
 }
 .places-route-arrow{width:38px;height:38px;border:1px solid rgba(196,203,255,.14);border-radius:12px;background:rgba(6,12,34,.42);color:#fff;font-size:1.35rem}
 .places-route-arrow:disabled{opacity:.25}
-.places-route-carousel-title{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:'category count' 'name count';gap:1px 8px;text-align:center;min-width:0}
+.places-route-carousel-title{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:'category count' 'name name' 'members members';gap:1px 8px;text-align:center;min-width:0}
 .places-route-carousel-title small{grid-area:category;color:#9b8cff;font-size:.54rem;font-weight:900;letter-spacing:.08em}
 .places-route-carousel-title strong{grid-area:name;font-size:.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.places-route-carousel-title span{grid-area:count;align-self:center;color:#8fe9df;font-size:.62rem;font-weight:800}
+.places-route-carousel-title>.places-route-count{grid-area:count;align-self:center;justify-self:end;color:#8fe9df;font-size:.62rem;font-weight:800;white-space:nowrap}
+.places-route-carousel-title>.member-assignees{grid-area:members;justify-self:end;align-self:start;margin-top:1px}
 .places-route-carousel>p{grid-column:1/-1;margin:0;text-align:center;color:var(--muted);font-size:.58rem}
 .places-route-dots{grid-column:1/-1;display:flex;justify-content:center;gap:5px}
 .places-route-dots button{width:6px;height:6px;min-width:0;padding:0;border:0;border-radius:999px;background:rgba(211,216,241,.25)}
@@ -1341,7 +1342,7 @@
 /* v2.1.0-p78.7 compact Places header and smooth route switcher */
 .places-route-carousel{grid-template-columns:34px minmax(0,1fr) 34px;margin-bottom:8px;padding:7px 10px;border-radius:15px;touch-action:pan-y;will-change:transform}
 .places-route-arrow{width:34px;height:34px;border-radius:11px;font-size:1.18rem}
-.places-route-carousel-title small{font-size:.49rem}.places-route-carousel-title strong{font-size:.72rem}.places-route-carousel-title span{font-size:.57rem}
+.places-route-carousel-title small{font-size:.49rem}.places-route-carousel-title strong{font-size:.72rem}.places-route-carousel-title>.places-route-count{font-size:.57rem}
 .places-route-dots{margin-top:1px}.places-route-dots button{height:5px;width:5px}.places-route-dots button.is-active{width:16px}
 .places-compact-heading{align-items:center!important;margin-bottom:12px!important;flex-direction:row!important}
 .places-compact-heading h1{margin:2px 0 0!important;font-size:1.55rem}.places-compact-heading .eyebrow{font-size:.56rem}

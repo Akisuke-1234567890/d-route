@@ -594,7 +594,7 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
         <small>{routePageIndex === 0 ? 'メインRoute' : activeAlternateRoute ? alternateRouteCategory(activeAlternateRoute.connectionType) : '別行動Route'}</small>
         <strong>{routePageIndex === 0 ? 'メインの予定' : activeAlternateRoute?.name ?? '別行動'}{activeAlternateRoute?.id === assignedAlternateRouteId ? <em className="v2-route-page-own">あなたのRoute</em> : null}</strong>
         <MemberAssignees members={activeAlternateMyMembers} />
-        <span>{routePageIndex + 1} / {routePageCount}</span>
+        <span className="v2-route-page-count">{routePageIndex + 1} / {routePageCount}</span>
       </div>
       <button type="button" onClick={showNextRoutePage} disabled={routePageIndex >= routePageCount - 1} aria-label="次のRouteを見る">›</button>
       <div className="v2-route-page-dots">
