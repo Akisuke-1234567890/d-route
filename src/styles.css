@@ -20,15 +20,15 @@ button:disabled { cursor: not-allowed; opacity: .5; }
   pointer-events: none;
   opacity: 1;
   background:
-    radial-gradient(circle at 42% 43%, rgba(58, 224, 235, .11) 0%, rgba(58, 224, 235, .055) 18%, transparent 42%),
-    radial-gradient(circle at 60% 47%, rgba(132, 92, 255, .12) 0%, rgba(132, 92, 255, .055) 19%, transparent 44%),
-    radial-gradient(circle at 51% 57%, rgba(63, 111, 255, .065) 0%, transparent 37%);
-  filter: blur(22px);
-  transform: scale(1.08);
+    radial-gradient(ellipse 38% 30% at 38% 42%, rgba(35, 210, 235, .34) 0%, rgba(35, 210, 235, .18) 30%, rgba(35, 210, 235, .07) 52%, transparent 72%),
+    radial-gradient(ellipse 36% 31% at 64% 49%, rgba(132, 74, 255, .32) 0%, rgba(132, 74, 255, .17) 31%, rgba(132, 74, 255, .06) 54%, transparent 74%),
+    radial-gradient(ellipse 34% 25% at 51% 61%, rgba(46, 104, 255, .20) 0%, rgba(46, 104, 255, .09) 42%, transparent 72%);
+  filter: blur(34px);
+  transform: scale(1.04);
   animation: splashGlowIn .9s ease-out both;
 }
 .splash-content { position: relative; z-index: 1; text-align: center; display: grid; justify-items: center; gap: 12px; }
-@keyframes splashGlowIn { from { opacity: 0; transform: scale(1.02); } to { opacity: 1; transform: scale(1.08); } }
+@keyframes splashGlowIn { from { opacity: 0; transform: scale(1.02); } to { opacity: 1; transform: scale(1.04); } }
 .brand-wordmark { font-size: 2rem; font-weight: 800; letter-spacing: .04em; }
 .brand-wordmark.small { font-size: 1.25rem; text-align: left; }
 .loading-dots { display: flex; gap: 8px; padding: 18px; }
@@ -3855,5 +3855,5 @@ body,
 .route-workspace-page .places-phase-section{border-radius:18px}
 .route-workspace-page .places-phase-header{padding:10px 11px}
 
-/* v2.1.0-p84.7 splash background refinement */
+/* v2.1.0-p84.8 splash glow visibility adjustment */
 @media (prefers-reduced-motion: reduce) { .star-field { animation: none; } }
