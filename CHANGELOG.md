@@ -1,3 +1,11 @@
+## v2.1.0-p84.15 Workspace scroll restoration
+
+- Route / Places を行き来した際、それぞれの縦スクロール位置を画面ごとに保持。
+- 遷移先の初回描画完了後、保存位置へ復元してからフェードイン。
+- 初めて開く画面は従来どおり先頭から表示。
+- Chatなど独自の自動スクロールを持つ画面には適用しない。
+- DB変更なし。
+
 ## v2.1.0-p84.14 Workspace transition readiness
 
 - Route / Places など同一Route内の画面切替で、遷移先のデータ取得と初回描画完了まで共通ローディング幕を維持。

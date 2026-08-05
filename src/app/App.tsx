@@ -29,6 +29,10 @@ function getWorkspaceRouteId(pathname: string): string | null {
   return match?.[1] ?? null;
 }
 
+function shouldRestoreWorkspaceScroll(pathname: string): boolean {
+  return /^\/routes\/[^/]+(?:\/places)?\/?$/.test(pathname);
+}
+
 function RouteWorkspaceLayout() {
   const { routeId = '' } = useParams<{ routeId: string }>();
   return (
@@ -49,6 +53,7 @@ function FadeRoutes({ children }: FadeRoutesProps) {
   const [phase, setPhase] = useState<'in' | 'out' | 'pre-in'>('in');
   const [workspaceLoading, setWorkspaceLoading] = useState(false);
   const transitionIdRef = useRef(0);
+  const workspaceScrollPositionsRef = useRef(new Map<string, number>());
 
   useEffect(() => {
     if (
@@ -62,6 +67,10 @@ function FadeRoutes({ children }: FadeRoutesProps) {
     const nextWorkspaceId = getWorkspaceRouteId(location.pathname);
     const currentWorkspaceId = getWorkspaceRouteId(displayLocation.pathname);
     if (nextWorkspaceId && nextWorkspaceId === currentWorkspaceId) {
+      if (shouldRestoreWorkspaceScroll(displayLocation.pathname)) {
+        workspaceScrollPositionsRef.current.set(displayLocation.pathname, window.scrollY);
+      }
+
       const transitionId = transitionIdRef.current + 1;
       transitionIdRef.current = transitionId;
       const targetPathname = location.pathname;
@@ -74,6 +83,10 @@ function FadeRoutes({ children }: FadeRoutesProps) {
         window.requestAnimationFrame(() => {
           window.requestAnimationFrame(() => {
             if (transitionIdRef.current !== transitionId) return;
+            if (shouldRestoreWorkspaceScroll(targetPathname)) {
+              const savedScrollY = workspaceScrollPositionsRef.current.get(targetPathname) ?? 0;
+              window.scrollTo({ top: savedScrollY, behavior: 'auto' });
+            }
             setPhase('in');
             setWorkspaceLoading(false);
           });
