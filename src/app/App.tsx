@@ -18,7 +18,6 @@ import { RouteChatPage } from '../features/route-list/RouteChatPage';
 import { RoutePlacesPage } from '../features/route-list/RoutePlacesPage';
 import { RouteMembersPage } from '../features/route-list/RouteMembersPage';
 import { RouteMenuPage } from '../features/route-list/RouteMenuPage';
-import { MyMembersPage } from '../features/my-members/MyMembersPage';
 import { RefreshButton } from '../shared/ui/RefreshButton';
 import { RouteBottomNav } from '../features/route-list/RouteBottomNav';
 
@@ -201,7 +200,7 @@ export function App() {
         <Route path="/account/profile" element={session ? <AccountProfilePage user={session.user} required={!nicknameReady} onCompleted={refreshProfile} /> : <Navigate to="/signin" replace />} />
         <Route path="/auth-preview" element={<AuthPrototypePage />} />
         <Route path="/routes" element={protectedElement(<RouteListPage onSignedOut={() => setSession(null)} />)} />
-        <Route path="/my-members" element={protectedElement(<MyMembersPage />)} />
+        <Route path="/my-members" element={protectedElement(<Navigate to="/routes" replace />)} />
         <Route path="/routes/:routeId" element={protectedElement(<RouteWorkspaceLayout />)}>
           <Route index element={<RouteDetailPage />} />
           <Route path="places" element={<RoutePlacesPage />} />

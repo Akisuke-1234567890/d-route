@@ -16,20 +16,30 @@ const participantTabs = ownerTabs.filter((tab) => tab.key === 'route' || tab.key
 
 export function RouteBottomNav({ routeId }: RouteBottomNavProps) {
   const [role, setRole] = useState<RouteMemberRole | null>(null);
+  const [roleResolved, setRoleResolved] = useState(false);
 
   useEffect(() => {
     let active = true;
+    setRoleResolved(false);
     void getOwnRouteMember(routeId)
-      .then((member) => { if (active) setRole(member?.role ?? null); })
-      .catch(() => { if (active) setRole(null); });
+      .then((member) => {
+        if (!active) return;
+        setRole(member?.role ?? null);
+        setRoleResolved(true);
+      })
+      .catch(() => {
+        if (!active) return;
+        setRole(null);
+        setRoleResolved(true);
+      });
     return () => { active = false; };
   }, [routeId]);
 
-  const tabs = role === 'member' ? participantTabs : ownerTabs;
+  const tabs = !roleResolved || role === 'member' ? participantTabs : ownerTabs;
   const base = `/routes/${routeId}`;
 
   return (
-    <nav className={`route-bottom-nav${role === 'member' ? ' is-participant' : ''}`} aria-label="Route内ナビゲーション">
+    <nav className={`route-bottom-nav${!roleResolved || role === 'member' ? ' is-participant' : ''}`} aria-label="Route内ナビゲーション" aria-busy={!roleResolved}>
       {tabs.map((tab) => (
         <NavLink
           key={tab.key}
