@@ -3857,3 +3857,31 @@ body,
 
 /* v2.1.0-p84.8 splash glow visibility adjustment */
 @media (prefers-reduced-motion: reduce) { .star-field { animation: none; } }
+
+
+/* v2.1.0-p84.10 Route switcher member label readability */
+.route-assignee-line{
+  max-width:min(248px,62vw);
+  gap:6px;
+  color:#8ce8d0!important;
+  font-size:.68rem!important;
+  font-weight:760;
+  line-height:1.25;
+  letter-spacing:0;
+  font-variant-ligatures:none;
+}
+.route-assignee-names{
+  display:inline-flex;
+  align-items:center;
+  min-width:0;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+.route-assignee-name{display:inline-flex;align-items:center;min-width:0}
+.route-assignee-name>span:last-child{display:inline-block;min-width:0}
+.route-assignee-separator{display:inline-block;margin:0 2px;color:rgba(140,232,208,.72)}
+@media(max-width:420px){
+  .route-assignee-line{max-width:58vw;font-size:.66rem!important}
+  .route-assignee-avatars i{width:14px;height:14px}
+}

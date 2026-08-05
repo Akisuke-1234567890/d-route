@@ -595,7 +595,12 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
         {activeAlternateMyMembers.length > 0 ? (
           <span className="route-assignee-line" aria-label={`担当 ${activeAlternateMyMembers.map((member) => member.name).join('、')}`}>
             <span className="route-assignee-avatars" aria-hidden="true">{activeAlternateMyMembers.slice(0, 3).map((member) => <i className={`is-color-${member.colorKey}`} key={member.id}/>)}</span>
-            <span className="route-assignee-names">{activeAlternateMyMembers.map((member) => member.name).join('・')}</span>
+            <span className="route-assignee-names">{activeAlternateMyMembers.map((member, index) => (
+              <span className="route-assignee-name" key={member.id}>
+                {index > 0 ? <span className="route-assignee-separator" aria-hidden="true">・</span> : null}
+                <span>{member.name}</span>
+              </span>
+            ))}</span>
           </span>
         ) : null}
         <span>{routePageIndex + 1} / {routePageCount}</span>
