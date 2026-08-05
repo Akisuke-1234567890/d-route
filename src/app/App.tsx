@@ -20,6 +20,7 @@ import { RouteMembersPage } from '../features/route-list/RouteMembersPage';
 import { RouteMenuPage } from '../features/route-list/RouteMenuPage';
 import { RefreshButton } from '../shared/ui/RefreshButton';
 import { RouteBottomNav } from '../features/route-list/RouteBottomNav';
+import { WORKSPACE_PAGE_READY_EVENT } from '../shared/ui/workspacePageReady';
 
 
 
@@ -46,6 +47,7 @@ function FadeRoutes({ children }: FadeRoutesProps) {
   const location = useLocation();
   const [displayLocation, setDisplayLocation] = useState(location);
   const [phase, setPhase] = useState<'in' | 'out' | 'pre-in'>('in');
+  const [workspaceLoading, setWorkspaceLoading] = useState(false);
   const transitionIdRef = useRef(0);
 
   useEffect(() => {
@@ -60,10 +62,42 @@ function FadeRoutes({ children }: FadeRoutesProps) {
     const nextWorkspaceId = getWorkspaceRouteId(location.pathname);
     const currentWorkspaceId = getWorkspaceRouteId(displayLocation.pathname);
     if (nextWorkspaceId && nextWorkspaceId === currentWorkspaceId) {
-      transitionIdRef.current += 1;
+      const transitionId = transitionIdRef.current + 1;
+      transitionIdRef.current = transitionId;
+      const targetPathname = location.pathname;
+      setWorkspaceLoading(true);
+      setPhase('pre-in');
+
+      let fallbackTimer = 0;
+      const finishTransition = () => {
+        if (transitionIdRef.current !== transitionId) return;
+        window.requestAnimationFrame(() => {
+          window.requestAnimationFrame(() => {
+            if (transitionIdRef.current !== transitionId) return;
+            setPhase('in');
+            setWorkspaceLoading(false);
+          });
+        });
+      };
+      const handleReady = (event: Event) => {
+        const pathname = (event as CustomEvent<{ pathname?: string }>).detail?.pathname;
+        if (pathname !== targetPathname) return;
+        window.removeEventListener(WORKSPACE_PAGE_READY_EVENT, handleReady);
+        window.clearTimeout(fallbackTimer);
+        finishTransition();
+      };
+
+      window.addEventListener(WORKSPACE_PAGE_READY_EVENT, handleReady);
       setDisplayLocation(location);
-      setPhase('in');
-      return;
+      fallbackTimer = window.setTimeout(() => {
+        window.removeEventListener(WORKSPACE_PAGE_READY_EVENT, handleReady);
+        finishTransition();
+      }, 2500);
+
+      return () => {
+        window.removeEventListener(WORKSPACE_PAGE_READY_EVENT, handleReady);
+        window.clearTimeout(fallbackTimer);
+      };
     }
 
     const transitionId = transitionIdRef.current + 1;
@@ -96,6 +130,12 @@ function FadeRoutes({ children }: FadeRoutesProps) {
   return (
     <div className={`route-page-transition is-${phase}`}>
       <Routes location={displayLocation}>{children}</Routes>
+      {workspaceLoading ? (
+        <div className="workspace-transition-loading" role="status" aria-live="polite">
+          <span className="route-loading-spinner" aria-hidden="true" />
+          <p>画面を準備しています</p>
+        </div>
+      ) : null}
     </div>
   );
 }

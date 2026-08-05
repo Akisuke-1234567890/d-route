@@ -5,6 +5,7 @@ import { RouteWorkspacePage } from '../../shared/ui/RouteWorkspacePage';
 import './RoutePlacesPage.css';
 import { useBodyScrollLock } from '../../shared/hooks/useBodyScrollLock';
 import {
+import { useWorkspacePageReady } from '../../shared/ui/workspacePageReady';
   createRouteDestination,
   getRouteDestinations,
   softDeleteRouteDestination,
@@ -153,6 +154,7 @@ export function RoutePlacesPage() {
   const activeDestinationSwipeIdRef = useRef<string | null>(null);
   const destinationSwipeAxisRef = useRef<'pending' | 'horizontal' | 'vertical'>('pending');
   const [loading, setLoading] = useState(true);
+  useWorkspacePageReady(!loading);
   const [error, setError] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState('');

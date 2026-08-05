@@ -4012,3 +4012,28 @@ body,
 /* v2.1.0-p84.12.1 separate page count from member rows */
 .v2-route-page-title>.v2-route-page-count{position:static!important;grid-area:count!important;z-index:2!important}
 .v2-route-page-title>.member-assignees--inline{grid-area:members!important;position:static!important;width:auto!important;min-width:0!important}
+
+/* RC-1: keep workspace construction hidden until the destination page reports ready. */
+.workspace-transition-loading {
+  position: fixed;
+  inset: 0 0 calc(86px + env(safe-area-inset-bottom)) 0;
+  z-index: 110;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+  background: var(--app-background, #0f1220);
+  color: rgba(238, 242, 255, 0.78);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.workspace-transition-loading p {
+  margin: 0;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+}
+
+.route-page-transition.is-pre-in > :not(.workspace-transition-loading) {
+  visibility: hidden;
+}

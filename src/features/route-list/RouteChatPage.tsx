@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
 import { RouteWorkspacePage } from '../../shared/ui/RouteWorkspacePage';
 import {
+import { useWorkspacePageReady } from '../../shared/ui/workspacePageReady';
   formatChatTime,
   getCurrentUserId,
   getRouteChatMessages,
@@ -30,6 +31,7 @@ export function RouteChatPage() {
   const [locationAttachment, setLocationAttachment] = useState<RouteChatLocationAttachment | null>(null);
   const [locating, setLocating] = useState(false);
   const [loading, setLoading] = useState(true);
+  useWorkspacePageReady(!loading);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);

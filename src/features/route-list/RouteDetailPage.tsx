@@ -9,6 +9,7 @@ import { getSupabaseClient } from '../../shared/api/supabase';
 import { formatChatTime, getLatestRouteChatMessages, type RouteChatMessage } from './chat';
 import { getOwnRouteMember, type RouteMember } from './members';
 import {
+import { useWorkspacePageReady } from '../../shared/ui/workspacePageReady';
   listRouteBranches,
   listAlternateRouteDestinations,
   listRouteBranchAssignments,
@@ -932,6 +933,7 @@ export function RouteDetailPage() {
   const { routeId } = useParams<{ routeId: string }>();
   const [route, setRoute] = useState<RouteSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  useWorkspacePageReady(!loading);
   const [error, setError] = useState<string | null>(null);
   const [ownMember, setOwnMember] = useState<RouteMember | null>(null);
 
