@@ -15,16 +15,16 @@ export default defineConfig({
       manifest: {
         name: 'D Route',
         short_name: 'D Route',
-        description: 'グループで目的地とRouteを共有するアプリ',
-        theme_color: '#15103d',
-        background_color: '#091633',
+        description: '一人でもグループでも、予定と行動プランを組み立てられるアプリ',
+        theme_color: '#090d20',
+        background_color: '#090d20',
         display: 'standalone',
         start_url: '.',
         scope: '.',
         orientation: 'portrait-primary',
         icons: [
-          { src: 'icons/d-route-mark.svg?v=2.1.0-p07', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
-          { src: 'icons/d-route-maskable.svg?v=2.1.0-p07', sizes: 'any', type: 'image/svg+xml', purpose: 'maskable' }
+          { src: 'icons/d-route-mark.svg?v=2.1.0-p84.13', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+          { src: 'icons/d-route-maskable.svg?v=2.1.0-p84.13', sizes: 'any', type: 'image/svg+xml', purpose: 'maskable' }
         ]
       },
       workbox: {

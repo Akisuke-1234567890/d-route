@@ -1,3 +1,10 @@
+## v2.1.0-p84.13 PWA metadata consistency
+
+- Browser・PWAのテーマ色を現在の共通キャンバス色へ統一。
+- 旧「目的地を共有する」説明を「予定と行動プランを組み立てる」表現へ更新。
+- Apple Touch Icon・PWAアイコンのキャッシュ番号を現行版へ更新。
+- 機能・DB変更なし。
+
 ## v2.1.0-p84.12.1 Page count layout hotfix
 
 - Route / Places切替欄のページ数を右上専用領域へ固定。
