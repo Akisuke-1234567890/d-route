@@ -3161,7 +3161,7 @@ a { color: inherit; }
 .v2-route-page-title{
   display:grid!important;
   grid-template-columns:minmax(0,1fr) auto;
-  grid-template-areas:'category count' 'name count';
+  grid-template-areas:'category count' 'name members';
   justify-content:stretch!important;
   gap:1px 8px!important;
   text-align:center;
@@ -3174,7 +3174,8 @@ a { color: inherit; }
   letter-spacing:.08em;
 }
 .v2-route-page-title strong{grid-area:name}
-.v2-route-page-title span{grid-area:count;align-self:center}
+.v2-route-page-title > span:not(.member-assignees){grid-area:count;align-self:center;justify-self:end}
+.v2-route-page-title > .member-assignees{grid-area:members;justify-self:end;align-self:center;max-width:min(190px,42vw)}
 .v2-route-page-motion{will-change:transform,opacity}
 .v2-route-page-motion.is-next{animation:v2-route-page-enter-next .28s cubic-bezier(.22,.75,.28,1) both}
 .v2-route-page-motion.is-previous{animation:v2-route-page-enter-previous .28s cubic-bezier(.22,.75,.28,1) both}
@@ -3216,7 +3217,7 @@ a { color: inherit; }
 /* v2.1.0-p78.7 compact shared Route switcher */
 .v2-route-page-switcher{grid-template-columns:34px minmax(0,1fr) 34px;padding:7px 10px;border-radius:15px;gap:7px;will-change:transform}
 .v2-route-page-switcher>button{width:34px;height:34px;border-radius:11px;font-size:1.18rem}
-.v2-route-page-title small{font-size:.49rem}.v2-route-page-title strong{font-size:.72rem}.v2-route-page-title span{font-size:.57rem}
+.v2-route-page-title small{font-size:.49rem}.v2-route-page-title strong{font-size:.72rem}.v2-route-page-title > span:not(.member-assignees){font-size:.57rem}
 .v2-route-page-dots{margin-top:1px}.v2-route-page-dots button{height:5px!important;width:5px!important}.v2-route-page-dots button.is-active{width:16px!important}
 
 
@@ -3904,3 +3905,24 @@ body,
 .member-assignee-chip>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;word-break:keep-all}
 .member-assignees--chips>.member-assignee-more{align-self:center;margin-left:0;padding:3px 6px;font-size:.62rem}
 @media(max-width:420px){.member-assignees--inline{max-width:59vw;font-size:.66rem}.member-assignee-dots i{width:13px;height:13px}.member-assignee-chip{max-width:140px}}
+
+
+/* v2.1.0-p84.11.2 Route switcher member overlap hotfix */
+.v2-route-page-title .member-assignee-name,
+.v2-route-page-title .member-assignee-name > span,
+.v2-route-page-title .member-assignee-separator,
+.v2-route-page-title .member-assignee-dots,
+.v2-route-page-title .member-assignee-dots > i,
+.v2-route-page-title .member-assignee-more{grid-area:auto!important}
+.v2-route-page-title > .member-assignees--inline{
+  display:flex!important;
+  min-width:0;
+  max-width:min(190px,42vw);
+  justify-content:flex-end;
+  overflow:hidden;
+}
+.v2-route-page-title > .member-assignees--inline .member-assignee-names{max-width:145px}
+@media(max-width:420px){
+  .v2-route-page-title > .member-assignees--inline{max-width:40vw;font-size:.62rem}
+  .v2-route-page-title > .member-assignees--inline .member-assignee-names{max-width:112px}
+}

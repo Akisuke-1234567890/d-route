@@ -1,3 +1,10 @@
+## v2.1.0-p84.11.2 Member overlap hotfix
+
+- Route切替欄の汎用 `span` CSSがメンバー名内部へ誤適用され、同一グリッド位置へ重なっていた問題を修正。
+- ページ番号、Route名、担当メンバーを個別のグリッド領域へ分離。
+- メンバー名内部の要素にはグリッド配置を適用せず、横並び・省略表示を維持。
+- DB変更なし。
+
 ## v2.1.0-p84.11.1 Build hotfix
 
 - Fixed the broken import block in `RouteDetailPage.tsx`.
