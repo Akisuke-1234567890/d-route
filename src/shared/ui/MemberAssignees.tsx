@@ -36,14 +36,9 @@ export function MemberAssignees({ members, variant = 'inline', maxVisible = 3 }:
       <span className="member-assignee-dots" aria-hidden="true">
         {visibleMembers.map((member) => <i className={`is-color-${member.colorKey}`} key={member.id} />)}
       </span>
-      <span className="member-assignee-names">
-        {visibleMembers.map((member, index) => (
-          <span className="member-assignee-name" key={member.id}>
-            {index > 0 ? <span className="member-assignee-separator" aria-hidden="true">・</span> : null}
-            <span>{member.name}</span>
-          </span>
-        ))}
-        {remainingCount > 0 ? <span className="member-assignee-more">他{remainingCount}名</span> : null}
+      <span className="member-assignee-label">
+        {visibleMembers.map((member) => member.name).join('・')}
+        {remainingCount > 0 ? `・他${remainingCount}名` : ''}
       </span>
     </span>
   );

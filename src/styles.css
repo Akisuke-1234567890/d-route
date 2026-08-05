@@ -3926,3 +3926,20 @@ body,
   .v2-route-page-title > .member-assignees--inline{max-width:40vw;font-size:.62rem}
   .v2-route-page-title > .member-assignees--inline .member-assignee-names{max-width:112px}
 }
+
+
+/* v2.1.0-p84.11.3 Route switcher member text hard fix */
+.member-assignees--inline .member-assignee-label{
+  display:block;
+  min-width:0;
+  max-width:145px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  word-break:keep-all;
+  line-height:1.25;
+}
+.v2-route-page-title > .member-assignees--inline .member-assignee-label{max-width:145px}
+@media(max-width:420px){
+  .v2-route-page-title > .member-assignees--inline .member-assignee-label{max-width:112px}
+}
