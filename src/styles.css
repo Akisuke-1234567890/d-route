@@ -3835,3 +3835,8 @@ body,
 .places-route-edit-button{width:38px;min-width:38px;height:38px;min-height:38px;padding:0;border-radius:12px;font-size:1rem;display:inline-grid;place-items:center}
 .places-add-menu-button{min-height:38px;padding:0 13px}
 @media (max-width:520px){.places-compact-heading{flex-direction:row;align-items:center}.places-heading-actions{display:flex;align-items:center}.places-title-block h1{font-size:1.35rem}}
+
+
+/* p84.5 Places phase density alignment */
+.route-workspace-page .places-phase-section{border-radius:18px}
+.route-workspace-page .places-phase-header{padding:10px 11px}

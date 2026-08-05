@@ -1484,3 +1484,116 @@
   display:none!important;
   background:none!important;
 }
+
+
+/* v2.1.0-p84.5 compact Places phase cards */
+.phase-planning-list {
+  gap: 12px;
+}
+
+.places-phase-section {
+  border-radius: 18px;
+}
+
+.places-phase-header {
+  min-height: 58px;
+  gap: 10px;
+  padding: 10px 11px;
+}
+
+.places-phase-copy {
+  display: grid;
+  gap: 2px;
+}
+
+.places-phase-titleline {
+  min-width: 0;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.places-phase-titleline h2 {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: .94rem;
+  line-height: 1.15;
+}
+
+.phase-unnamed-badge,
+.phase-start-badge,
+.phase-destination-count {
+  flex: 0 0 auto;
+  min-height: 20px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: .64rem;
+  font-weight: 850;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+}
+
+.phase-destination-count {
+  background: rgba(255, 255, 255, .045);
+  color: var(--muted);
+}
+
+.places-phase-copy p {
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: .69rem;
+}
+
+.places-phase-actions {
+  gap: 5px;
+}
+
+.phase-edit-button {
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 11px;
+  font-size: .92rem;
+}
+
+.phase-add-place-button {
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 11px;
+  font-size: .72rem;
+  white-space: nowrap;
+}
+
+.places-phase-section > .places-list {
+  padding: 8px;
+}
+
+.phase-empty-add {
+  width: calc(100% - 16px);
+  min-height: 48px;
+  margin: 8px;
+  border-radius: 13px;
+  font-size: .75rem;
+}
+
+@media (max-width: 380px) {
+  .places-phase-header {
+    padding-inline: 9px;
+  }
+
+  .phase-start-badge {
+    display: none;
+  }
+
+  .phase-add-place-button {
+    padding-inline: 8px;
+  }
+}

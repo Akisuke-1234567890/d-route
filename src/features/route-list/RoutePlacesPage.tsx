@@ -1394,10 +1394,10 @@ function requestDestinationDelete(destination: DestinationSummary) {
                 <section className="places-phase-section" key={phase.id}>
                   <header className="places-phase-header">
                     <div className="places-phase-copy">
-                      <div className="places-phase-titleline"><h2>{phase.name || 'Phase'}</h2>{!phase.name && <span className="phase-unnamed-badge">名前未設定</span>}{phase.startTime && <span className="phase-start-badge">{phase.startTime.slice(0, 5)}〜</span>}</div>
+                      <div className="places-phase-titleline"><h2 title={phase.name || 'Phase'}>{phase.name || 'Phase'}</h2>{!phase.name && <span className="phase-unnamed-badge">名前未設定</span>}{phase.startTime && <span className="phase-start-badge">{phase.startTime.slice(0, 5)}〜</span>}<span className="phase-destination-count">{phaseDestinations.length}件</span></div>
                       {phase.description && <p>{phase.description}</p>}
                     </div>
-                    <div className="places-phase-actions"><button className="phase-edit-button" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeDestinationSwipe(); openPhaseEdit(phase); }}>編集</button><button className="phase-add-place-button" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeDestinationSwipe(); openCreateModal(phase.id); }}>＋ 予定</button></div>
+                    <div className="places-phase-actions"><button className="phase-edit-button" type="button" aria-label={`${phase.name || 'Phase'}を編集`} title="Phaseを編集" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeDestinationSwipe(); openPhaseEdit(phase); }}><span aria-hidden="true">✎</span><span className="sr-only">Phaseを編集</span></button><button className="phase-add-place-button" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeDestinationSwipe(); openCreateModal(phase.id); }}>＋予定</button></div>
                   </header>
                   {phaseDestinations.length === 0 ? (
                     <button className="phase-empty-add" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeDestinationSwipe(); openCreateModal(phase.id); }}>このPhaseに最初の予定を追加</button>
