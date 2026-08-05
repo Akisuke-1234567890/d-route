@@ -13,8 +13,22 @@ button, input { font: inherit; }
 button { cursor: pointer; }
 button:disabled { cursor: not-allowed; opacity: .5; }
 .splash-screen, .auth-page { min-height: 100dvh; display: grid; place-items: center; padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom)); position: relative; overflow: hidden; }
-.star-field { position: absolute; inset: 0; opacity: .6; background-image: radial-gradient(circle, #fff 0 1px, transparent 1.5px), radial-gradient(circle, #9d92ff 0 1px, transparent 1.5px); background-size: 58px 58px, 91px 91px; background-position: 0 0, 24px 31px; mask-image: linear-gradient(to bottom, #000, transparent 86%); }
-.splash-content { position: relative; text-align: center; display: grid; justify-items: center; gap: 12px; }
+.star-field {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 1;
+  background:
+    radial-gradient(circle at 42% 43%, rgba(58, 224, 235, .11) 0%, rgba(58, 224, 235, .055) 18%, transparent 42%),
+    radial-gradient(circle at 60% 47%, rgba(132, 92, 255, .12) 0%, rgba(132, 92, 255, .055) 19%, transparent 44%),
+    radial-gradient(circle at 51% 57%, rgba(63, 111, 255, .065) 0%, transparent 37%);
+  filter: blur(22px);
+  transform: scale(1.08);
+  animation: splashGlowIn .9s ease-out both;
+}
+.splash-content { position: relative; z-index: 1; text-align: center; display: grid; justify-items: center; gap: 12px; }
+@keyframes splashGlowIn { from { opacity: 0; transform: scale(1.02); } to { opacity: 1; transform: scale(1.08); } }
 .brand-wordmark { font-size: 2rem; font-weight: 800; letter-spacing: .04em; }
 .brand-wordmark.small { font-size: 1.25rem; text-align: left; }
 .loading-dots { display: flex; gap: 8px; padding: 18px; }
@@ -3840,3 +3854,6 @@ body,
 /* p84.5 Places phase density alignment */
 .route-workspace-page .places-phase-section{border-radius:18px}
 .route-workspace-page .places-phase-header{padding:10px 11px}
+
+/* v2.1.0-p84.7 splash background refinement */
+@media (prefers-reduced-motion: reduce) { .star-field { animation: none; } }
