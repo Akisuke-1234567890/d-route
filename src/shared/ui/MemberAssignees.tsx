@@ -10,7 +10,7 @@ type MemberAssigneesProps = {
   maxVisible?: number;
 };
 
-export function MemberAssignees({ members, variant = 'inline', maxVisible = 3 }: MemberAssigneesProps) {
+export function MemberAssignees({ members, variant = 'inline', maxVisible = 4 }: MemberAssigneesProps) {
   if (members.length === 0) return null;
 
   const visibleMembers = members.slice(0, maxVisible);
@@ -33,13 +33,13 @@ export function MemberAssignees({ members, variant = 'inline', maxVisible = 3 }:
 
   return (
     <span className="member-assignees member-assignees--inline" aria-label={label}>
-      <span className="member-assignee-dots" aria-hidden="true">
-        {visibleMembers.map((member) => <i className={`is-color-${member.colorKey}`} key={member.id} />)}
-      </span>
-      <span className="member-assignee-label">
-        {visibleMembers.map((member) => member.name).join('・')}
-        {remainingCount > 0 ? `・他${remainingCount}名` : ''}
-      </span>
+      {visibleMembers.map((member) => (
+        <span className="member-assignee-row" key={member.id}>
+          <i className={`member-assignee-dot is-color-${member.colorKey}`} aria-hidden="true" />
+          <span className="member-assignee-row-name">{member.name}</span>
+        </span>
+      ))}
+      {remainingCount > 0 ? <span className="member-assignee-more">＋{remainingCount}名</span> : null}
     </span>
   );
 }
