@@ -1356,12 +1356,12 @@ function requestDestinationDelete(destination: DestinationSummary) {
         </section>
         <div ref={placesRouteContentRef} className="places-route-content-buffer"><div ref={placesRouteMotionRef} className={`places-route-motion is-${placesRouteDirection}`} key={`places-route-${placesRouteMotionId}`}>
         <div className="route-tab-heading places-compact-heading">
-          <div>
+          <div className="places-title-block">
             <p className="eyebrow">{activeBranchId ? 'SUB ROUTE' : 'PLACES'}</p>
-            <h1 id="places-title">{activeBranchId ? (alternateRoutes.find((route) => route.id === activeBranchId)?.name ?? 'サブRoute') : '予定'}</h1>
+            <h1 id="places-title" title={activeBranchId ? (alternateRoutes.find((route) => route.id === activeBranchId)?.name ?? 'サブRoute') : '予定'}>{activeBranchId ? (alternateRoutes.find((route) => route.id === activeBranchId)?.name ?? 'サブRoute') : '予定'}</h1>
           </div>
           <div className="places-heading-actions">
-            {activePlacesRoute ? <button className="secondary-button places-route-edit-button" type="button" onClick={() => openAlternateRouteEdit(activePlacesRoute)}>編集</button> : null}
+            {activePlacesRoute ? <button className="secondary-button places-route-edit-button" type="button" aria-label="サブRouteを編集" title="サブRouteを編集" onClick={() => openAlternateRouteEdit(activePlacesRoute)}><span aria-hidden="true">✎</span><span className="sr-only">サブRouteを編集</span></button> : null}
           <button
             className="primary-button places-add-menu-button"
             type="button"
@@ -1908,10 +1908,6 @@ function requestDestinationDelete(destination: DestinationSummary) {
                 ) : <p className="route-tab-demo-note">参加中のメンバーはいません。先にMembersから招待・参加登録を行ってください。</p>}
                 <p className="field-hint">別の別行動に設定中の人を選ぶと、所属先はこちらへ移ります。メンバーは後から変更できます。</p>
               </section>
-              {alternateRouteEditing ? <section className="alternate-destination-editor"><div className="alternate-destination-heading"><div><strong>この別行動の予定</strong><small>{alternateRouteDestinations.length}件</small></div><button type="button" className="secondary-button" onClick={startAlternateDestinationCreate}>＋予定</button></div>
-                <div className="alternate-destination-list">{alternateRouteDestinations.map(item=><div className="alternate-destination-row" key={item.id}><button type="button" onClick={()=>startAlternateDestinationEdit(item)}><strong>{item.startTime ? `${item.startTime} ` : ''}{item.name}</strong><small>{item.locationName || '場所未設定'}</small></button><button type="button" className="alternate-destination-delete" onClick={()=>void handleAlternateDestinationDelete(item)}>削除</button></div>)}</div>
-                <div className="alternate-destination-form"><input value={alternateDestinationName} onChange={e=>setAlternateDestinationName(e.target.value)} placeholder="予定名" maxLength={40}/><input value={alternateDestinationLocation} onChange={e=>setAlternateDestinationLocation(e.target.value)} placeholder="場所（任意）" maxLength={80}/><select value={alternateDestinationTimeType} onChange={e=>setAlternateDestinationTimeType(e.target.value as 'none'|'fixed'|'approx')}><option value="none">時間なし</option><option value="fixed">時間を指定</option><option value="approx">目安時間</option></select>{alternateDestinationTimeType!=='none'?<div className="alternate-destination-times"><input type="time" step="300" value={alternateDestinationStart} onChange={e=>setAlternateDestinationStart(e.target.value)}/><input type="time" step="300" value={alternateDestinationEnd} onChange={e=>setAlternateDestinationEnd(e.target.value)}/></div>:null}<textarea value={alternateDestinationDescription} onChange={e=>setAlternateDestinationDescription(e.target.value)} placeholder="メモ（任意）" maxLength={200} rows={2}/><button type="button" className="primary-button" disabled={!alternateDestinationName.trim()||alternateDestinationSaving} onClick={()=>void handleAlternateDestinationSave()}>{alternateDestinationSaving?'保存中…':alternateDestinationEditing?'予定を更新':'予定を追加'}</button></div>
-              </section> : <p className="route-tab-demo-note">別行動を一度保存すると、その中の予定を追加できます。</p>}
               {alternateRouteError ? <p className="form-error" role="alert">{alternateRouteError}</p> : null}
               <div className="modal-actions"><button className="secondary-button" type="button" onClick={closeAlternateRouteModal} disabled={alternateRouteSaving || alternateRouteDeleting}>キャンセル</button><button className="primary-button" type="submit" disabled={alternateRouteSaving || alternateRouteDeleting || !alternateRouteName.trim() || (!alternateRouteEditing && timedDestinations.length === 0)}>{alternateRouteSaving ? '保存中…' : alternateRouteEditing ? '保存' : '追加'}</button></div>
               {alternateRouteEditing ? <button className="alternate-route-delete-button" type="button" onClick={() => alternateRouteEditing && requestAlternateRouteDelete(alternateRouteEditing)} disabled={alternateRouteSaving || alternateRouteDeleting}>{alternateRouteDeleting ? '削除中…' : 'この別行動を削除'}</button> : null}
