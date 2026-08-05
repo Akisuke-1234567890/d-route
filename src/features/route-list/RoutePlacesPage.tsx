@@ -18,6 +18,7 @@ import { createRoutePhase, deleteRoutePhase, getRoutePhases, updateRoutePhase, t
 import { createAlternateRoute, configureAlternateRoute, deleteAlternateRoute, listRouteBranches, listAlternateRouteDestinations, saveAlternateRouteDestination, deleteAlternateRouteDestination, listRouteBranchAssignments, assignMemberToBranch, clearMemberBranch, type AlternateRouteConnectionType, type RouteBranch, type AlternateRouteDestination, type RouteBranchAssignment } from './branches';
 import { listRouteMembers, type RouteMember } from './members';
 import { listMyMembers, listRouteBranchMyMemberAssignments, replaceRouteBranchMyMembers, listRouteDestinationMyMemberAssignments, replaceRouteDestinationMyMembers, type MyMember, type RouteBranchMyMemberAssignment, type DestinationMyMemberAssignment } from '../my-members/myMembers';
+import { MemberAssignees } from '../../shared/ui/MemberAssignees';
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error && error.message) return error.message;
@@ -1343,12 +1344,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
           <div className="places-route-carousel-title">
             <small>{placesRouteCategory}</small>
             <strong>{activePlacesRoute?.name ?? 'メインの予定'}</strong>
-            {activePlacesRouteMyMembers.length > 0 ? (
-              <span className="route-assignee-line" aria-label={`担当 ${activePlacesRouteMyMembers.map((member) => member.name).join('、')}`}>
-                <span className="route-assignee-avatars" aria-hidden="true">{activePlacesRouteMyMembers.slice(0, 3).map((member) => <i className={`is-color-${member.colorKey}`} key={member.id}/>)}</span>
-                <span className="route-assignee-names">{activePlacesRouteMyMembers.map((member) => member.name).join('・')}</span>
-              </span>
-            ) : null}
+            <MemberAssignees members={activePlacesRouteMyMembers} />
             <span>{activePlacesRouteIndex + 1} / {placesRouteIds.length}</span>
           </div>
           <button type="button" className="places-route-arrow" onClick={() => void movePlacesRoute(activePlacesRouteIndex + 1)} disabled={activePlacesRouteIndex >= placesRouteIds.length - 1} aria-label="次のRouteを見る">›</button>

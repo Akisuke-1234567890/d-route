@@ -3885,3 +3885,22 @@ body,
   .route-assignee-line{max-width:58vw;font-size:.66rem!important}
   .route-assignee-avatars i{width:14px;height:14px}
 }
+
+
+/* v2.1.0-p84.11 shared member assignee rendering */
+.member-assignees{--member-color:#8b78ff}
+.member-assignees--inline{max-width:min(252px,64vw);display:inline-flex;align-items:center;justify-content:center;gap:6px;color:#8ce8d0;font-size:.68rem;font-weight:760;line-height:1.25;letter-spacing:0;font-variant-ligatures:none}
+.member-assignee-dots{display:inline-flex;align-items:center;flex:0 0 auto;padding-left:2px}
+.member-assignee-dots i{display:block;width:14px;height:14px;margin-left:-3px;border-radius:50%;background:var(--member-color);border:2px solid #111735;box-shadow:0 2px 6px rgba(0,0,0,.24)}
+.member-assignee-dots i:first-child{margin-left:0}
+.member-assignee-names{display:inline-flex;align-items:center;min-width:0;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.member-assignee-name{display:inline-flex;align-items:center;min-width:0;flex:0 1 auto;white-space:nowrap}
+.member-assignee-name>span:last-child{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;word-break:keep-all;overflow-wrap:normal}
+.member-assignee-separator{display:inline-block;flex:0 0 auto;margin:0 2px;color:rgba(140,232,208,.72)}
+.member-assignee-more{display:inline-block;flex:0 0 auto;margin-left:4px;color:rgba(204,215,247,.72);white-space:nowrap}
+.member-assignees--chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.member-assignee-chip{display:inline-flex;align-items:center;gap:5px;max-width:170px;padding:4px 8px;border-radius:999px;border:1px solid color-mix(in srgb,var(--member-color) 28%,transparent);background:color-mix(in srgb,var(--member-color) 10%,transparent);color:rgba(220,241,236,.88);font-size:.64rem;font-weight:760;line-height:1.25}
+.member-assignee-chip i{flex:0 0 auto;width:8px;height:8px;border-radius:50%;background:var(--member-color)}
+.member-assignee-chip>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;word-break:keep-all}
+.member-assignees--chips>.member-assignee-more{align-self:center;margin-left:0;padding:3px 6px;font-size:.62rem}
+@media(max-width:420px){.member-assignees--inline{max-width:59vw;font-size:.66rem}.member-assignee-dots i{width:13px;height:13px}.member-assignee-chip{max-width:140px}}

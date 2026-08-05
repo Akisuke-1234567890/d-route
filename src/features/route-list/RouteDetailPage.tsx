@@ -16,6 +16,7 @@ import {
   type AlternateRouteDestination,
 } from './branches';
 import {
+import { MemberAssignees } from '../../shared/ui/MemberAssignees';
   listMyMembers,
   listRouteBranchMyMemberAssignments,
   type MyMember,
@@ -592,17 +593,7 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
       <div className="v2-route-page-title">
         <small>{routePageIndex === 0 ? 'メインRoute' : activeAlternateRoute ? alternateRouteCategory(activeAlternateRoute.connectionType) : '別行動Route'}</small>
         <strong>{routePageIndex === 0 ? 'メインの予定' : activeAlternateRoute?.name ?? '別行動'}{activeAlternateRoute?.id === assignedAlternateRouteId ? <em className="v2-route-page-own">あなたのRoute</em> : null}</strong>
-        {activeAlternateMyMembers.length > 0 ? (
-          <span className="route-assignee-line" aria-label={`担当 ${activeAlternateMyMembers.map((member) => member.name).join('、')}`}>
-            <span className="route-assignee-avatars" aria-hidden="true">{activeAlternateMyMembers.slice(0, 3).map((member) => <i className={`is-color-${member.colorKey}`} key={member.id}/>)}</span>
-            <span className="route-assignee-names">{activeAlternateMyMembers.map((member, index) => (
-              <span className="route-assignee-name" key={member.id}>
-                {index > 0 ? <span className="route-assignee-separator" aria-hidden="true">・</span> : null}
-                <span>{member.name}</span>
-              </span>
-            ))}</span>
-          </span>
-        ) : null}
+        <MemberAssignees members={activeAlternateMyMembers} />
         <span>{routePageIndex + 1} / {routePageCount}</span>
       </div>
       <button type="button" onClick={showNextRoutePage} disabled={routePageIndex >= routePageCount - 1} aria-label="次のRouteを見る">›</button>
@@ -625,11 +616,7 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
             <div>
               <p className="eyebrow">{alternateRouteCategory(activeAlternateRoute.connectionType)}</p>
               <h2>{activeAlternateRoute.name}</h2>
-              {activeAlternateMyMembers.length > 0 ? (
-                <div className="alternate-route-assignees" aria-label={`担当 ${activeAlternateMyMembers.map((member) => member.name).join('、')}`}>
-                  {activeAlternateMyMembers.map((member) => <span className={`is-color-${member.colorKey}`} key={member.id}><i aria-hidden="true"/>{member.name}</span>)}
-                </div>
-              ) : null}
+              <MemberAssignees members={activeAlternateMyMembers} variant="chips" maxVisible={4} />
             </div>
             <span className="v2-alternate-route-badge">{activeAlternateRoute.id === assignedAlternateRouteId ? 'あなたの別行動' : alternateTypeLabel(activeAlternateRoute.connectionType)}</span>
           </div>
