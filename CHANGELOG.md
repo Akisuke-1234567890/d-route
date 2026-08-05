@@ -1,3 +1,9 @@
+## v2.1.0-p84.11.1 Build hotfix
+
+- Fixed the broken import block in `RouteDetailPage.tsx`.
+- Restored the P84.11 shared member assignee display without changing behavior.
+- Database changes: none.
+
 ## v2.1.0-p84.11 Shared member assignee display
 
 - Route・Places・サブRoute詳細の担当メンバー表示を共通コンポーネントへ統一。
