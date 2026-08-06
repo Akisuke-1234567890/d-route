@@ -1,3 +1,10 @@
+## v2.1.0-p84.15.2 RoutePlaces import hotfix
+
+- RoutePlacesPage.tsx の壊れた import ブロックを修正
+- P84.14 の画面準備通知を維持
+- P84.15 のスクロール位置保持を維持
+- 機能・DB変更なし
+
 ## v2.1.0-p84.15.1 Build hotfix
 
 - `RouteDetailPage.tsx` と `RouteChatPage.tsx` の壊れた import ブロックを修正。

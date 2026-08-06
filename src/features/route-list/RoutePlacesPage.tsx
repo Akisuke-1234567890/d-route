@@ -4,8 +4,8 @@ import { BrandMark } from '../../shared/ui/BrandMark';
 import { RouteWorkspacePage } from '../../shared/ui/RouteWorkspacePage';
 import './RoutePlacesPage.css';
 import { useBodyScrollLock } from '../../shared/hooks/useBodyScrollLock';
-import {
 import { useWorkspacePageReady } from '../../shared/ui/workspacePageReady';
+import {
   createRouteDestination,
   getRouteDestinations,
   softDeleteRouteDestination,
