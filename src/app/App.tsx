@@ -76,40 +76,11 @@ function FadeRoutes({ children }: FadeRoutesProps) {
         (nextSection === 'places' && currentSection === 'route'));
 
     if (isRoutePlacesSwitch) {
-      const transitionId = transitionIdRef.current + 1;
-      transitionIdRef.current = transitionId;
+      transitionIdRef.current += 1;
       setWorkspaceLoading(true);
       setPhase('pre-in');
       setDisplayLocation(location);
-
-      let frameId = 0;
-      const startedAt = performance.now();
-      const revealWhenReady = () => {
-        if (transitionIdRef.current !== transitionId) return;
-
-        const content = contentRef.current;
-        const stillLoading = Boolean(
-          content?.querySelector('.route-loading, [aria-busy="true"]') ||
-          content?.textContent?.includes('読み込んでいます')
-        );
-        const timedOut = performance.now() - startedAt >= 3000;
-
-        if (!stillLoading || timedOut) {
-          window.requestAnimationFrame(() => {
-            window.requestAnimationFrame(() => {
-              if (transitionIdRef.current !== transitionId) return;
-              setPhase('in');
-              setWorkspaceLoading(false);
-            });
-          });
-          return;
-        }
-
-        frameId = window.requestAnimationFrame(revealWhenReady);
-      };
-
-      frameId = window.requestAnimationFrame(revealWhenReady);
-      return () => window.cancelAnimationFrame(frameId);
+      return;
     }
 
     if (nextWorkspaceId && nextWorkspaceId === currentWorkspaceId) {
@@ -145,6 +116,50 @@ function FadeRoutes({ children }: FadeRoutesProps) {
     displayLocation.pathname,
     displayLocation.search,
     location,
+  ]);
+
+  useEffect(() => {
+    if (!workspaceLoading) return;
+
+    const transitionId = transitionIdRef.current;
+    const startedAt = performance.now();
+    let frameId = 0;
+    let revealFrameId = 0;
+
+    const revealWhenReady = () => {
+      if (transitionIdRef.current !== transitionId) return;
+
+      const content = contentRef.current;
+      const stillLoading = Boolean(
+        content?.querySelector('.route-loading, [aria-busy="true"]') ||
+        content?.textContent?.includes('読み込んでいます')
+      );
+      const timedOut = performance.now() - startedAt >= 3000;
+
+      if (!stillLoading || timedOut) {
+        revealFrameId = window.requestAnimationFrame(() => {
+          revealFrameId = window.requestAnimationFrame(() => {
+            if (transitionIdRef.current !== transitionId) return;
+            setPhase('in');
+            setWorkspaceLoading(false);
+          });
+        });
+        return;
+      }
+
+      frameId = window.requestAnimationFrame(revealWhenReady);
+    };
+
+    frameId = window.requestAnimationFrame(revealWhenReady);
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.cancelAnimationFrame(revealFrameId);
+    };
+  }, [
+    displayLocation.hash,
+    displayLocation.pathname,
+    displayLocation.search,
+    workspaceLoading,
   ]);
 
   return (

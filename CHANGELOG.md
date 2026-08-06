@@ -1,8 +1,15 @@
+# D Route v2.1.0-p84.17.3
+
+- Route⇔Places切替時の共通ローディングが解除されず停止する問題を修正。
+- 遷移先の監視処理を画面差し替え用effectから分離し、構築完了後に確実に表示。
+- 3秒の安全タイムアウトは維持。
+
 ## v2.1.0-p84.17.2 Safe redeploy
 
-- P84.17のRoute / Places安定ローディングを通常のmain pushで再デプロイ。
-- `.github/workflows`は変更しない。
-- 公開確認用の`public/deploy-version.txt`を追加。
+- P84.17のRoute／Places切替ローディングを維持。
+- Workflowファイルには触れず、通常のmain更新としてGitHub Actionsを再起動。
+- 公開版のバージョン表示を2.1.0-p84.17.2へ更新。
+- DB変更なし。
 
 ## v2.1.0-p84.17 Route / Places stable loading
 
