@@ -6,7 +6,6 @@ import { getSupabaseClient } from '../../shared/api/supabase';
 import { MY_MEMBER_COLOR_KEYS, createMyMember, deleteMyMember, listMyMembers, updateMyMember, type MyMember, type MyMemberColorKey } from '../my-members/myMembers';
 import { getRoute } from './routes';
 import { getOwnRouteMember, inviteRouteMemberByLoginId, listRouteMembers, respondToRouteInvite, type RouteMember, type RouteMemberStatus } from './members';
-import { useWorkspacePageReady } from '../../shared/ui/workspacePageReady';
 
 const labels: Record<RouteMemberStatus, string> = { participating: '参加', unanswered: '未回答', declined: '不参加' };
 type MembersView = 'my' | 'shared';
@@ -40,7 +39,6 @@ export function RouteMembersPage() {
 
   const [members, setMembers] = useState<RouteMember[]>([]);
   const [loading, setLoading] = useState(true);
-  useWorkspacePageReady(!loading);
   const [error, setError] = useState('');
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteLoginId, setInviteLoginId] = useState('');

@@ -1,31 +1,10 @@
-## v2.1.0-p84.15.2 RoutePlaces import hotfix
+## v2.1.0-p84.16 Transition rollback
 
-- RoutePlacesPage.tsx の壊れた import ブロックを修正
-- P84.14 の画面準備通知を維持
-- P84.15 のスクロール位置保持を維持
-- 機能・DB変更なし
-
-## v2.1.0-p84.15.1 Build hotfix
-
-- `RouteDetailPage.tsx` と `RouteChatPage.tsx` の壊れた import ブロックを修正。
-- P84.14 の画面準備通知と P84.15 のスクロール位置保持は維持。
-- 機能・DB変更なし。
-
-## v2.1.0-p84.15 Workspace scroll restoration
-
-- Route / Places を行き来した際、それぞれの縦スクロール位置を画面ごとに保持。
-- 遷移先の初回描画完了後、保存位置へ復元してからフェードイン。
-- 初めて開く画面は従来どおり先頭から表示。
-- Chatなど独自の自動スクロールを持つ画面には適用しない。
-- DB変更なし。
-
-## v2.1.0-p84.14 Workspace transition readiness
-
-- Route / Places など同一Route内の画面切替で、遷移先のデータ取得と初回描画完了まで共通ローディング幕を維持。
-- 画面構築途中のカードやレイアウトが一瞬見える問題を抑制。
-- 遷移先が準備完了を通知した後、2フレーム待ってからフェードイン。
-- 固定下帯はローディング幕より前面に維持。
-- 2.5秒の安全タイムアウトを設け、通信エラー時に画面が永久に隠れないよう対応。
+- P84.14以降で追加した画面準備通知・共通ローディング制御を撤回。
+- P84.15以降で追加したRoute／Placesスクロール位置保持を撤回。
+- Route／Places／Chat／Members／Menuの画面切替をP84.13時点の安定した挙動へ復元。
+- P84.15系Hotfixで生じたimport差分も撤回。
+- P84.13までのUI・PWAメタ情報・サブRoute機能は維持。
 - DB変更なし。
 
 ## v2.1.0-p84.13 PWA metadata consistency

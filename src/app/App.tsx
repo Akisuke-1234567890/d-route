@@ -20,17 +20,12 @@ import { RouteMembersPage } from '../features/route-list/RouteMembersPage';
 import { RouteMenuPage } from '../features/route-list/RouteMenuPage';
 import { RefreshButton } from '../shared/ui/RefreshButton';
 import { RouteBottomNav } from '../features/route-list/RouteBottomNav';
-import { WORKSPACE_PAGE_READY_EVENT } from '../shared/ui/workspacePageReady';
 
 
 
 function getWorkspaceRouteId(pathname: string): string | null {
   const match = pathname.match(/^\/routes\/([^/]+)(?:\/(?:places|chat|members|menu))?\/?$/);
   return match?.[1] ?? null;
-}
-
-function shouldRestoreWorkspaceScroll(pathname: string): boolean {
-  return /^\/routes\/[^/]+(?:\/places)?\/?$/.test(pathname);
 }
 
 function RouteWorkspaceLayout() {
@@ -51,9 +46,7 @@ function FadeRoutes({ children }: FadeRoutesProps) {
   const location = useLocation();
   const [displayLocation, setDisplayLocation] = useState(location);
   const [phase, setPhase] = useState<'in' | 'out' | 'pre-in'>('in');
-  const [workspaceLoading, setWorkspaceLoading] = useState(false);
   const transitionIdRef = useRef(0);
-  const workspaceScrollPositionsRef = useRef(new Map<string, number>());
 
   useEffect(() => {
     if (
@@ -67,50 +60,10 @@ function FadeRoutes({ children }: FadeRoutesProps) {
     const nextWorkspaceId = getWorkspaceRouteId(location.pathname);
     const currentWorkspaceId = getWorkspaceRouteId(displayLocation.pathname);
     if (nextWorkspaceId && nextWorkspaceId === currentWorkspaceId) {
-      if (shouldRestoreWorkspaceScroll(displayLocation.pathname)) {
-        workspaceScrollPositionsRef.current.set(displayLocation.pathname, window.scrollY);
-      }
-
-      const transitionId = transitionIdRef.current + 1;
-      transitionIdRef.current = transitionId;
-      const targetPathname = location.pathname;
-      setWorkspaceLoading(true);
-      setPhase('pre-in');
-
-      let fallbackTimer = 0;
-      const finishTransition = () => {
-        if (transitionIdRef.current !== transitionId) return;
-        window.requestAnimationFrame(() => {
-          window.requestAnimationFrame(() => {
-            if (transitionIdRef.current !== transitionId) return;
-            if (shouldRestoreWorkspaceScroll(targetPathname)) {
-              const savedScrollY = workspaceScrollPositionsRef.current.get(targetPathname) ?? 0;
-              window.scrollTo({ top: savedScrollY, behavior: 'auto' });
-            }
-            setPhase('in');
-            setWorkspaceLoading(false);
-          });
-        });
-      };
-      const handleReady = (event: Event) => {
-        const pathname = (event as CustomEvent<{ pathname?: string }>).detail?.pathname;
-        if (pathname !== targetPathname) return;
-        window.removeEventListener(WORKSPACE_PAGE_READY_EVENT, handleReady);
-        window.clearTimeout(fallbackTimer);
-        finishTransition();
-      };
-
-      window.addEventListener(WORKSPACE_PAGE_READY_EVENT, handleReady);
+      transitionIdRef.current += 1;
       setDisplayLocation(location);
-      fallbackTimer = window.setTimeout(() => {
-        window.removeEventListener(WORKSPACE_PAGE_READY_EVENT, handleReady);
-        finishTransition();
-      }, 2500);
-
-      return () => {
-        window.removeEventListener(WORKSPACE_PAGE_READY_EVENT, handleReady);
-        window.clearTimeout(fallbackTimer);
-      };
+      setPhase('in');
+      return;
     }
 
     const transitionId = transitionIdRef.current + 1;
@@ -143,12 +96,6 @@ function FadeRoutes({ children }: FadeRoutesProps) {
   return (
     <div className={`route-page-transition is-${phase}`}>
       <Routes location={displayLocation}>{children}</Routes>
-      {workspaceLoading ? (
-        <div className="workspace-transition-loading" role="status" aria-live="polite">
-          <span className="route-loading-spinner" aria-hidden="true" />
-          <p>画面を準備しています</p>
-        </div>
-      ) : null}
     </div>
   );
 }

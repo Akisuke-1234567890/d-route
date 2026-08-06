@@ -8,7 +8,6 @@ import { getRouteDestinations, setRouteDestinationCompleted, type DestinationSum
 import { getSupabaseClient } from '../../shared/api/supabase';
 import { formatChatTime, getLatestRouteChatMessages, type RouteChatMessage } from './chat';
 import { getOwnRouteMember, type RouteMember } from './members';
-import { useWorkspacePageReady } from '../../shared/ui/workspacePageReady';
 import {
   listRouteBranches,
   listAlternateRouteDestinations,
@@ -933,7 +932,6 @@ export function RouteDetailPage() {
   const { routeId } = useParams<{ routeId: string }>();
   const [route, setRoute] = useState<RouteSummary | null>(null);
   const [loading, setLoading] = useState(true);
-  useWorkspacePageReady(!loading);
   const [error, setError] = useState<string | null>(null);
   const [ownMember, setOwnMember] = useState<RouteMember | null>(null);
 

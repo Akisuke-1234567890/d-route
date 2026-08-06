@@ -23,8 +23,8 @@ export default defineConfig({
         scope: '.',
         orientation: 'portrait-primary',
         icons: [
-          { src: 'icons/d-route-mark.svg?v=2.1.0-p84.13', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
-          { src: 'icons/d-route-maskable.svg?v=2.1.0-p84.13', sizes: 'any', type: 'image/svg+xml', purpose: 'maskable' }
+          { src: 'icons/d-route-mark.svg?v=2.1.0-p84.16', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+          { src: 'icons/d-route-maskable.svg?v=2.1.0-p84.16', sizes: 'any', type: 'image/svg+xml', purpose: 'maskable' }
         ]
       },
       workbox: {

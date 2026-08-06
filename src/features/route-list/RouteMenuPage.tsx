@@ -5,7 +5,6 @@ import { RouteWorkspacePage } from '../../shared/ui/RouteWorkspacePage';
 import { getSupabaseClient } from '../../shared/api/supabase';
 import { duplicateOwnedRoute, getRoute, updateOwnedRouteSettings, type RouteSummary } from './routes';
 import { useBodyScrollLock } from '../../shared/hooks/useBodyScrollLock';
-import { useWorkspacePageReady } from '../../shared/ui/workspacePageReady';
 
 const items = [
   { key:'settings', icon:'⚙️', title:'Route設定', description:'名前と説明を変更' },
@@ -18,7 +17,6 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 export function RouteMenuPage() {
-  useWorkspacePageReady(true);
   const { routeId = '' } = useParams<{ routeId: string }>();
   const navigate = useNavigate();
   const [route, setRoute] = useState<RouteSummary | null>(null);
