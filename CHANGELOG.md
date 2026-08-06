@@ -1,3 +1,9 @@
+## v2.1.0-p84.17.2 Safe redeploy
+
+- P84.17のRoute / Places安定ローディングを通常のmain pushで再デプロイ。
+- `.github/workflows`は変更しない。
+- 公開確認用の`public/deploy-version.txt`を追加。
+
 ## v2.1.0-p84.17 Route / Places stable loading
 
 - RouteとPlacesの相互切替だけに対象を限定し、共通ローディングを表示します。
