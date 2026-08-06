@@ -28,6 +28,12 @@ function getWorkspaceRouteId(pathname: string): string | null {
   return match?.[1] ?? null;
 }
 
+function getWorkspaceSection(pathname: string): 'route' | 'places' | 'other' {
+  if (/^\/routes\/[^/]+\/?$/.test(pathname)) return 'route';
+  if (/^\/routes\/[^/]+\/places\/?$/.test(pathname)) return 'places';
+  return 'other';
+}
+
 function RouteWorkspaceLayout() {
   const { routeId = '' } = useParams<{ routeId: string }>();
   return (
@@ -46,7 +52,9 @@ function FadeRoutes({ children }: FadeRoutesProps) {
   const location = useLocation();
   const [displayLocation, setDisplayLocation] = useState(location);
   const [phase, setPhase] = useState<'in' | 'out' | 'pre-in'>('in');
+  const [workspaceLoading, setWorkspaceLoading] = useState(false);
   const transitionIdRef = useRef(0);
+  const contentRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (
@@ -59,8 +67,54 @@ function FadeRoutes({ children }: FadeRoutesProps) {
 
     const nextWorkspaceId = getWorkspaceRouteId(location.pathname);
     const currentWorkspaceId = getWorkspaceRouteId(displayLocation.pathname);
+    const nextSection = getWorkspaceSection(location.pathname);
+    const currentSection = getWorkspaceSection(displayLocation.pathname);
+    const isRoutePlacesSwitch =
+      nextWorkspaceId &&
+      nextWorkspaceId === currentWorkspaceId &&
+      ((nextSection === 'route' && currentSection === 'places') ||
+        (nextSection === 'places' && currentSection === 'route'));
+
+    if (isRoutePlacesSwitch) {
+      const transitionId = transitionIdRef.current + 1;
+      transitionIdRef.current = transitionId;
+      setWorkspaceLoading(true);
+      setPhase('pre-in');
+      setDisplayLocation(location);
+
+      let frameId = 0;
+      const startedAt = performance.now();
+      const revealWhenReady = () => {
+        if (transitionIdRef.current !== transitionId) return;
+
+        const content = contentRef.current;
+        const stillLoading = Boolean(
+          content?.querySelector('.route-loading, [aria-busy="true"]') ||
+          content?.textContent?.includes('読み込んでいます')
+        );
+        const timedOut = performance.now() - startedAt >= 3000;
+
+        if (!stillLoading || timedOut) {
+          window.requestAnimationFrame(() => {
+            window.requestAnimationFrame(() => {
+              if (transitionIdRef.current !== transitionId) return;
+              setPhase('in');
+              setWorkspaceLoading(false);
+            });
+          });
+          return;
+        }
+
+        frameId = window.requestAnimationFrame(revealWhenReady);
+      };
+
+      frameId = window.requestAnimationFrame(revealWhenReady);
+      return () => window.cancelAnimationFrame(frameId);
+    }
+
     if (nextWorkspaceId && nextWorkspaceId === currentWorkspaceId) {
       transitionIdRef.current += 1;
+      setWorkspaceLoading(false);
       setDisplayLocation(location);
       setPhase('in');
       return;
@@ -94,8 +148,16 @@ function FadeRoutes({ children }: FadeRoutesProps) {
   ]);
 
   return (
-    <div className={`route-page-transition is-${phase}`}>
-      <Routes location={displayLocation}>{children}</Routes>
+    <div className="route-transition-shell">
+      <div ref={contentRef} className={`route-page-transition is-${phase}`}>
+        <Routes location={displayLocation}>{children}</Routes>
+      </div>
+      {workspaceLoading ? (
+        <div className="workspace-switch-loading" role="status" aria-live="polite">
+          <span className="route-loading-spinner" aria-hidden="true" />
+          <p>画面を準備しています</p>
+        </div>
+      ) : null}
     </div>
   );
 }
