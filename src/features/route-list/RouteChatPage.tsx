@@ -2,8 +2,8 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
 import { RouteWorkspacePage } from '../../shared/ui/RouteWorkspacePage';
-import {
 import { useWorkspacePageReady } from '../../shared/ui/workspacePageReady';
+import {
   formatChatTime,
   getCurrentUserId,
   getRouteChatMessages,

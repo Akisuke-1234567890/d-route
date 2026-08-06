@@ -1,3 +1,9 @@
+## v2.1.0-p84.15.1 Build hotfix
+
+- `RouteDetailPage.tsx` と `RouteChatPage.tsx` の壊れた import ブロックを修正。
+- P84.14 の画面準備通知と P84.15 のスクロール位置保持は維持。
+- 機能・DB変更なし。
+
 ## v2.1.0-p84.15 Workspace scroll restoration
 
 - Route / Places を行き来した際、それぞれの縦スクロール位置を画面ごとに保持。
