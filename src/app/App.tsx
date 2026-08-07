@@ -212,6 +212,8 @@ function FadeRoutes({ children }: FadeRoutesProps) {
     workspaceLoading,
   ]);
 
+  const loadingRouteId = workspaceLoading ? getWorkspaceRouteId(displayLocation.pathname) : null;
+
   return (
     <div className="route-transition-shell">
       <div ref={contentRef} className={`route-page-transition is-${phase}`}>
@@ -223,6 +225,7 @@ function FadeRoutes({ children }: FadeRoutesProps) {
           <p>画面を準備しています</p>
         </div>
       ) : null}
+      {loadingRouteId ? <RouteBottomNav routeId={loadingRouteId} /> : null}
     </div>
   );
 }

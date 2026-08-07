@@ -1,3 +1,11 @@
+# D Route v2.1.0-p84.20.1
+
+## Hotfix
+- Route/Places/Chat/Members/MenuからRouteへ戻るローディング中も固定下帯を表示。
+- ローディング中だけ下帯をフェード領域の外側へ描画し、画面本体のopacity切替に巻き込まれないよう修正。
+- P84.20の長めのローディング、裏生成、フェード条件は維持。
+- DB / Workflow変更なし。
+
 # D Route v2.1.0-p84.20
 
 - Chat / Members / Menu から Route へ戻る場合も、Places→Route と同じ準備ローディングを使用。
