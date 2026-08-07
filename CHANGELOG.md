@@ -1,3 +1,10 @@
+# 2.1.0-p84.23.1
+
+- Hotfix: Route内の固定下帯をフェード領域の外へ常駐化。
+- Route/Places/Chat/Members/Menu切替時に下帯を再生成せず、Routeクリック時の一瞬の消失を防止。
+- ローディング中専用の二重BottomNavigationを廃止し、常に同じナビゲーションを維持。
+- DB・Workflow・画面遷移の待機時間は変更なし。
+
 ## 2.1.0-p84.23 RC2 freeze
 
 - P84.22までの安定状態をRC2として固定

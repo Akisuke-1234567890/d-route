@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation, useParams } from 'react-router-dom';
+import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
 import { getSupabaseClient } from '../shared/api/supabase';
 import { getInitialSession } from '../features/auth/auth';
 import { getOwnProfile, type UserProfile } from '../features/auth/account';
@@ -35,11 +35,9 @@ function getWorkspaceSection(pathname: string): 'route' | 'places' | 'other' {
 }
 
 function RouteWorkspaceLayout() {
-  const { routeId = '' } = useParams<{ routeId: string }>();
   return (
     <div className="route-workspace-layout">
       <Outlet />
-      {routeId ? <RouteBottomNav routeId={routeId} /> : null}
     </div>
   );
 }
@@ -212,7 +210,7 @@ function FadeRoutes({ children }: FadeRoutesProps) {
     workspaceLoading,
   ]);
 
-  const loadingRouteId = workspaceLoading ? getWorkspaceRouteId(displayLocation.pathname) : null;
+  const persistentRouteId = getWorkspaceRouteId(location.pathname) ?? getWorkspaceRouteId(displayLocation.pathname);
 
   return (
     <div className="route-transition-shell">
@@ -225,7 +223,7 @@ function FadeRoutes({ children }: FadeRoutesProps) {
           <p>画面を準備しています</p>
         </div>
       ) : null}
-      {loadingRouteId ? <RouteBottomNav routeId={loadingRouteId} /> : null}
+      {persistentRouteId ? <RouteBottomNav routeId={persistentRouteId} /> : null}
     </div>
   );
 }
