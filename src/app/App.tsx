@@ -70,13 +70,13 @@ function FadeRoutes({ children }: FadeRoutesProps) {
     const currentWorkspaceId = getWorkspaceRouteId(displayLocation.pathname);
     const nextSection = getWorkspaceSection(location.pathname);
     const currentSection = getWorkspaceSection(displayLocation.pathname);
-    const isRoutePlacesSwitch =
+    const isPreparedWorkspaceSwitch =
       nextWorkspaceId &&
       nextWorkspaceId === currentWorkspaceId &&
-      ((nextSection === 'route' && currentSection === 'places') ||
+      ((nextSection === 'route' && currentSection !== 'route') ||
         (nextSection === 'places' && currentSection === 'route'));
 
-    if (isRoutePlacesSwitch) {
+    if (isPreparedWorkspaceSwitch) {
       transitionIdRef.current += 1;
       setWorkspaceOverlayPhase('visible');
       setWorkspaceLoading(true);

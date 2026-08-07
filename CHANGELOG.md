@@ -1,3 +1,10 @@
+# D Route v2.1.0-p84.20
+
+- Chat / Members / Menu から Route へ戻る場合も、Places→Route と同じ準備ローディングを使用。
+- Route画面はローディング幕の裏で生成し、最低表示時間・静止判定後にフェード表示。
+- Route→Places の既存ローディング挙動は維持。
+- DB / Workflow変更なし。
+
 # D Route 2.1.0-p84.19
 
 - RC final UI polish: workspace heading, menu card, modal control and bottom navigation spacing unified.
