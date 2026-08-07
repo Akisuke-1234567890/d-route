@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { getOwnRouteMember, type RouteMemberRole } from './members';
 
@@ -15,8 +15,6 @@ const ownerTabs = [
 const participantTabs = ownerTabs.filter((tab) => tab.key === 'route' || tab.key === 'chat');
 
 export function RouteBottomNav({ routeId }: RouteBottomNavProps) {
-  const navRef = useRef<HTMLElement>(null);
-  const [visualTop, setVisualTop] = useState<number | null>(null);
   const [role, setRole] = useState<RouteMemberRole | null>(null);
   const [roleResolved, setRoleResolved] = useState(false);
 
@@ -37,39 +35,11 @@ export function RouteBottomNav({ routeId }: RouteBottomNavProps) {
     return () => { active = false; };
   }, [routeId]);
 
-  useLayoutEffect(() => {
-    const viewport = window.visualViewport;
-    if (!viewport) {
-      setVisualTop(null);
-      return;
-    }
-
-    let frame = 0;
-    const sync = () => {
-      window.cancelAnimationFrame(frame);
-      frame = window.requestAnimationFrame(() => {
-        const height = navRef.current?.getBoundingClientRect().height ?? 0;
-        setVisualTop(Math.max(0, viewport.offsetTop + viewport.height - height));
-      });
-    };
-
-    sync();
-    viewport.addEventListener('resize', sync);
-    viewport.addEventListener('scroll', sync);
-    window.addEventListener('orientationchange', sync);
-    return () => {
-      window.cancelAnimationFrame(frame);
-      viewport.removeEventListener('resize', sync);
-      viewport.removeEventListener('scroll', sync);
-      window.removeEventListener('orientationchange', sync);
-    };
-  }, []);
-
   const tabs = !roleResolved || role === 'member' ? participantTabs : ownerTabs;
   const base = `/routes/${routeId}`;
 
   return (
-    <nav ref={navRef} className={`route-bottom-nav${!roleResolved || role === 'member' ? ' is-participant' : ''}`} style={visualTop === null ? undefined : { top: `${visualTop}px`, bottom: 'auto' }} aria-label="Route内ナビゲーション" aria-busy={!roleResolved}>
+    <nav className={`route-bottom-nav${!roleResolved || role === 'member' ? ' is-participant' : ''}`} aria-label="Route内ナビゲーション" aria-busy={!roleResolved}>
       {tabs.map((tab) => (
         <NavLink
           key={tab.key}

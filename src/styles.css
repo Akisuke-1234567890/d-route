@@ -4197,14 +4197,3 @@ body,
   -webkit-transform: none !important;
   z-index: 200 !important;
 }
-
-
-/* 2.1.0-RC1.3: anchor persistent Route navigation to the actual iOS visual viewport.
-   RouteBottomNav supplies an inline top coordinate from window.visualViewport;
-   bottom is only the non-VisualViewport fallback. */
-.route-bottom-nav {
-  bottom: 0 !important;
-}
-.route-detail-content.v2-dashboard-content {
-  padding-bottom: max(164px, calc(136px + env(safe-area-inset-bottom))) !important;
-}
