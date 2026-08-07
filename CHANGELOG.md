@@ -1,3 +1,9 @@
+# D Route 2.1.0-p84.19
+
+- RC final UI polish: workspace heading, menu card, modal control and bottom navigation spacing unified.
+- Route / Places transition behavior is unchanged from p84.18.
+- No database or workflow changes.
+
 ## v2.1.0-p84.18 RC stabilization
 
 - P84.17.4のRoute / Places切替とローディング挙動を安定版として固定。

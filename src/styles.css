@@ -4048,3 +4048,103 @@ body,
 /* v2.1.0-p84.12.1 separate page count from member rows */
 .v2-route-page-title>.v2-route-page-count{position:static!important;grid-area:count!important;z-index:2!important}
 .v2-route-page-title>.member-assignees--inline{grid-area:members!important;position:static!important;width:auto!important;min-width:0!important}
+
+/* v2.1.0-p84.19 RC final UI rhythm */
+:root{
+  --dr-control-height:40px;
+  --dr-primary-height:44px;
+}
+
+/* Keep everyday controls compact while preserving a comfortable tap target. */
+.header-actions .header-link,
+.header-actions .refresh-button,
+.icon-button,
+.secondary-button,
+.phase-edit-button,
+.phase-add-place-button,
+.places-route-edit-button{
+  min-height:var(--dr-control-height);
+}
+.primary-button,
+.compact-primary-button,
+.places-add-menu-button{
+  min-height:var(--dr-primary-height);
+}
+
+/* Page headings use the same vertical rhythm across the workspace. */
+.route-tab-heading,
+.places-compact-heading,
+.chat-page-heading,
+.members-page-heading,
+.route-menu-heading{
+  margin-bottom:18px;
+}
+.route-tab-heading h1,
+.places-compact-heading h1,
+.chat-page-heading h1{
+  line-height:1.15;
+}
+
+/* Compact editing controls should stay secondary to the content itself. */
+.places-phase-actions{
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.phase-edit-button,
+.phase-add-place-button{
+  border-radius:11px;
+  box-shadow:none;
+}
+.phase-edit-button{padding-inline:10px}
+.phase-add-place-button{padding-inline:10px}
+
+/* Menu and list cards share the same density as Route / Places cards. */
+.route-menu-item{
+  padding:13px 14px;
+  border-radius:16px!important;
+  gap:11px;
+}
+.route-menu-item small{margin-top:3px;line-height:1.35}
+
+/* Modal chrome: one close-button size and one action rhythm. */
+.modal-close-button{
+  width:38px;
+  height:38px;
+  flex-basis:38px;
+  border-radius:12px;
+  font-size:1.25rem;
+}
+.modal-actions{gap:8px;margin-top:16px}
+.modal-actions>button{min-height:44px}
+
+/* Bottom navigation stays visually stable between all workspace tabs. */
+.route-bottom-nav{
+  min-height:68px;
+  padding-top:6px;
+  column-gap:3px;
+}
+.route-bottom-nav-item{
+  min-height:52px;
+  border-radius:13px;
+  gap:2px;
+}
+.route-bottom-nav-icon{font-size:1.02rem}
+.route-bottom-nav-label{line-height:1.05}
+
+/* Footer is supporting information and should not compete with page content. */
+.route-workspace-footer,
+.app-footer{
+  color:rgba(174,182,216,.62);
+}
+
+@media(max-width:420px){
+  .route-tab-heading,
+  .places-compact-heading,
+  .chat-page-heading,
+  .members-page-heading,
+  .route-menu-heading{margin-bottom:15px}
+  .route-menu-item{padding:12px 13px}
+  .route-bottom-nav-item{min-height:50px}
+}
+
