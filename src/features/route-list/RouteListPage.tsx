@@ -6,6 +6,7 @@ import { RefreshButton } from '../../shared/ui/RefreshButton';
 import { useBodyScrollLock } from '../../shared/hooks/useBodyScrollLock';
 import { signOut } from '../auth/auth';
 import { createRoute, createRouteFromBuiltInTemplate, deleteOwnedRoute, listRoutes, setOwnedRouteArchived, type BuiltInTemplateKey, type RouteSummary } from './routes';
+import { listOwnRouteMemberships, type RouteMember } from './members';
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback;
@@ -37,6 +38,7 @@ type CreateMode = 'blank' | 'template';
 
 export function RouteListPage({ onSignedOut }: { onSignedOut: () => void }) {
   const [routes, setRoutes] = useState<RouteSummary[]>([]);
+  const [routeMembershipById, setRouteMembershipById] = useState<Record<string, RouteMember>>({});
   const [loading, setLoading] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [routeName, setRouteName] = useState('');
@@ -74,10 +76,24 @@ export function RouteListPage({ onSignedOut }: { onSignedOut: () => void }) {
   useEffect(() => {
     let active = true;
     setLoading(true);
-    void listRoutes(showArchived ? 'archived' : 'active')
-      .then((nextRoutes) => { if (active) setRoutes(nextRoutes); })
-      .catch((error) => { if (active) setToast(getErrorMessage(error, 'Route一覧を読み込めませんでした。')); })
-      .finally(() => { if (active) setLoading(false); });
+    void (async () => {
+      try {
+        const nextRoutes = await listRoutes(showArchived ? 'archived' : 'active');
+        let memberships: RouteMember[] = [];
+        try {
+          memberships = await listOwnRouteMemberships(nextRoutes.map((route) => route.id));
+        } catch {
+          // Route一覧自体は表示し、参加状態のバッジだけ省略する。
+        }
+        if (!active) return;
+        setRoutes(nextRoutes);
+        setRouteMembershipById(Object.fromEntries(memberships.map((member) => [member.routeId, member])));
+      } catch (error) {
+        if (active) setToast(getErrorMessage(error, 'Route一覧を読み込めませんでした。'));
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
     return () => { active = false; };
   }, [showArchived]);
 
@@ -325,12 +341,15 @@ async function handleDeleteRoute() {
             <div className="home-route-list">
               {recentRoutes.map((route) => {
                 const descriptionOpen = expandedDescriptionId === route.id;
-                const swipeOpen = swipedRouteId === route.id;
+                const membership = routeMembershipById[route.id] ?? null;
+                const isInvitedRoute = membership?.role === 'member';
+                const inviteStatusLabel = membership?.status === 'unanswered' ? '招待・未回答' : membership?.status === 'participating' ? '参加中' : membership?.status === 'declined' ? '不参加' : '';
+                const swipeOpen = !isInvitedRoute && swipedRouteId === route.id;
                 const currentOffset = swipeOpen ? swipeOffset : 0;
 
                 return (
                   <div className={`home-route-swipe-shell${swipeOpen ? ' is-open' : ''}`} key={route.id}>
-                    <div className="home-route-swipe-actions" aria-hidden={!swipeOpen}>
+                    {!isInvitedRoute ? <div className="home-route-swipe-actions" aria-hidden={!swipeOpen}>
                       <button
                         className={`home-route-swipe-archive${showArchived ? ' is-restore' : ''}`}
                         type="button"
@@ -351,15 +370,15 @@ async function handleDeleteRoute() {
                         <span aria-hidden="true">⌫</span>
                         <strong>削除</strong>
                       </button>
-                    </div>
+                    </div> : null}
 
                     <article
-                      className={`home-route-card home-route-swipe-panel${descriptionOpen ? ' is-description-open' : ''}`}
+                      className={`home-route-card home-route-swipe-panel${descriptionOpen ? ' is-description-open' : ''}${isInvitedRoute ? ' is-invited-route' : ''}`}
                       style={{ transform: `translateX(${currentOffset}px)` }}
-                      onPointerDown={(event) => handleRoutePointerDown(event, route.id)}
-                      onPointerMove={(event) => handleRoutePointerMove(event, route.id)}
-                      onPointerUp={(event) => handleRoutePointerEnd(event, route.id)}
-                      onPointerCancel={(event) => handleRoutePointerEnd(event, route.id)}
+                      onPointerDown={isInvitedRoute ? undefined : (event) => handleRoutePointerDown(event, route.id)}
+                      onPointerMove={isInvitedRoute ? undefined : (event) => handleRoutePointerMove(event, route.id)}
+                      onPointerUp={isInvitedRoute ? undefined : (event) => handleRoutePointerEnd(event, route.id)}
+                      onPointerCancel={isInvitedRoute ? undefined : (event) => handleRoutePointerEnd(event, route.id)}
                     >
                       <Link
                         className="home-route-card-main"
@@ -373,10 +392,10 @@ async function handleDeleteRoute() {
                         }}
                       >
                         <div className="home-route-card-copy">
-                          <h3>{route.name}</h3>
+                          <div className="home-route-card-titleline"><h3>{route.name}</h3>{isInvitedRoute && inviteStatusLabel ? <span className={`home-route-invite-badge is-${membership?.status}`}>{inviteStatusLabel}</span> : null}</div>
                           <p>{formatUpdatedAt(route.updated_at)}</p>
                         </div>
-                        <span className="home-route-swipe-hint" aria-hidden="true"><b>≪</b><i>⋯</i></span>
+                        {!isInvitedRoute ? <span className="home-route-swipe-hint" aria-hidden="true"><b>≪</b><i>⋯</i></span> : <span className="home-route-invite-chevron" aria-hidden="true">›</span>}
                       </Link>
                       {route.description?.trim() ? (
                         <>

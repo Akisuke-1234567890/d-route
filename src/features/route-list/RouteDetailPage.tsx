@@ -7,7 +7,7 @@ import { getRoutePhases, type PhaseSummary } from './phases';
 import { getRouteDestinations, setRouteDestinationCompleted, type DestinationSummary } from './destinations';
 import { getSupabaseClient } from '../../shared/api/supabase';
 import { formatChatTime, getLatestRouteChatMessages, type RouteChatMessage } from './chat';
-import { getOwnRouteMember, type RouteMember } from './members';
+import { getOwnRouteMember, respondToRouteInvite, type RouteMember } from './members';
 import {
   listRouteBranches,
   listAlternateRouteDestinations,
@@ -934,6 +934,9 @@ export function RouteDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [ownMember, setOwnMember] = useState<RouteMember | null>(null);
+  const [membershipResolved, setMembershipResolved] = useState(false);
+  const [inviteResponseSaving, setInviteResponseSaving] = useState(false);
+  const [inviteResponseError, setInviteResponseError] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -956,6 +959,8 @@ export function RouteDetailPage() {
         if (active) setLoading(false);
       });
 
+    setMembershipResolved(false);
+    setInviteResponseError('');
     void getOwnRouteMember(routeId)
       .then((member) => {
         if (active) setOwnMember(member);
@@ -963,16 +968,33 @@ export function RouteDetailPage() {
       .catch(() => {
         // 参加者判定に失敗してもRoute本体の表示は継続する。
         if (active) setOwnMember(null);
+      })
+      .finally(() => {
+        if (active) setMembershipResolved(true);
       });
 
     return () => { active = false; };
   }, [routeId]);
 
+  async function answerRouteInvite(status: 'participating' | 'declined') {
+    if (!routeId || inviteResponseSaving) return;
+    setInviteResponseSaving(true);
+    setInviteResponseError('');
+    try {
+      const updated = await respondToRouteInvite(routeId, status);
+      setOwnMember(updated);
+    } catch (caught) {
+      setInviteResponseError(getErrorMessage(caught, '招待への回答を保存できませんでした。'));
+    } finally {
+      setInviteResponseSaving(false);
+    }
+  }
+
   return (
     <RouteWorkspacePage shellClassName="v2-dashboard-shell" footerLabel="Route / Current Phase">
 
       <section className="page-content route-detail-content v2-dashboard-content" aria-labelledby="route-detail-title">
-        {loading ? (
+        {loading || !membershipResolved ? (
           <section className="route-loading" aria-live="polite">
             <span className="route-loading-spinner" aria-hidden="true" />
             <p>Routeを読み込んでいます</p>
@@ -983,6 +1005,28 @@ export function RouteDetailPage() {
             <h1 id="route-detail-title">Routeを開けませんでした</h1>
             <p>{error ?? 'Routeが見つかりませんでした。'}</p>
             <Link className="primary-button link-button" to="/routes">Route一覧へ戻る</Link>
+          </section>
+        ) : ownMember?.role === 'member' && ownMember.status !== 'participating' ? (
+          <section className="route-invite-response" aria-labelledby="route-invite-title">
+            <div className="route-invite-response-mark" aria-hidden="true"><BrandMark size={58} /></div>
+            <p className="eyebrow">ROUTE INVITATION</p>
+            <h1 id="route-invite-title">{route.name}</h1>
+            {route.description?.trim() ? <p className="route-invite-description">{route.description}</p> : null}
+            <div className="route-invite-status">
+              <strong>{ownMember.status === 'declined' ? '参加しないを選択しています' : 'このRouteに招待されています'}</strong>
+              <p>{ownMember.status === 'declined' ? '参加する場合は、ここから回答を変更できます。' : 'Routeに参加すると、当日のRouteとChatを利用できます。'}</p>
+            </div>
+            {inviteResponseError ? <div className="route-inline-error" role="alert">{inviteResponseError}</div> : null}
+            <div className="route-invite-actions">
+              <button className="primary-button" type="button" disabled={inviteResponseSaving} onClick={() => void answerRouteInvite('participating')}>
+                {inviteResponseSaving ? '保存中…' : '参加する'}
+              </button>
+              {ownMember.status === 'unanswered' ? (
+                <button className="secondary-button" type="button" disabled={inviteResponseSaving} onClick={() => void answerRouteInvite('declined')}>参加しない</button>
+              ) : (
+                <Link className="secondary-button link-button" to="/routes">Route一覧へ戻る</Link>
+              )}
+            </div>
           </section>
         ) : (
           <>

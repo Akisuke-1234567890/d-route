@@ -54,6 +54,25 @@ export async function inviteRouteMemberByLoginId(routeId: string, loginId: strin
   return mapMember(row);
 }
 
+export async function listOwnRouteMemberships(routeIds: string[]): Promise<RouteMember[]> {
+  const normalizedRouteIds = [...new Set(routeIds.map((id) => id.trim()).filter(Boolean))];
+  if (!normalizedRouteIds.length) return [];
+
+  const supabase = requireSupabase();
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError) throw authError;
+  if (!authData.user) return [];
+
+  const { data, error } = await supabase
+    .from('route_members')
+    .select(columns)
+    .eq('user_id', authData.user.id)
+    .in('route_id', normalizedRouteIds);
+  if (error) throw error;
+  return (data ?? []).map(mapMember);
+}
+
+
 export async function getOwnRouteMember(routeId: string): Promise<RouteMember | null> {
   const supabase = requireSupabase();
   const { data: authData, error: authError } = await supabase.auth.getUser();
