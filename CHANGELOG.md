@@ -1,3 +1,11 @@
+# 2.1.0-RC1
+
+- Release Candidate 1。P84.23.1までの安定版を固定。
+- Route / Places / Chat / Members / Menu の既存機能を維持。
+- Route遷移時の裏生成・フェードと、固定下帯の常駐化を維持。
+- 新機能追加は停止し、以後は実機で確認された不具合のみ修正するRC運用へ移行。
+- DB / GitHub Workflow変更なし。
+
 # 2.1.0-p84.23.1
 
 - Hotfix: Route内の固定下帯をフェード領域の外へ常駐化。
