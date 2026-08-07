@@ -1,3 +1,8 @@
+## 2.1.0-RC1.2
+- Hotfix: iOS/PWAで固定下帯が画面途中へずれる問題に対し、fixed要素自身のtranslateX中央寄せを廃止。
+- left/right=0 + margin:autoで固定し、Route/Places/Chat/Members/Menuの下帯位置をviewport最下部へ固定。
+- Route画面のローディング・フェード条件、DB、Workflowは変更なし。
+
 ## 2.1.0-RC1.1
 - Hotfix: fixed Route bottom navigation to the viewport via React portal so transition/loading ancestors can no longer move it.
 - Loading/fade timing, DB, and GitHub workflow are unchanged.
