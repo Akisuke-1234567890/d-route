@@ -1,3 +1,0 @@
-D Route iPhone API test
-実行日時: 2026/7/22 18:45:40
-ScriptableからGitHubへの書き込みに成功しました。

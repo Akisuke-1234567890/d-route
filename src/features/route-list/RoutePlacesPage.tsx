@@ -583,8 +583,7 @@ export function RoutePlacesPage() {
       try {
         await saveAlternateRouteMemberSelection(saved.id);
         await replaceRouteBranchMyMembers(routeId, saved.id, alternateRouteSelectedMyMemberIds);
-      } catch (memberError) {
-        console.error('サブRoute担当設定の保存に失敗しました。', memberError);
+      } catch {
         assignmentWarning = '名称は保存しましたが、担当設定を保存できませんでした。';
       }
 
@@ -594,8 +593,8 @@ export function RoutePlacesPage() {
         setAlternateRoutes(refreshed);
         const refreshedSaved = refreshed.find((item) => item.id === saved.id);
         if (refreshedSaved) setAlternateRouteEditing(refreshedSaved);
-      } catch (refreshError) {
-        console.error('サブRoute保存後の再取得に失敗しました。', refreshError);
+      } catch {
+        // 保存済みのローカル表示を維持し、次回読み込み時にDBの確定値へ同期する。
       }
 
       setAlternateRouteOpen(false);
