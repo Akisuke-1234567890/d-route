@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import type { Session } from '@supabase/supabase-js';
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
 import { getSupabaseClient } from '../shared/api/supabase';
@@ -223,7 +224,7 @@ function FadeRoutes({ children }: FadeRoutesProps) {
           <p>画面を準備しています</p>
         </div>
       ) : null}
-      {persistentRouteId ? <RouteBottomNav routeId={persistentRouteId} /> : null}
+      {persistentRouteId ? createPortal(<RouteBottomNav routeId={persistentRouteId} />, document.body) : null}
     </div>
   );
 }

@@ -1,3 +1,7 @@
+## 2.1.0-RC1.1
+- Hotfix: fixed Route bottom navigation to the viewport via React portal so transition/loading ancestors can no longer move it.
+- Loading/fade timing, DB, and GitHub workflow are unchanged.
+
 # 2.1.0-RC1
 
 - Release Candidate 1。P84.23.1までの安定版を固定。
