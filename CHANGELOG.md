@@ -1,3 +1,10 @@
+## v2.1.0-p84.18 RC stabilization
+
+- P84.17.4のRoute / Places切替とローディング挙動を安定版として固定。
+- APP_VERSION、deploy-version、package.json、package-lock.jsonのバージョン表記を統一。
+- GitHub Workflow、DB、Route / Places遷移ロジックには追加変更なし。
+- RC前の小差分整理として、ここから大きな仕様変更を止める。
+
 # D Route v2.1.0-p84.17.4
 
 - Routeへ戻る際、データ取得完了だけでなく画面レイアウトが安定するまでローディング表示を維持。
