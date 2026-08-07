@@ -4220,6 +4220,20 @@ body,
 .route-page-transition.is-heavy.is-in {
   transition-duration: 240ms !important;
 }
+
+/* 2.1.0-RC2.1: restore cross-fade when opening a Route from the Route list
+   and when returning from the Dashboard to the Route list. This is separate
+   from the bottom-nav tab cadence introduced in RC2. */
+.route-page-transition.is-route-select {
+  transition: opacity 220ms ease-in-out !important;
+}
+.route-page-transition.is-route-select.is-out {
+  transition-duration: 180ms !important;
+}
+.route-page-transition.is-route-select.is-in {
+  transition-duration: 220ms !important;
+}
+
 .route-page-transition.is-pre-in {
   opacity: 0 !important;
   pointer-events: none;

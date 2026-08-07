@@ -51,7 +51,7 @@ function FadeRoutes({ children }: FadeRoutesProps) {
   const location = useLocation();
   const [displayLocation, setDisplayLocation] = useState(location);
   const [phase, setPhase] = useState<'in' | 'out' | 'pre-in'>('in');
-  const [transitionWeight, setTransitionWeight] = useState<'light' | 'heavy'>('light');
+  const [transitionWeight, setTransitionWeight] = useState<'light' | 'heavy' | 'route-select'>('light');
   const transitionIdRef = useRef(0);
   const contentRef = useRef<HTMLDivElement | null>(null);
 
@@ -69,14 +69,18 @@ function FadeRoutes({ children }: FadeRoutesProps) {
     const nextSection = getWorkspaceSection(location.pathname);
     const sameWorkspace = Boolean(nextWorkspaceId && nextWorkspaceId === currentWorkspaceId);
     const isHeavyWorkspaceTab = sameWorkspace && (nextSection === 'route' || nextSection === 'places');
+    const isRouteListBoundary =
+      (displayLocation.pathname === '/routes' && Boolean(nextWorkspaceId)) ||
+      (location.pathname === '/routes' && Boolean(currentWorkspaceId));
+    const enteringDashboardFromList = displayLocation.pathname === '/routes' && Boolean(nextWorkspaceId);
     const transitionId = transitionIdRef.current + 1;
     transitionIdRef.current = transitionId;
-    setTransitionWeight(isHeavyWorkspaceTab ? 'heavy' : 'light');
+    setTransitionWeight(isRouteListBoundary ? 'route-select' : isHeavyWorkspaceTab ? 'heavy' : 'light');
     setPhase('out');
 
-    const fadeOutMs = isHeavyWorkspaceTab ? 200 : sameWorkspace ? 130 : 250;
-    const hiddenHoldMs = isHeavyWorkspaceTab ? 260 : sameWorkspace ? 35 : 0;
-    const readinessTimeoutMs = isHeavyWorkspaceTab ? 1400 : 0;
+    const fadeOutMs = isRouteListBoundary ? 180 : isHeavyWorkspaceTab ? 200 : sameWorkspace ? 130 : 250;
+    const hiddenHoldMs = isRouteListBoundary ? 70 : isHeavyWorkspaceTab ? 260 : sameWorkspace ? 35 : 0;
+    const readinessTimeoutMs = enteringDashboardFromList ? 900 : isHeavyWorkspaceTab ? 1400 : 0;
 
     const swapTimer = window.setTimeout(() => {
       if (transitionIdRef.current !== transitionId) return;
@@ -97,7 +101,8 @@ function FadeRoutes({ children }: FadeRoutesProps) {
         const holdFinished = elapsed >= hiddenHoldMs;
         const timedOut = readinessTimeoutMs > 0 && elapsed >= readinessTimeoutMs;
 
-        if ((!stillLoading && holdFinished) || timedOut || !isHeavyWorkspaceTab) {
+        const shouldWaitForReadiness = isHeavyWorkspaceTab || enteringDashboardFromList;
+        if ((!stillLoading && holdFinished) || timedOut || !shouldWaitForReadiness) {
           window.requestAnimationFrame(() => {
             window.requestAnimationFrame(() => {
               if (transitionIdRef.current === transitionId) setPhase('in');

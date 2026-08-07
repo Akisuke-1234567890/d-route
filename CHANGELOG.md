@@ -1,3 +1,9 @@
+## 2.1.0-RC2.1
+
+- Route一覧からDashboardを開く遷移と、DashboardからRoute一覧へ戻る遷移のクロスフェードを復元。
+- RC2の下帯タブ共通フェードは維持。
+- Main/Sub Route切替、DB、Workflowは変更なし。
+
 # 2.1.0-RC2
 
 - 下帯タブの画面遷移をフェードイン／フェードアウトへ統一。
