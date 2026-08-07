@@ -51,8 +51,7 @@ function FadeRoutes({ children }: FadeRoutesProps) {
   const location = useLocation();
   const [displayLocation, setDisplayLocation] = useState(location);
   const [phase, setPhase] = useState<'in' | 'out' | 'pre-in'>('in');
-  const [workspaceLoading, setWorkspaceLoading] = useState(false);
-  const [workspaceOverlayPhase, setWorkspaceOverlayPhase] = useState<'visible' | 'fading'>('visible');
+  const [transitionWeight, setTransitionWeight] = useState<'light' | 'heavy'>('light');
   const transitionIdRef = useRef(0);
   const contentRef = useRef<HTMLDivElement | null>(null);
 
@@ -68,48 +67,56 @@ function FadeRoutes({ children }: FadeRoutesProps) {
     const nextWorkspaceId = getWorkspaceRouteId(location.pathname);
     const currentWorkspaceId = getWorkspaceRouteId(displayLocation.pathname);
     const nextSection = getWorkspaceSection(location.pathname);
-    const currentSection = getWorkspaceSection(displayLocation.pathname);
-    const isPreparedWorkspaceSwitch =
-      nextWorkspaceId &&
-      nextWorkspaceId === currentWorkspaceId &&
-      ((nextSection === 'route' && currentSection !== 'route') ||
-        (nextSection === 'places' && currentSection === 'route'));
-
-    if (isPreparedWorkspaceSwitch) {
-      transitionIdRef.current += 1;
-      setWorkspaceOverlayPhase('visible');
-      setWorkspaceLoading(true);
-      setPhase('pre-in');
-      setDisplayLocation(location);
-      return;
-    }
-
-    if (nextWorkspaceId && nextWorkspaceId === currentWorkspaceId) {
-      transitionIdRef.current += 1;
-      setWorkspaceLoading(false);
-      setDisplayLocation(location);
-      setPhase('in');
-      return;
-    }
-
+    const sameWorkspace = Boolean(nextWorkspaceId && nextWorkspaceId === currentWorkspaceId);
+    const isHeavyWorkspaceTab = sameWorkspace && (nextSection === 'route' || nextSection === 'places');
     const transitionId = transitionIdRef.current + 1;
     transitionIdRef.current = transitionId;
+    setTransitionWeight(isHeavyWorkspaceTab ? 'heavy' : 'light');
     setPhase('out');
+
+    const fadeOutMs = isHeavyWorkspaceTab ? 200 : sameWorkspace ? 130 : 250;
+    const hiddenHoldMs = isHeavyWorkspaceTab ? 260 : sameWorkspace ? 35 : 0;
+    const readinessTimeoutMs = isHeavyWorkspaceTab ? 1400 : 0;
 
     const swapTimer = window.setTimeout(() => {
       if (transitionIdRef.current !== transitionId) return;
 
       setDisplayLocation(location);
       setPhase('pre-in');
+      const swappedAt = performance.now();
 
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => {
-          if (transitionIdRef.current === transitionId) {
-            setPhase('in');
-          }
-        });
-      });
-    }, 250);
+      const reveal = () => {
+        if (transitionIdRef.current !== transitionId) return;
+
+        const elapsed = performance.now() - swappedAt;
+        const currentContent = contentRef.current;
+        const stillLoading = Boolean(
+          currentContent?.querySelector('.route-loading, [aria-busy="true"]') ||
+          currentContent?.textContent?.includes('読み込んでいます')
+        );
+        const holdFinished = elapsed >= hiddenHoldMs;
+        const timedOut = readinessTimeoutMs > 0 && elapsed >= readinessTimeoutMs;
+
+        if ((!stillLoading && holdFinished) || timedOut || !isHeavyWorkspaceTab) {
+          window.requestAnimationFrame(() => {
+            window.requestAnimationFrame(() => {
+              if (transitionIdRef.current === transitionId) setPhase('in');
+            });
+          });
+          return;
+        }
+
+        window.requestAnimationFrame(reveal);
+      };
+
+      if (isHeavyWorkspaceTab) {
+        window.requestAnimationFrame(reveal);
+      } else if (hiddenHoldMs > 0) {
+        window.setTimeout(reveal, hiddenHoldMs);
+      } else {
+        reveal();
+      }
+    }, fadeOutMs);
 
     return () => window.clearTimeout(swapTimer);
   }, [
@@ -119,111 +126,13 @@ function FadeRoutes({ children }: FadeRoutesProps) {
     location,
   ]);
 
-  useEffect(() => {
-    if (!workspaceLoading) return;
-
-    const transitionId = transitionIdRef.current;
-    const startedAt = performance.now();
-    const revealSection = getWorkspaceSection(displayLocation.pathname);
-    const isRouteReveal = revealSection === 'route';
-    const minimumHoldMs = isRouteReveal ? 900 : 180;
-    const quietPeriodMs = isRouteReveal ? 450 : 80;
-    const timeoutMs = isRouteReveal ? 5000 : 3000;
-    let frameId = 0;
-    let revealFrameId = 0;
-    let fadeTimer = 0;
-    let lastLayoutHeight = -1;
-    let lastActivityAt = performance.now();
-    const content = contentRef.current;
-
-    const mutationObserver = isRouteReveal && content
-      ? new MutationObserver(() => {
-          lastActivityAt = performance.now();
-        })
-      : null;
-
-    mutationObserver?.observe(content!, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-      attributes: true,
-    });
-
-    const revealWhenReady = () => {
-      if (transitionIdRef.current !== transitionId) return;
-
-      const currentContent = contentRef.current;
-      const now = performance.now();
-      const stillLoading = Boolean(
-        currentContent?.querySelector('.route-loading, [aria-busy="true"]') ||
-        currentContent?.textContent?.includes('読み込んでいます')
-      );
-
-      if (isRouteReveal && currentContent) {
-        const nextHeight = currentContent.scrollHeight;
-        if (lastLayoutHeight < 0 || Math.abs(nextHeight - lastLayoutHeight) > 1) {
-          lastLayoutHeight = nextHeight;
-          lastActivityAt = now;
-        }
-      }
-
-      const minimumHoldFinished = now - startedAt >= minimumHoldMs;
-      const layoutIsQuiet = !isRouteReveal || now - lastActivityAt >= quietPeriodMs;
-      const timedOut = now - startedAt >= timeoutMs;
-      const ready = !stillLoading && minimumHoldFinished && layoutIsQuiet;
-
-      if (ready || timedOut) {
-        revealFrameId = window.requestAnimationFrame(() => {
-          revealFrameId = window.requestAnimationFrame(() => {
-            if (transitionIdRef.current !== transitionId) return;
-
-            setPhase('in');
-
-            if (isRouteReveal) {
-              setWorkspaceOverlayPhase('fading');
-              fadeTimer = window.setTimeout(() => {
-                if (transitionIdRef.current !== transitionId) return;
-                setWorkspaceLoading(false);
-                setWorkspaceOverlayPhase('visible');
-              }, 320);
-            } else {
-              setWorkspaceLoading(false);
-            }
-          });
-        });
-        return;
-      }
-
-      frameId = window.requestAnimationFrame(revealWhenReady);
-    };
-
-    frameId = window.requestAnimationFrame(revealWhenReady);
-    return () => {
-      mutationObserver?.disconnect();
-      window.cancelAnimationFrame(frameId);
-      window.cancelAnimationFrame(revealFrameId);
-      window.clearTimeout(fadeTimer);
-    };
-  }, [
-    displayLocation.hash,
-    displayLocation.pathname,
-    displayLocation.search,
-    workspaceLoading,
-  ]);
-
   const persistentRouteId = getWorkspaceRouteId(location.pathname) ?? getWorkspaceRouteId(displayLocation.pathname);
 
   return (
     <div className="route-transition-shell">
-      <div ref={contentRef} className={`route-page-transition is-${phase}`}>
+      <div ref={contentRef} className={`route-page-transition is-${phase} is-${transitionWeight}`}>
         <Routes location={displayLocation}>{children}</Routes>
       </div>
-      {workspaceLoading ? (
-        <div className={`workspace-switch-loading is-${workspaceOverlayPhase}`} role="status" aria-live="polite">
-          <span className="route-loading-spinner" aria-hidden="true" />
-          <p>画面を準備しています</p>
-        </div>
-      ) : null}
       {persistentRouteId ? createPortal(<RouteBottomNav routeId={persistentRouteId} />, document.body) : null}
     </div>
   );

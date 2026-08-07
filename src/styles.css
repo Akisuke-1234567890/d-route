@@ -4197,3 +4197,33 @@ body,
   -webkit-transform: none !important;
   z-index: 200 !important;
 }
+
+/* 2.1.0-RC2: unified workspace tab transitions.
+   Bottom-nav tab changes use fade only. Route / Places get a slightly slower
+   cadence so their page can finish initial layout while hidden; Chat / Members /
+   Menu stay intentionally quick. Main/Sub Route switching remains page-local. */
+.route-page-transition.is-light {
+  transition: opacity 160ms ease-in-out !important;
+}
+.route-page-transition.is-light.is-out {
+  transition-duration: 130ms !important;
+}
+.route-page-transition.is-light.is-in {
+  transition-duration: 160ms !important;
+}
+.route-page-transition.is-heavy {
+  transition: opacity 240ms ease-in-out !important;
+}
+.route-page-transition.is-heavy.is-out {
+  transition-duration: 200ms !important;
+}
+.route-page-transition.is-heavy.is-in {
+  transition-duration: 240ms !important;
+}
+.route-page-transition.is-pre-in {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+.workspace-switch-loading {
+  display: none !important;
+}
