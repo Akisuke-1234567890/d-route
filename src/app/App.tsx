@@ -53,6 +53,7 @@ function FadeRoutes({ children }: FadeRoutesProps) {
   const [displayLocation, setDisplayLocation] = useState(location);
   const [phase, setPhase] = useState<'in' | 'out' | 'pre-in'>('in');
   const [workspaceLoading, setWorkspaceLoading] = useState(false);
+  const [workspaceOverlayPhase, setWorkspaceOverlayPhase] = useState<'visible' | 'fading'>('visible');
   const transitionIdRef = useRef(0);
   const contentRef = useRef<HTMLDivElement | null>(null);
 
@@ -77,6 +78,7 @@ function FadeRoutes({ children }: FadeRoutesProps) {
 
     if (isRoutePlacesSwitch) {
       transitionIdRef.current += 1;
+      setWorkspaceOverlayPhase('visible');
       setWorkspaceLoading(true);
       setPhase('pre-in');
       setDisplayLocation(location);
@@ -123,25 +125,71 @@ function FadeRoutes({ children }: FadeRoutesProps) {
 
     const transitionId = transitionIdRef.current;
     const startedAt = performance.now();
+    const revealSection = getWorkspaceSection(displayLocation.pathname);
+    const isRouteReveal = revealSection === 'route';
+    const minimumHoldMs = isRouteReveal ? 900 : 180;
+    const quietPeriodMs = isRouteReveal ? 450 : 80;
+    const timeoutMs = isRouteReveal ? 5000 : 3000;
     let frameId = 0;
     let revealFrameId = 0;
+    let fadeTimer = 0;
+    let lastLayoutHeight = -1;
+    let lastActivityAt = performance.now();
+    const content = contentRef.current;
+
+    const mutationObserver = isRouteReveal && content
+      ? new MutationObserver(() => {
+          lastActivityAt = performance.now();
+        })
+      : null;
+
+    mutationObserver?.observe(content!, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+      attributes: true,
+    });
 
     const revealWhenReady = () => {
       if (transitionIdRef.current !== transitionId) return;
 
-      const content = contentRef.current;
+      const currentContent = contentRef.current;
+      const now = performance.now();
       const stillLoading = Boolean(
-        content?.querySelector('.route-loading, [aria-busy="true"]') ||
-        content?.textContent?.includes('読み込んでいます')
+        currentContent?.querySelector('.route-loading, [aria-busy="true"]') ||
+        currentContent?.textContent?.includes('読み込んでいます')
       );
-      const timedOut = performance.now() - startedAt >= 3000;
 
-      if (!stillLoading || timedOut) {
+      if (isRouteReveal && currentContent) {
+        const nextHeight = currentContent.scrollHeight;
+        if (lastLayoutHeight < 0 || Math.abs(nextHeight - lastLayoutHeight) > 1) {
+          lastLayoutHeight = nextHeight;
+          lastActivityAt = now;
+        }
+      }
+
+      const minimumHoldFinished = now - startedAt >= minimumHoldMs;
+      const layoutIsQuiet = !isRouteReveal || now - lastActivityAt >= quietPeriodMs;
+      const timedOut = now - startedAt >= timeoutMs;
+      const ready = !stillLoading && minimumHoldFinished && layoutIsQuiet;
+
+      if (ready || timedOut) {
         revealFrameId = window.requestAnimationFrame(() => {
           revealFrameId = window.requestAnimationFrame(() => {
             if (transitionIdRef.current !== transitionId) return;
+
             setPhase('in');
-            setWorkspaceLoading(false);
+
+            if (isRouteReveal) {
+              setWorkspaceOverlayPhase('fading');
+              fadeTimer = window.setTimeout(() => {
+                if (transitionIdRef.current !== transitionId) return;
+                setWorkspaceLoading(false);
+                setWorkspaceOverlayPhase('visible');
+              }, 320);
+            } else {
+              setWorkspaceLoading(false);
+            }
           });
         });
         return;
@@ -152,8 +200,10 @@ function FadeRoutes({ children }: FadeRoutesProps) {
 
     frameId = window.requestAnimationFrame(revealWhenReady);
     return () => {
+      mutationObserver?.disconnect();
       window.cancelAnimationFrame(frameId);
       window.cancelAnimationFrame(revealFrameId);
+      window.clearTimeout(fadeTimer);
     };
   }, [
     displayLocation.hash,
@@ -168,7 +218,7 @@ function FadeRoutes({ children }: FadeRoutesProps) {
         <Routes location={displayLocation}>{children}</Routes>
       </div>
       {workspaceLoading ? (
-        <div className="workspace-switch-loading" role="status" aria-live="polite">
+        <div className={`workspace-switch-loading is-${workspaceOverlayPhase}`} role="status" aria-live="polite">
           <span className="route-loading-spinner" aria-hidden="true" />
           <p>画面を準備しています</p>
         </div>

@@ -1439,6 +1439,18 @@ a { color: inherit; }
   letter-spacing: .04em;
 }
 
+/* p84.17.4: Route is built behind the loading veil, then cross-faded in. */
+.workspace-switch-loading {
+  opacity: 1;
+  transition: opacity 280ms ease-out;
+  will-change: opacity;
+}
+
+.workspace-switch-loading.is-fading {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .route-page-transition {
   min-height: 100dvh;
   opacity: 1;
