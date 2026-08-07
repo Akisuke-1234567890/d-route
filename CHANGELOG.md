@@ -1,3 +1,9 @@
+# 2.1.0-p84.21 - RC1 Freeze
+
+- P84.20.1までの画面遷移・固定下帯・サブRoute・UI修正をRC1として固定。
+- 機能ロジック、DB、GitHub Workflowには追加変更なし。
+- APP_VERSION / package version / deploy-versionを2.1.0-p84.21へ統一。
+
 # D Route v2.1.0-p84.20.1
 
 ## Hotfix
