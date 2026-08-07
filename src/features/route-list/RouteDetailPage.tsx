@@ -1033,7 +1033,7 @@ export function RouteDetailPage() {
             <section className="v2-route-hero">
               <div className="v2-route-brand" aria-hidden="true"><BrandMark size={48} /></div>
               <div className="v2-route-hero-copy">
-                <p className="eyebrow">ROUTE DASHBOARD / ALPHA.3</p>
+                <p className="eyebrow">ROUTE DASHBOARD</p>
                 <h1 id="route-detail-title">{route.name}</h1>
                 <p><span>現在Phaseを時刻から自動表示</span><span>・</span><span>Planning接続</span></p>
               </div>
