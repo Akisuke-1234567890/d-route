@@ -131,7 +131,7 @@ function FadeRoutes({ children }: FadeRoutesProps) {
     location,
   ]);
 
-  const persistentRouteId = getWorkspaceRouteId(location.pathname) ?? getWorkspaceRouteId(displayLocation.pathname);
+  const persistentRouteId = getWorkspaceRouteId(displayLocation.pathname);
 
   return (
     <div className="route-transition-shell">

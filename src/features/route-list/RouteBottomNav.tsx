@@ -35,11 +35,13 @@ export function RouteBottomNav({ routeId }: RouteBottomNavProps) {
     return () => { active = false; };
   }, [routeId]);
 
-  const tabs = !roleResolved || role === 'member' ? participantTabs : ownerTabs;
+  if (!roleResolved) return null;
+
+  const tabs = role === 'member' ? participantTabs : ownerTabs;
   const base = `/routes/${routeId}`;
 
   return (
-    <nav className={`route-bottom-nav${!roleResolved || role === 'member' ? ' is-participant' : ''}`} aria-label="Route内ナビゲーション" aria-busy={!roleResolved}>
+    <nav className={`route-bottom-nav${role === 'member' ? ' is-participant' : ''}`} aria-label="Route内ナビゲーション">
       {tabs.map((tab) => (
         <NavLink
           key={tab.key}

@@ -1,3 +1,10 @@
+## 2.1.0-RC2.2
+
+- Route一覧→Dashboardのクロスフェード中に、権限未判定の参加者用2項目ナビが一瞬表示される問題を修正。
+- Dashboard用下帯はRoute画面へ切り替わった後にマウントし、メンバー権限の判定完了後に正しいタブ構成を一度だけ表示。
+- RC2.1のRoute一覧⇔Dashboardクロスフェード、RC2の下帯タブ共通フェード、Main/Sub Route切替は維持。
+- DB、Workflowは変更なし。
+
 ## 2.1.0-RC2.1
 
 - Route一覧からDashboardを開く遷移と、DashboardからRoute一覧へ戻る遷移のクロスフェードを復元。
