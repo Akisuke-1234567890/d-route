@@ -1,3 +1,9 @@
+# 2.1.0-RC2.4
+
+- Apple Touch Icon のキャッシュ識別子を現行RCへ統一。
+- Vite PWA manifest のアイコン識別子も 2.1.0-RC2.4 へ統一。
+- 画面遷移・下帯・Route / Places / Chat / Members / Menu の機能ロジックは変更なし。
+
 # 2.1.0-RC2.3
 
 - RC最終QA: PWAアイコンのキャッシュ識別子を現在バージョンへ統一
