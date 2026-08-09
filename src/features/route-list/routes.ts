@@ -16,12 +16,9 @@ export async function listRoutes(status: 'active' | 'archived' = 'active'): Prom
   const supabase = getSupabaseClient();
   if (!supabase) throw new Error('Supabaseの環境変数が設定されていません。');
 
-  const { data, error } = await supabase
-    .from('routes')
-    .select(routeSummaryColumns)
-    .eq('status', status)
-    .is('deleted_at', null)
-    .order('updated_at', { ascending: false });
+  const { data, error } = await supabase.rpc('list_my_routes', {
+    p_status: status,
+  });
 
   if (error) throw error;
   return (data ?? []) as RouteSummary[];
