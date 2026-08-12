@@ -16,9 +16,12 @@ export async function listRoutes(status: 'active' | 'archived' = 'active'): Prom
   const supabase = getSupabaseClient();
   if (!supabase) throw new Error('Supabaseの環境変数が設定されていません。');
 
-  const { data, error } = await supabase.rpc('list_my_routes', {
-    p_status: status,
-  });
+  const { data, error } = await supabase
+    .from('routes')
+    .select(routeSummaryColumns)
+    .eq('status', status)
+    .is('deleted_at', null)
+    .order('updated_at', { ascending: false });
 
   if (error) throw error;
   return (data ?? []) as RouteSummary[];
@@ -32,15 +35,14 @@ export async function getRoute(id: string): Promise<RouteSummary> {
   const supabase = getSupabaseClient();
   if (!supabase) throw new Error('Supabaseの環境変数が設定されていません。');
 
-  const { data, error } = await supabase
-    .from('routes')
-    .select(routeSummaryColumns)
-    .eq('id', normalizedId)
-    .is('deleted_at', null)
-    .single();
+  const { data, error } = await supabase.rpc('get_my_route', {
+    p_route_id: normalizedId,
+  });
 
   if (error) throw error;
-  return data as RouteSummary;
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) throw new Error('Routeが見つかりませんでした。');
+  return row as RouteSummary;
 }
 
 export async function createRoute(name: string, description = ''): Promise<RouteSummary> {
