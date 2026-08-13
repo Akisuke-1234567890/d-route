@@ -646,7 +646,7 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
               {endLabel ? <article className="v2-alternate-route-step is-connection"><span className="v2-alternate-route-step-index">✓</span><div><small>{activeAlternateRoute.connectionType === 'leave' ? '別行動終了' : 'メインRouteへ合流'}</small><h3>{endLabel}</h3></div></article> : null}
             </div>
           ) : (
-            <div className="v2-phase-empty"><p>この別行動には予定がまだありません。</p>{!participantView ? <Link className="v2-text-link" to={`/routes/${routeId}/places`}>Placesで追加する ›</Link> : null}</div>
+            <div className="v2-phase-empty"><p>この別行動には予定がまだありません。</p>{!participantView ? {!participantView ? <Link className="v2-text-link" to={`/routes/${routeId}/places`}>Placesで追加する ›</Link> : null} : null}</div>
           )}
 
           {alternateLoading ? <p className="v2-alternate-route-error">別行動を読み込んでいます。</p> : null}
@@ -661,68 +661,6 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
     );
   }
 
-  if (participantView) {
-    return (
-      <>
-        {routeSwitcher}
-        <article className={`v2-participant-route v2-route-page-motion is-${routePageDirection}`} key={`participant-${routePageAnimationId}`} style={routeDragStyle} aria-labelledby="participant-route-title">
-          <div className="v2-section-heading">
-            <div>
-              <p className="eyebrow">YOUR ROUTE</p>
-              <h2 id="participant-route-title">いま必要な流れ</h2>
-            </div>
-            <span className="v2-participant-view-badge">参加者表示</span>
-          </div>
-
-          {participantSteps.length ? (
-            <div className="v2-participant-step-list">
-              {participantSteps.map((destination, index) => {
-                const phase = phases.find((item) => item.id === destination.phaseId);
-                const timeLabel = formatDestinationTime(destination);
-                return (
-                  <article className={`v2-participant-step is-${index === 0 ? 'current' : index === 1 ? 'next' : 'later'}`} key={destination.id}>
-                    <div className="v2-participant-step-label">
-                      <span>{participantStepLabels[index]}</span>
-                      {phase?.name ? <small>{phase.name}</small> : null}
-                    </div>
-                    <div className="v2-participant-step-content">
-                      {timeLabel ? <time>{timeLabel}</time> : null}
-                      <h3>{destination.name}</h3>
-                      {getDestinationNote(destination) ? <p>{getDestinationNote(destination)}</p> : null}
-                      {getDestinationDirectionsUrl(destination, 'walking') ? (
-                        <a href={getDestinationDirectionsUrl(destination, 'walking') ?? undefined} target="_blank" rel="noreferrer">地図で確認 ›</a>
-                      ) : null}
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="v2-phase-empty"><p>現在案内する予定はありません。</p></div>
-          )}
-
-          <p className="v2-participant-route-note">分岐構造は内部で管理し、参加者には必要な順番だけを表示します。</p>
-        </article>
-
-        <article className="v2-chat-summary">
-          <div className="v2-section-heading">
-            <div><p className="eyebrow">CHAT</p><h2>連絡</h2></div>
-            <Link className="v2-text-link" to={`/routes/${routeId}/chat`}>Chatを見る ›</Link>
-          </div>
-          {latestChats.length ? (
-            <div className="v2-route-chat-preview">
-              {latestChats.map((message) => (
-                <div className={`v2-route-chat-line${message.isImportant ? ' is-priority' : ''}`} key={message.id}>
-                  <div className="v2-route-chat-meta">{message.isImportant ? <span className="v2-route-chat-important">重要</span> : null}<strong>{message.authorName}</strong><time>{formatChatTime(message.createdAt)}</time></div>
-                  <p>{message.body}</p>
-                </div>
-              ))}
-            </div>
-          ) : <div className="v2-latest-message is-empty"><div className="v2-empty-message-copy"><strong>まだ連絡はありません。</strong><p>必要な連絡があればChatで共有できます。</p></div></div>}
-        </article>
-      </>
-    );
-  }
 
   return (
     <>
@@ -753,12 +691,12 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
         {!currentPhase ? (
           <div className="v2-phase-empty">
             <p>Phaseがまだありません。</p>
-            <Link className="v2-text-link" to={`/routes/${routeId}/places`}>PlacesでPlanningする ›</Link>
+            {!participantView ? <Link className="v2-text-link" to={`/routes/${routeId}/places`}>PlacesでPlanningする ›</Link> : null}
           </div>
         ) : currentDestinations.length === 0 ? (
           <div className="v2-phase-empty">
             <p>このPhaseには予定がまだありません。</p>
-            <Link className="v2-text-link" to={`/routes/${routeId}/places`}>Placesで追加する ›</Link>
+            {!participantView ? <Link className="v2-text-link" to={`/routes/${routeId}/places`}>Placesで追加する ›</Link> : null}
           </div>
         ) : (
           <>
@@ -790,8 +728,8 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
                           type="button"
                           aria-label={`${destination.name}を${destination.completedAt ? '未完了に戻す' : '完了にする'}`}
                           aria-pressed={Boolean(destination.completedAt)}
-                          disabled={progressSavingId === destination.id}
-                          onClick={() => void toggleDestinationCompleted(destination)}
+                          disabled={participantView || progressSavingId === destination.id}
+                          onClick={() => { if (!participantView) void toggleDestinationCompleted(destination); }}
                         >
                           <span aria-hidden="true">{destination.completedAt ? '✓' : ''}</span>
                         </button>
