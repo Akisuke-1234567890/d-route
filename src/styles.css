@@ -1954,6 +1954,7 @@ a { color: inherit; }
 }
 .chat-message-row{
   align-items:flex-end;
+  width:min(88%, 100%);
 }
 .chat-message-row.is-continuation{
   margin-top:-4px;
@@ -1966,7 +1967,11 @@ a { color: inherit; }
   min-width:0;
   max-width:min(78%, 520px);
 }
+.chat-message-self{
+  justify-self:end;
+}
 .chat-message-self .chat-message-copy{
+  width:min(78%, 520px);
   margin-left:auto;
 }
 .chat-bubble{
