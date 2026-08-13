@@ -5,7 +5,7 @@ import { RouteWorkspacePage } from '../../shared/ui/RouteWorkspacePage';
 import { getSupabaseClient } from '../../shared/api/supabase';
 import { MY_MEMBER_COLOR_KEYS, createMyMember, deleteMyMember, listMyMembers, updateMyMember, type MyMember, type MyMemberColorKey } from '../my-members/myMembers';
 import { getRoute } from './routes';
-import { getOwnRouteMember, inviteRouteMemberByLoginId, listRouteMembers, respondToRouteInvite, type RouteMember, type RouteMemberStatus } from './members';
+import { getOwnRouteMember, inviteRouteMemberByLoginId, listRouteMembers, respondToRouteInvite, setOwnRouteMemberColor, type RouteMember, type RouteMemberStatus } from './members';
 
 const labels: Record<RouteMemberStatus, string> = { participating: '参加', unanswered: '未回答', declined: '不参加' };
 type MembersView = 'my' | 'shared';
@@ -48,6 +48,8 @@ export function RouteMembersPage() {
   const [isRouteOwner, setIsRouteOwner] = useState(false);
   const [responseSaving, setResponseSaving] = useState(false);
   const [responseError, setResponseError] = useState('');
+  const [colorSaving, setColorSaving] = useState(false);
+  const [colorError, setColorError] = useState('');
 
   async function loadMyMembers() {
     setMyLoading(true);
@@ -186,6 +188,22 @@ export function RouteMembersPage() {
     }
   }
 
+
+  async function changeOwnColor(colorKey: MyMemberColorKey) {
+    if (!ownMember || colorSaving || ownMember.colorKey === colorKey) return;
+    setColorSaving(true);
+    setColorError('');
+    try {
+      const updated = await setOwnRouteMemberColor(routeId, colorKey);
+      setOwnMember(updated);
+      setMembers((current) => current.map((member) => member.userId === updated.userId ? updated : member));
+    } catch (caught) {
+      setColorError(getErrorMessage(caught, '識別色を変更できませんでした。'));
+    } finally {
+      setColorSaving(false);
+    }
+  }
+
   const answered = members.filter((member) => member.status !== 'unanswered').length;
 
 
@@ -269,11 +287,27 @@ export function RouteMembersPage() {
           <p className="member-invite-help">相手のD RouteログインIDを入力します。</p>{inviteError ? <p className="member-invite-error" role="alert">{inviteError}</p> : null}
         </div> : null}
 
-        {ownMember?.role === 'member' ? <div className="member-response-panel"><div><p className="eyebrow">YOUR RESPONSE</p><h2>このRouteに参加しますか？</h2><p>{ownMember.status === 'unanswered' ? '招待への回答を選択してください。' : `現在の回答：${labels[ownMember.status]}`}</p></div><div className="member-response-actions"><button className={`primary-button${ownMember.status === 'participating' ? ' is-selected' : ''}`} type="button" disabled={responseSaving} onClick={() => void answerInvite('participating')}>参加する</button><button className={`secondary-button${ownMember.status === 'declined' ? ' is-selected' : ''}`} type="button" disabled={responseSaving} onClick={() => void answerInvite('declined')}>参加しない</button></div>{responseError ? <p className="member-invite-error" role="alert">{responseError}</p> : null}</div> : null}
+        {ownMember ? <div className="member-response-panel">
+          <div>
+            <p className="eyebrow">YOUR COLOR</p>
+            <h2>Chatで使う識別色</h2>
+            <p>Memberと同じ色で名前を表示します。</p>
+          </div>
+          <div className="route-member-color-options" aria-label="Chatの識別色">
+            {MY_MEMBER_COLOR_KEYS.map((key) => <button key={key} className={`route-member-color-option is-color-${key}${ownMember.colorKey === key ? ' is-selected' : ''}`} type="button" aria-label={`${key}を選択`} aria-pressed={ownMember.colorKey === key} disabled={colorSaving} onClick={() => void changeOwnColor(key)}><span aria-hidden="true"/></button>)}
+          </div>
+          {colorError ? <p className="member-invite-error" role="alert">{colorError}</p> : null}
+          {ownMember.role === 'member' ? <>
+            <div className="member-response-divider"/>
+            <div><p className="eyebrow">YOUR RESPONSE</p><h2>このRouteに参加しますか？</h2><p>{ownMember.status === 'unanswered' ? '招待への回答を選択してください。' : `現在の回答：${labels[ownMember.status]}`}</p></div>
+            <div className="member-response-actions"><button className={`primary-button${ownMember.status === 'participating' ? ' is-selected' : ''}`} type="button" disabled={responseSaving} onClick={() => void answerInvite('participating')}>参加する</button><button className={`secondary-button${ownMember.status === 'declined' ? ' is-selected' : ''}`} type="button" disabled={responseSaving} onClick={() => void answerInvite('declined')}>参加しない</button></div>
+            {responseError ? <p className="member-invite-error" role="alert">{responseError}</p> : null}
+          </> : null}
+        </div> : null}
 
         {loading ? <p className="route-tab-demo-note">共有メンバーを読み込んでいます。</p> : null}
         {error ? <p className="route-tab-demo-note" role="alert">{error}</p> : null}
-        {!loading && !error ? <><div className="members-overview"><strong>{answered}/{members.length}</strong><span>回答済み</span><div><span>参加 {members.filter((member) => member.status === 'participating').length}</span><span>未回答 {members.filter((member) => member.status === 'unanswered').length}</span><span>不参加 {members.filter((member) => member.status === 'declined').length}</span></div></div><div className="members-page-list">{members.map((member) => <article className="member-row member-page-row" key={member.id}><div className="member-avatar" aria-hidden="true">{member.displayName.slice(0, 2).toUpperCase()}</div><div className="member-copy"><div className="member-name-line"><h2>{member.displayName}</h2><span className="member-role">{member.role === 'owner' ? 'リーダー' : 'メンバー'}</span></div><p className={`member-status member-status-${member.status}`}><span aria-hidden="true"/>{labels[member.status]}</p></div></article>)}</div>{members.length === 0 ? <p className="route-tab-demo-note">共有メンバーはいません。</p> : null}</> : null}
+        {!loading && !error ? <><div className="members-overview"><strong>{answered}/{members.length}</strong><span>回答済み</span><div><span>参加 {members.filter((member) => member.status === 'participating').length}</span><span>未回答 {members.filter((member) => member.status === 'unanswered').length}</span><span>不参加 {members.filter((member) => member.status === 'declined').length}</span></div></div><div className="members-page-list">{members.map((member) => <article className="member-row member-page-row" key={member.id}><div className={`member-avatar is-color-${member.colorKey}`} aria-hidden="true">{member.displayName.slice(0, 2).toUpperCase()}</div><div className="member-copy"><div className="member-name-line"><h2 className={`is-color-text-${member.colorKey}`}>{member.displayName}</h2><span className="member-role">{member.role === 'owner' ? 'リーダー' : 'メンバー'}</span></div><p className={`member-status member-status-${member.status}`}><span aria-hidden="true"/>{labels[member.status]}</p></div></article>)}</div>{members.length === 0 ? <p className="route-tab-demo-note">共有メンバーはいません。</p> : null}</> : null}
         <p className="route-tab-demo-note">共有・同期機能は現在β版です。名前だけで管理する同行者は「My Members」を使用してください。</p>
       </>}
     </section>

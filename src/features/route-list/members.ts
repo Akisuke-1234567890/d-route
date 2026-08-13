@@ -1,4 +1,5 @@
 import { getSupabaseClient } from '../../shared/api/supabase';
+import { MY_MEMBER_COLOR_KEYS, type MyMemberColorKey } from '../my-members/myMembers';
 
 export type RouteMemberStatus = 'participating' | 'unanswered' | 'declined';
 export type RouteMemberRole = 'owner' | 'member';
@@ -11,9 +12,10 @@ export type RouteMember = {
   role: RouteMemberRole;
   status: RouteMemberStatus;
   createdAt: string;
+  colorKey: MyMemberColorKey;
 };
 
-const columns = 'id,route_id,user_id,display_name,role,status,created_at';
+const columns = 'id,route_id,user_id,display_name,role,status,created_at,color_key';
 
 function requireSupabase() {
   const supabase = getSupabaseClient();
@@ -26,6 +28,7 @@ function mapMember(row: any): RouteMember {
     id: row.id, routeId: row.route_id, userId: row.user_id,
     displayName: row.display_name || 'メンバー',
     role: row.role, status: row.status, createdAt: row.created_at,
+    colorKey: MY_MEMBER_COLOR_KEYS.includes(row.color_key as MyMemberColorKey) ? row.color_key as MyMemberColorKey : 'purple',
   };
 }
 
@@ -82,6 +85,18 @@ export async function getOwnRouteMember(routeId: string): Promise<RouteMember | 
     .eq('route_id', routeId).eq('user_id', authData.user.id).maybeSingle();
   if (error) throw error;
   return data ? mapMember(data) : null;
+}
+
+export async function setOwnRouteMemberColor(routeId: string, colorKey: MyMemberColorKey): Promise<RouteMember> {
+  const normalizedColor = MY_MEMBER_COLOR_KEYS.includes(colorKey) ? colorKey : 'purple';
+  const { data, error } = await requireSupabase().rpc('set_own_route_member_color', {
+    p_route_id: routeId,
+    p_color_key: normalizedColor,
+  });
+  if (error) throw error;
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) throw new Error('識別色の更新結果を確認できませんでした。');
+  return mapMember(row);
 }
 
 export async function respondToRouteInvite(routeId: string, status: 'participating' | 'declined'): Promise<RouteMember> {

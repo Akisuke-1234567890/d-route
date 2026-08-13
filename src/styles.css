@@ -4246,3 +4246,27 @@ body,
 .workspace-switch-loading {
   display: none !important;
 }
+
+
+/* v2.1.1-p82 Route participant identification colors */
+.is-color-purple{--member-color:#8c7cff;--member-soft:rgba(140,124,255,.20)}
+.is-color-blue{--member-color:#55c9ff;--member-soft:rgba(85,201,255,.18)}
+.is-color-green{--member-color:#48d9a6;--member-soft:rgba(72,217,166,.18)}
+.is-color-orange{--member-color:#ffb35b;--member-soft:rgba(255,179,91,.18)}
+.is-color-red{--member-color:#ff6f7d;--member-soft:rgba(255,111,125,.18)}
+.is-color-gray{--member-color:#a9b1c8;--member-soft:rgba(169,177,200,.16)}
+.is-color-text-purple{color:#b8aeff!important}
+.is-color-text-blue{color:#86ddff!important}
+.is-color-text-green{color:#82e6c0!important}
+.is-color-text-orange{color:#ffc878!important}
+.is-color-text-red{color:#ff9da8!important}
+.is-color-text-gray{color:#c5cada!important}
+.route-member-color-options{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:12px}
+.route-member-color-option{min-width:0;aspect-ratio:1;border:1px solid rgba(196,203,255,.13);border-radius:12px;background:rgba(196,203,255,.025);display:grid;place-items:center;padding:0}
+.route-member-color-option span{width:20px;height:20px;border-radius:50%;background:var(--member-color);box-shadow:0 0 0 5px var(--member-soft)}
+.route-member-color-option.is-selected{border-color:var(--member-color);background:var(--member-soft);box-shadow:0 0 0 2px color-mix(in srgb,var(--member-color) 18%,transparent)}
+.member-response-divider{height:1px;margin:14px 0;border-top:1px solid rgba(196,203,255,.10)}
+.member-avatar{background:var(--member-soft)!important;border-color:color-mix(in srgb,var(--member-color) 38%,transparent)!important;color:var(--member-color)!important}
+
+
+.chat-message-row .chat-avatar,.chat-message-row .chat-avatar-spacer{display:none}

@@ -1,10 +1,12 @@
 import { getSupabaseClient } from '../../shared/api/supabase';
+import { MY_MEMBER_COLOR_KEYS, type MyMemberColorKey } from '../my-members/myMembers';
 
 export type RouteChatMessage = {
   id: string;
   routeId: string;
   authorUserId: string;
   authorName: string;
+  authorColorKey: MyMemberColorKey;
   body: string;
   isImportant: boolean;
   createdAt: string;
@@ -33,6 +35,7 @@ function mapMessage(row: any): RouteChatMessage {
     routeId: row.route_id,
     authorUserId: row.author_user_id,
     authorName: row.author_name || 'メンバー',
+    authorColorKey: MY_MEMBER_COLOR_KEYS.includes(row.author_color_key as MyMemberColorKey) ? row.author_color_key as MyMemberColorKey : 'purple',
     body: row.body,
     isImportant: Boolean(row.is_important),
     createdAt: row.created_at,
@@ -43,28 +46,37 @@ function mapMessage(row: any): RouteChatMessage {
   };
 }
 
+
+async function getRouteMemberColorMap(routeId: string): Promise<Map<string, MyMemberColorKey>> {
+  const { data, error } = await requireSupabase()
+    .from('route_members')
+    .select('user_id,color_key')
+    .eq('route_id', routeId);
+  if (error) throw error;
+  return new Map((data ?? []).map((row: any) => [
+    row.user_id,
+    MY_MEMBER_COLOR_KEYS.includes(row.color_key as MyMemberColorKey) ? row.color_key as MyMemberColorKey : 'purple',
+  ]));
+}
+
 export async function getRouteChatMessages(routeId: string): Promise<RouteChatMessage[]> {
   const supabase = requireSupabase();
-  const { data, error } = await supabase
-    .from('route_chat_messages')
-    .select(columns)
-    .eq('route_id', routeId)
-    .order('created_at', { ascending: true })
-    .limit(200);
+  const [{ data, error }, colorMap] = await Promise.all([
+    supabase.from('route_chat_messages').select(columns).eq('route_id', routeId).order('created_at', { ascending: true }).limit(200),
+    getRouteMemberColorMap(routeId),
+  ]);
   if (error) throw error;
-  return (data ?? []).map(mapMessage);
+  return (data ?? []).map((row: any) => mapMessage({ ...row, author_color_key: colorMap.get(row.author_user_id) ?? 'purple' }));
 }
 
 export async function getLatestRouteChatMessages(routeId: string, limit = 3): Promise<RouteChatMessage[]> {
   const supabase = requireSupabase();
-  const { data, error } = await supabase
-    .from('route_chat_messages')
-    .select(columns)
-    .eq('route_id', routeId)
-    .order('created_at', { ascending: false })
-    .limit(limit);
+  const [{ data, error }, colorMap] = await Promise.all([
+    supabase.from('route_chat_messages').select(columns).eq('route_id', routeId).order('created_at', { ascending: false }).limit(limit),
+    getRouteMemberColorMap(routeId),
+  ]);
   if (error) throw error;
-  return (data ?? []).map(mapMessage).reverse();
+  return (data ?? []).map((row: any) => mapMessage({ ...row, author_color_key: colorMap.get(row.author_user_id) ?? 'purple' })).reverse();
 }
 
 export async function getRouteChatReadStatuses(routeId: string): Promise<RouteChatReadStatus[]> {
@@ -145,7 +157,16 @@ export async function sendRouteChatMessage(
     .single();
 
   if (error) throw error;
-  return mapMessage(data);
+  const { data: memberColor } = await supabase
+    .from('route_members')
+    .select('color_key')
+    .eq('route_id', routeId)
+    .eq('user_id', user.id)
+    .maybeSingle();
+  return mapMessage({
+    ...data,
+    author_color_key: MY_MEMBER_COLOR_KEYS.includes(memberColor?.color_key as MyMemberColorKey) ? memberColor?.color_key : 'purple',
+  });
 }
 
 export async function getCurrentUserId(): Promise<string | null> {

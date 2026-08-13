@@ -198,7 +198,6 @@ export function RouteChatPage() {
               !message.isImportant &&
               new Date(message.createdAt).getTime() - new Date(previous.createdAt).getTime() < 5 * 60 * 1000
             );
-            const initial = message.authorName.slice(0, 1).toUpperCase();
             const readCount = isSelf
               ? readStatuses.filter(
                   (status) => status.userId !== currentUserId && new Date(status.lastReadAt).getTime() >= new Date(message.createdAt).getTime()
@@ -209,12 +208,11 @@ export function RouteChatPage() {
               <div key={message.id}>
                 {index === firstUnreadIndex ? <div className="chat-unread-divider" ref={unreadRef}><span>ここから未読</span></div> : null}
                 <section className={`chat-message-row${isSelf ? ' chat-message-self' : ''}${message.isImportant ? ' is-important' : ''}${isContinuation ? ' is-continuation' : ''}`}>
-                  {!isSelf && !isContinuation ? <div className="chat-avatar" aria-hidden="true">{initial}</div> : !isSelf ? <div className="chat-avatar-spacer" aria-hidden="true" /> : null}
                   <div className="chat-message-copy">
                     {!isContinuation ? (
                       <div className="chat-message-meta">
                         {message.isImportant ? <span className="chat-important-mark">重要</span> : null}
-                        <strong>{isSelf ? 'あなた' : message.authorName}</strong>
+                        <strong className={`is-color-text-${message.authorColorKey}`}>{isSelf ? 'あなた' : message.authorName}</strong>
                         <time>{formatChatTime(message.createdAt)}</time>
                       </div>
                     ) : null}
