@@ -646,7 +646,7 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
               {endLabel ? <article className="v2-alternate-route-step is-connection"><span className="v2-alternate-route-step-index">✓</span><div><small>{activeAlternateRoute.connectionType === 'leave' ? '別行動終了' : 'メインRouteへ合流'}</small><h3>{endLabel}</h3></div></article> : null}
             </div>
           ) : (
-            <div className="v2-phase-empty"><p>この別行動には予定がまだありません。</p>{!participantView ? {!participantView ? <Link className="v2-text-link" to={`/routes/${routeId}/places`}>Placesで追加する ›</Link> : null} : null}</div>
+            <div className="v2-phase-empty"><p>この別行動には予定がまだありません。</p>{!participantView ? <Link className="v2-text-link" to={`/routes/${routeId}/places`}>Placesで追加する ›</Link> : null}</div>
           )}
 
           {alternateLoading ? <p className="v2-alternate-route-error">別行動を読み込んでいます。</p> : null}
