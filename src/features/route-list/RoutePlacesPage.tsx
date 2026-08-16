@@ -1,7 +1,9 @@
 import { FormEvent, PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
-import { RouteWorkspacePage } from '../../shared/ui/RouteWorkspacePage';
+import { RefreshButton } from '../../shared/ui/RefreshButton';
+import { VersionBadge } from '../../shared/ui/VersionBadge';
+import { RouteBottomNav } from './RouteBottomNav';
 import './RoutePlacesPage.css';
 import { useBodyScrollLock } from '../../shared/hooks/useBodyScrollLock';
 import {
@@ -17,8 +19,6 @@ import {
 import { createRoutePhase, deleteRoutePhase, getRoutePhases, updateRoutePhase, type PhaseSummary } from './phases';
 import { createAlternateRoute, configureAlternateRoute, deleteAlternateRoute, listRouteBranches, listAlternateRouteDestinations, saveAlternateRouteDestination, deleteAlternateRouteDestination, listRouteBranchAssignments, assignMemberToBranch, clearMemberBranch, type AlternateRouteConnectionType, type RouteBranch, type AlternateRouteDestination, type RouteBranchAssignment } from './branches';
 import { listRouteMembers, type RouteMember } from './members';
-import { listMyMembers, listRouteBranchMyMemberAssignments, replaceRouteBranchMyMembers, listRouteDestinationMyMemberAssignments, replaceRouteDestinationMyMembers, type MyMember, type RouteBranchMyMemberAssignment, type DestinationMyMemberAssignment } from '../my-members/myMembers';
-import { MemberAssignees } from '../../shared/ui/MemberAssignees';
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error && error.message) return error.message;
@@ -116,22 +116,15 @@ export function RoutePlacesPage() {
   const [activeBranchId, setActiveBranchId] = useState<string | null>(null);
   const [placesRouteDirection, setPlacesRouteDirection] = useState<'next' | 'previous'>('next');
   const [placesRouteMotionId, setPlacesRouteMotionId] = useState(0);
+  const [placesRouteDragX, setPlacesRouteDragX] = useState(0);
   const [placesRouteDragging, setPlacesRouteDragging] = useState(false);
   const [placesRouteSettling, setPlacesRouteSettling] = useState(false);
   const placesRouteSwipeStartTimeRef = useRef(0);
-  const placesRouteCarouselRef = useRef<HTMLElement | null>(null);
-  const placesRouteMotionRef = useRef<HTMLDivElement | null>(null);
-  const placesRouteContentRef = useRef<HTMLDivElement | null>(null);
-  const placesRouteSwitchTokenRef = useRef(0);
-  const placesRouteRafRef = useRef<number | null>(null);
-  const placesRouteVisualXRef = useRef(0);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const placesSwipeStartXRef = useRef<number | null>(null);
   const placesSwipeStartYRef = useRef<number | null>(null);
   const placesSwipeBlockedRef = useRef(false);
   const placesRouteGestureLockRef = useRef(false);
-  const placesRouteSettleTimerRef = useRef<number | null>(null);
-  const placesPlanningCacheRef = useRef(new Map<string, { phases: PhaseSummary[]; destinations: DestinationSummary[] }>());
   const [phases, setPhases] = useState<PhaseSummary[]>([]);
   const [selectedPhaseId, setSelectedPhaseId] = useState('');
   const [editPhaseId, setEditPhaseId] = useState('');
@@ -142,9 +135,6 @@ export function RoutePlacesPage() {
   const [phaseStartTime, setPhaseStartTime] = useState('');
   const [phaseSaving, setPhaseSaving] = useState(false);
   const [phaseError, setPhaseError] = useState<string | null>(null);
-  const [phaseDeleteTarget, setPhaseDeleteTarget] = useState<PhaseSummary | null>(null);
-  const [phaseDeleting, setPhaseDeleting] = useState(false);
-  const [phaseDeleteError, setPhaseDeleteError] = useState<string | null>(null);
   const [swipedDestinationId, setSwipedDestinationId] = useState<string | null>(null);
   const [destinationSwipeOffset, setDestinationSwipeOffset] = useState(0);
   const destinationSwipeStartXRef = useRef(0);
@@ -162,8 +152,6 @@ export function RoutePlacesPage() {
   const [timeType, setTimeType] = useState<DestinationTimeType>('none');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
-  const [assignmentMode, setAssignmentMode] = useState<'inherit'|'override'>('inherit');
-  const [selectedDestinationMyMemberIds, setSelectedDestinationMyMemberIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -175,8 +163,6 @@ export function RoutePlacesPage() {
   const [editTimeType, setEditTimeType] = useState<DestinationTimeType>('none');
   const [editStartTime, setEditStartTime] = useState('');
   const [editEndTime, setEditEndTime] = useState('');
-  const [editAssignmentMode, setEditAssignmentMode] = useState<'inherit'|'override'>('inherit');
-  const [editSelectedDestinationMyMemberIds, setEditSelectedDestinationMyMemberIds] = useState<string[]>([]);
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [alternateRoutes, setAlternateRoutes] = useState<RouteBranch[]>([]);
@@ -190,23 +176,10 @@ export function RoutePlacesPage() {
   const [alternateRouteSaving, setAlternateRouteSaving] = useState(false);
   const [alternateRouteError, setAlternateRouteError] = useState<string | null>(null);
   const [alternateRouteDeleting, setAlternateRouteDeleting] = useState(false);
-  const [alternateRouteManageOpen, setAlternateRouteManageOpen] = useState(false);
-  const [alternateRouteDeleteTarget, setAlternateRouteDeleteTarget] = useState<RouteBranch | null>(null);
-  const [swipedAlternateRouteId, setSwipedAlternateRouteId] = useState<string | null>(null);
-  const [alternateRouteSwipeOffset, setAlternateRouteSwipeOffset] = useState(0);
-  const alternateRouteSwipeStartXRef = useRef(0);
-  const alternateRouteSwipeStartYRef = useRef(0);
-  const alternateRouteSwipeStartOffsetRef = useRef(0);
-  const activeAlternateRouteSwipeIdRef = useRef<string | null>(null);
-  const alternateRouteSwipeAxisRef = useRef<'pending' | 'horizontal' | 'vertical'>('pending');
   const [alternateRouteMembers, setAlternateRouteMembers] = useState<RouteMember[]>([]);
   const [alternateRouteAssignments, setAlternateRouteAssignments] = useState<RouteBranchAssignment[]>([]);
   const [alternateRouteSelectedMemberIds, setAlternateRouteSelectedMemberIds] = useState<string[]>([]);
   const [alternateRouteMembersLoading, setAlternateRouteMembersLoading] = useState(false);
-  const [alternateRouteMyMembers, setAlternateRouteMyMembers] = useState<MyMember[]>([]);
-  const [alternateRouteMyMemberAssignments, setAlternateRouteMyMemberAssignments] = useState<RouteBranchMyMemberAssignment[]>([]);
-  const [destinationMyMemberAssignments, setDestinationMyMemberAssignments] = useState<DestinationMyMemberAssignment[]>([]);
-  const [alternateRouteSelectedMyMemberIds, setAlternateRouteSelectedMyMemberIds] = useState<string[]>([]);
   const [alternateRouteDestinations, setAlternateRouteDestinations] = useState<AlternateRouteDestination[]>([]);
   const [alternateDestinationEditing, setAlternateDestinationEditing] = useState<AlternateRouteDestination | null>(null);
   const [alternateDestinationName, setAlternateDestinationName] = useState('');
@@ -242,27 +215,16 @@ export function RoutePlacesPage() {
   const nameInputRef = useRef<HTMLInputElement>(null);
   const editNameInputRef = useRef<HTMLInputElement>(null);
 
-  useBodyScrollLock(createOpen || Boolean(editing) || Boolean(deleteTarget) || phaseCreateOpen || Boolean(phaseEditing) || Boolean(phaseDeleteTarget) || alternateRouteOpen || addMenuOpen || alternateRouteManageOpen || Boolean(alternateRouteDeleteTarget));
+  useBodyScrollLock(createOpen || Boolean(editing) || Boolean(deleteTarget) || phaseCreateOpen || Boolean(phaseEditing) || alternateRouteOpen || addMenuOpen);
 
   async function loadPlanning() {
     setLoading(true);
     setError(null);
     try {
-      const [nextPhases, nextDestinations, nextAlternateRoutes, nextMyMembers, nextMyMemberAssignments, nextDestinationAssignments] = await Promise.all([
-        getRoutePhases(routeId, activeBranchId),
-        getRouteDestinations(routeId, activeBranchId),
-        listRouteBranches(routeId),
-        listMyMembers(),
-        listRouteBranchMyMemberAssignments(routeId),
-        listRouteDestinationMyMemberAssignments(routeId),
-      ]);
+      const [nextPhases, nextDestinations, nextAlternateRoutes] = await Promise.all([getRoutePhases(routeId, activeBranchId), getRouteDestinations(routeId, activeBranchId), listRouteBranches(routeId)]);
       setPhases(nextPhases);
       setDestinations(nextDestinations);
       setAlternateRoutes(nextAlternateRoutes);
-      setAlternateRouteMyMembers(nextMyMembers);
-      setAlternateRouteMyMemberAssignments(nextMyMemberAssignments);
-      setDestinationMyMemberAssignments(nextDestinationAssignments);
-      placesPlanningCacheRef.current.set(activeBranchId ?? 'main', { phases: nextPhases, destinations: nextDestinations });
     } catch (err) {
       setError(getErrorMessage(err, 'Placesを読み込めませんでした。'));
     } finally {
@@ -270,7 +232,7 @@ export function RoutePlacesPage() {
     }
   }
 
-  useEffect(() => { void loadPlanning(); }, [routeId]);
+  useEffect(() => { void loadPlanning(); }, [routeId, activeBranchId]);
 
   const exceptionDestinationIds = useMemo(() => {
     const ids = new Set<string>();
@@ -340,31 +302,6 @@ export function RoutePlacesPage() {
     return `${time ? `${time} ` : ''}${destination.name}`;
   }
 
-  async function loadAlternateRouteMyMemberSelection(branchId: string | null) {
-    const [membersResult, assignmentsResult] = await Promise.allSettled([
-      listMyMembers(),
-      listRouteBranchMyMemberAssignments(routeId),
-    ]);
-    if (membersResult.status === 'fulfilled') setAlternateRouteMyMembers(membersResult.value);
-    else { setAlternateRouteMyMembers([]); setAlternateRouteError(getErrorMessage(membersResult.reason, 'My Membersを読み込めませんでした。')); }
-    if (assignmentsResult.status === 'fulfilled') {
-      setAlternateRouteMyMemberAssignments(assignmentsResult.value);
-      setAlternateRouteSelectedMyMemberIds(branchId
-        ? assignmentsResult.value.filter((assignment) => assignment.branchId === branchId).map((assignment) => assignment.myMemberId)
-        : []);
-    } else {
-      setAlternateRouteMyMemberAssignments([]);
-      setAlternateRouteSelectedMyMemberIds([]);
-      setAlternateRouteError((current) => current ?? getErrorMessage(assignmentsResult.reason, 'My Membersの担当設定を読み込めませんでした。'));
-    }
-  }
-
-  function toggleAlternateRouteMyMember(myMemberId: string) {
-    setAlternateRouteSelectedMyMemberIds((current) => current.includes(myMemberId)
-      ? current.filter((id) => id !== myMemberId)
-      : [...current, myMemberId]);
-  }
-
   async function loadAlternateRouteMemberSelection(branchId: string | null) {
     setAlternateRouteMembersLoading(true);
     const [membersResult, assignmentsResult] = await Promise.allSettled([
@@ -428,7 +365,6 @@ export function RoutePlacesPage() {
     setAlternateRouteAssignments([]);
     setAlternateRouteSelectedMemberIds([]);
     void loadAlternateRouteMemberSelection(null);
-    void loadAlternateRouteMyMemberSelection(null);
     setAlternateRouteOpen(true);
   }
 
@@ -443,7 +379,6 @@ export function RoutePlacesPage() {
     setAlternateRouteEndId(route.endDestinationId ?? '');
     setAlternateRouteError(null);
     void loadAlternateRouteMemberSelection(route.id);
-    void loadAlternateRouteMyMemberSelection(route.id);
     setAlternateRouteOpen(true);
   }
 
@@ -478,75 +413,20 @@ export function RoutePlacesPage() {
     catch(err){ setAlternateRouteError(getErrorMessage(err,'別行動の予定を削除できませんでした。')); }
   }
 
-  const ALTERNATE_ROUTE_DELETE_REVEAL_WIDTH = 92;
-
-  function closeAlternateRouteSwipe() {
-    setSwipedAlternateRouteId(null);
-    setAlternateRouteSwipeOffset(0);
-    activeAlternateRouteSwipeIdRef.current = null;
-    alternateRouteSwipeAxisRef.current = 'pending';
-  }
-
-  function handleAlternateRoutePointerDown(event: ReactPointerEvent<HTMLElement>, branchId: string) {
-    if (event.pointerType === 'mouse' && event.button !== 0) return;
-    event.stopPropagation();
-    if (swipedAlternateRouteId && swipedAlternateRouteId !== branchId) closeAlternateRouteSwipe();
-    activeAlternateRouteSwipeIdRef.current = branchId;
-    alternateRouteSwipeStartXRef.current = event.clientX;
-    alternateRouteSwipeStartYRef.current = event.clientY;
-    alternateRouteSwipeStartOffsetRef.current = swipedAlternateRouteId === branchId ? alternateRouteSwipeOffset : 0;
-    alternateRouteSwipeAxisRef.current = 'pending';
-    event.currentTarget.setPointerCapture(event.pointerId);
-  }
-
-  function handleAlternateRoutePointerMove(event: ReactPointerEvent<HTMLElement>, branchId: string) {
-    if (activeAlternateRouteSwipeIdRef.current !== branchId) return;
-    const deltaX = event.clientX - alternateRouteSwipeStartXRef.current;
-    const deltaY = event.clientY - alternateRouteSwipeStartYRef.current;
-    if (alternateRouteSwipeAxisRef.current === 'pending' && (Math.abs(deltaX) > 8 || Math.abs(deltaY) > 8)) {
-      alternateRouteSwipeAxisRef.current = Math.abs(deltaX) > Math.abs(deltaY) * 1.12 ? 'horizontal' : 'vertical';
-    }
-    if (alternateRouteSwipeAxisRef.current !== 'horizontal') return;
-    event.preventDefault();
-    event.stopPropagation();
-    const nextOffset = Math.max(-ALTERNATE_ROUTE_DELETE_REVEAL_WIDTH, Math.min(0, alternateRouteSwipeStartOffsetRef.current + deltaX));
-    setSwipedAlternateRouteId(branchId);
-    setAlternateRouteSwipeOffset(nextOffset);
-  }
-
-  function handleAlternateRoutePointerEnd(event: ReactPointerEvent<HTMLElement>, branchId: string) {
-    if (activeAlternateRouteSwipeIdRef.current !== branchId) return;
-    event.stopPropagation();
-    try { event.currentTarget.releasePointerCapture(event.pointerId); } catch { /* released */ }
-    const horizontal = alternateRouteSwipeAxisRef.current === 'horizontal';
-    const shouldOpen = horizontal && alternateRouteSwipeOffset <= -(ALTERNATE_ROUTE_DELETE_REVEAL_WIDTH * 0.52);
-    setSwipedAlternateRouteId(shouldOpen ? branchId : null);
-    setAlternateRouteSwipeOffset(shouldOpen ? -ALTERNATE_ROUTE_DELETE_REVEAL_WIDTH : 0);
-    activeAlternateRouteSwipeIdRef.current = null;
-    alternateRouteSwipeAxisRef.current = 'pending';
-  }
-
-  function requestAlternateRouteDelete(route: RouteBranch) {
-    closeAlternateRouteSwipe();
-    setAlternateRouteDeleteTarget(route);
-  }
-
   async function handleAlternateRouteDelete() {
-    const target = alternateRouteDeleteTarget ?? alternateRouteEditing;
-    if (!target || alternateRouteDeleting || alternateRouteSaving) return;
+    if (!alternateRouteEditing || alternateRouteDeleting || alternateRouteSaving) return;
+    const confirmed = window.confirm(`「${alternateRouteEditing.name}」を削除しますか？\n割り振り情報も解除されます。`);
+    if (!confirmed) return;
     setAlternateRouteDeleting(true);
     setAlternateRouteError(null);
     try {
-      await deleteAlternateRoute(target.id, routeId);
-      setAlternateRoutes((current) => current.filter((item) => item.id !== target.id));
-      if (activeBranchId === target.id) setActiveBranchId(null);
-      setAlternateRouteDeleteTarget(null);
-      setAlternateRouteManageOpen(false);
+      await deleteAlternateRoute(alternateRouteEditing.id, routeId);
+      setAlternateRoutes((current) => current.filter((item) => item.id !== alternateRouteEditing.id));
       setAlternateRouteOpen(false);
       setAlternateRouteEditing(null);
-      setToast('サブRouteを削除しました。');
+      setToast('別行動を削除しました。');
     } catch (err) {
-      setAlternateRouteError(getErrorMessage(err, 'サブRouteを削除できませんでした。'));
+      setAlternateRouteError(getErrorMessage(err, '別行動を削除できませんでした。'));
     } finally {
       setAlternateRouteDeleting(false);
     }
@@ -573,32 +453,20 @@ export function RoutePlacesPage() {
       const saved = alternateRouteEditing
         ? await configureAlternateRoute(alternateRouteEditing.id, input)
         : await createAlternateRoute(input);
-      // サブRoute本体の保存を最優先に確定し、担当設定の失敗で名称変更を巻き戻さない。
-      setAlternateRouteEditing(saved);
-      setAlternateRoutes((current) => current.some((item) => item.id === saved.id)
-        ? current.map((item) => item.id === saved.id ? saved : item)
-        : [...current, saved].sort((a, b) => a.orderValue - b.orderValue));
-
-      let assignmentWarning: string | null = null;
       try {
         await saveAlternateRouteMemberSelection(saved.id);
-        await replaceRouteBranchMyMembers(routeId, saved.id, alternateRouteSelectedMyMemberIds);
-      } catch {
-        assignmentWarning = '名称は保存しましたが、担当設定を保存できませんでした。';
+      } catch (memberError) {
+        setAlternateRouteEditing(saved);
+        setAlternateRoutes((current) => current.some((item) => item.id === saved.id)
+          ? current.map((item) => item.id === saved.id ? saved : item)
+          : [...current, saved].sort((a, b) => a.orderValue - b.orderValue));
+        throw new Error(`別行動は保存しましたが、参加者設定を保存できませんでした。${getErrorMessage(memberError, '')}`);
       }
-
-      // DBの確定値を再取得し、Route／Placesの表示を同時に更新する。
-      try {
-        const refreshed = await listRouteBranches(routeId);
-        setAlternateRoutes(refreshed);
-        const refreshedSaved = refreshed.find((item) => item.id === saved.id);
-        if (refreshedSaved) setAlternateRouteEditing(refreshedSaved);
-      } catch {
-        // 保存済みのローカル表示を維持し、次回読み込み時にDBの確定値へ同期する。
-      }
-
+      setAlternateRoutes((current) => alternateRouteEditing
+        ? current.map((item) => item.id === saved.id ? saved : item)
+        : [...current, saved].sort((a, b) => a.orderValue - b.orderValue));
       setAlternateRouteOpen(false);
-      setToast(assignmentWarning ?? (alternateRouteEditing ? 'サブRoute名を更新しました。' : 'サブRouteを追加しました。'));
+      setToast(alternateRouteEditing ? '別行動を更新しました。' : '別行動を追加しました。');
     } catch (err) {
       setAlternateRouteError(getErrorMessage(err, '別Routeを保存できませんでした。'));
     } finally {
@@ -632,8 +500,6 @@ export function RoutePlacesPage() {
     setDescription('');
     setImportance('must');
     setTimeType('none'); setStartTime(''); setEndTime('');
-    setAssignmentMode(activeBranchId ? 'inherit' : 'override');
-    setSelectedDestinationMyMemberIds([]);
     setFormError(null);
     setCreateOpen(true);
   }
@@ -653,19 +519,12 @@ export function RoutePlacesPage() {
       const fallbackPhaseId = selectedPhaseId || phases[0]?.id || '';
       const created = await createRouteDestination(routeId, {
         phaseId: timeType === 'none' ? fallbackPhaseId : (autoPhase?.id ?? fallbackPhaseId), branchId: activeBranchId, name, locationName, description, importance,
-        timeType, startTime: timeType === 'none' ? null : startTime, endTime: timeType === 'none' ? null : (endTime || null), assignmentMode,
+        timeType, startTime: timeType === 'none' ? null : startTime, endTime: timeType === 'none' ? null : (endTime || null),
       });
-      if (assignmentMode === 'override') {
-        await replaceRouteDestinationMyMembers(routeId, created.id, selectedDestinationMyMemberIds);
-        setDestinationMyMemberAssignments((current) => [
-          ...current.filter((item) => item.destinationId !== created.id),
-          ...selectedDestinationMyMemberIds.map((myMemberId) => ({ routeId, destinationId: created.id, myMemberId, assignedAt: new Date().toISOString() })),
-        ]);
-      }
       setDestinations((current) => [...current, created].sort((a, b) => a.orderValue - b.orderValue));
       setCreateOpen(false);
     } catch (err) {
-      setFormError(getErrorMessage(err, '予定を追加できませんでした。'));
+      setFormError(getErrorMessage(err, '目的地を追加できませんでした。'));
     } finally {
       setSaving(false);
     }
@@ -680,8 +539,6 @@ export function RoutePlacesPage() {
     setEditDescription(destination.description ?? '');
     setEditImportance(destination.importance === 'optional' ? 'optional' : 'must');
     setEditTimeType(destination.timeType); setEditStartTime(destination.startTime?.slice(0,5) ?? ''); setEditEndTime(destination.endTime?.slice(0,5) ?? '');
-    setEditAssignmentMode(destination.assignmentMode);
-    setEditSelectedDestinationMyMemberIds(destinationMyMemberAssignments.filter((item) => item.destinationId === destination.id).map((item) => item.myMemberId));
     setEditError(null);
   }
 
@@ -700,19 +557,14 @@ export function RoutePlacesPage() {
       const fallbackPhaseId = editPhaseId || editing.phaseId || phases[0]?.id || '';
       const updated = await updateRouteDestination(routeId, editing.id, {
         phaseId: editTimeType === 'none' ? fallbackPhaseId : (autoPhase?.id ?? fallbackPhaseId), branchId: activeBranchId, name: editName, locationName: editLocationName, description: editDescription, importance: editImportance,
-        timeType: editTimeType, startTime: editTimeType === 'none' ? null : editStartTime, endTime: editTimeType === 'none' ? null : (editEndTime || null), assignmentMode: editAssignmentMode,
+        timeType: editTimeType, startTime: editTimeType === 'none' ? null : editStartTime, endTime: editTimeType === 'none' ? null : (editEndTime || null),
       });
-      await replaceRouteDestinationMyMembers(routeId, updated.id, editAssignmentMode === 'override' ? editSelectedDestinationMyMemberIds : []);
-      setDestinationMyMemberAssignments((current) => [
-        ...current.filter((item) => item.destinationId !== updated.id),
-        ...(editAssignmentMode === 'override' ? editSelectedDestinationMyMemberIds.map((myMemberId) => ({ routeId, destinationId: updated.id, myMemberId, assignedAt: new Date().toISOString() })) : []),
-      ]);
       setDestinations((current) =>
         current.map((item) => item.id === updated.id ? updated : item)
       );
       setEditing(null);
     } catch (err) {
-      setEditError(getErrorMessage(err, '予定を更新できませんでした。'));
+      setEditError(getErrorMessage(err, '目的地を更新できませんでした。'));
     } finally {
       setEditSaving(false);
     }
@@ -741,10 +593,8 @@ export function RoutePlacesPage() {
     setPhaseSaving(true);
     setPhaseError(null);
     try {
-      await createRoutePhase(routeId, { name: phaseName, description: phaseDescription, startTime: phaseStartTime || null }, activeBranchId);
-      const nextPhases = await getRoutePhases(routeId, activeBranchId);
-      setPhases(nextPhases);
-      placesPlanningCacheRef.current.set(activeBranchId ?? 'main', { phases: nextPhases, destinations });
+      const created = await createRoutePhase(routeId, { name: phaseName, description: phaseDescription, startTime: phaseStartTime || null }, activeBranchId);
+      setPhases((current) => [...current, created].sort((a, b) => a.orderValue - b.orderValue));
       setPhaseCreateOpen(false);
     } catch (err) {
       setPhaseError(getErrorMessage(err, 'Phaseを追加できませんでした。'));
@@ -817,45 +667,12 @@ function requestDestinationDelete(destination: DestinationSummary) {
     setPhaseSaving(true);
     setPhaseError(null);
     try {
-      await updateRoutePhase(routeId, phaseEditing.id, { name: phaseName, description: phaseDescription, startTime: phaseStartTime || null }, activeBranchId);
-      const nextPhases = await getRoutePhases(routeId, activeBranchId);
-      setPhases(nextPhases);
-      placesPlanningCacheRef.current.set(activeBranchId ?? 'main', { phases: nextPhases, destinations });
+      const updated = await updateRoutePhase(routeId, phaseEditing.id, { name: phaseName, description: phaseDescription, startTime: phaseStartTime || null }, activeBranchId);
+      setPhases((current) => current.map((phase) => phase.id === updated.id ? updated : phase));
       setPhaseEditing(null);
     } catch (err) {
       setPhaseError(getErrorMessage(err, 'Phaseを更新できませんでした。'));
     } finally { setPhaseSaving(false); }
-  }
-
-
-  function requestPhaseDelete() {
-    if (!phaseEditing || phaseSaving || phaseDeleting) return;
-    setPhaseDeleteError(null);
-    setPhaseDeleteTarget(phaseEditing);
-  }
-
-  async function handlePhaseDelete() {
-    if (!phaseDeleteTarget || phaseDeleting) return;
-    setPhaseDeleting(true);
-    setPhaseDeleteError(null);
-    try {
-      await deleteRoutePhase(routeId, phaseDeleteTarget.id, activeBranchId);
-      const [nextPhases, nextDestinations] = await Promise.all([
-        getRoutePhases(routeId, activeBranchId),
-        getRouteDestinations(routeId, activeBranchId),
-      ]);
-      setPhases(nextPhases);
-      setDestinations(nextDestinations);
-      setPhaseDeleteTarget(null);
-      setPhaseEditing(null);
-      setPhaseCreateOpen(false);
-      setToast('Phaseを削除しました。');
-      placesPlanningCacheRef.current.set(activeBranchId ?? 'main', { phases: nextPhases, destinations: nextDestinations });
-    } catch (err) {
-      setPhaseDeleteError(getErrorMessage(err, 'Phaseを削除できませんでした。'));
-    } finally {
-      setPhaseDeleting(false);
-    }
   }
 
   function askDeleteDestination() {
@@ -1119,169 +936,61 @@ function requestDestinationDelete(destination: DestinationSummary) {
   const activePlacesRouteIndex = Math.max(0, placesRouteIds.findIndex((id) => id === activeBranchId));
   const activePlacesRoute = activeBranchId ? alternateRoutes.find((route) => route.id === activeBranchId) ?? null : null;
   const placesRouteCategory = !activePlacesRoute ? 'メインRoute' : activePlacesRoute.connectionType === 'split_merge' ? '分岐Route' : activePlacesRoute.connectionType === 'join' ? '合流Route' : activePlacesRoute.connectionType === 'leave' ? '離脱Route' : '別行動Route';
-  const activePlacesRouteMyMembers = activePlacesRoute
-    ? alternateRouteMyMemberAssignments
-      .filter((assignment) => assignment.branchId === activePlacesRoute.id)
-      .map((assignment) => alternateRouteMyMembers.find((member) => member.id === assignment.myMemberId))
-      .filter((member): member is MyMember => Boolean(member))
-    : [];
 
-  function clearPlacesRouteSettleTimer() {
-    if (placesRouteSettleTimerRef.current !== null) {
-      window.clearTimeout(placesRouteSettleTimerRef.current);
-      placesRouteSettleTimerRef.current = null;
-    }
-  }
-
-  function applyPlacesRouteVisualOffset(nextX: number, animate: boolean) {
-    placesRouteVisualXRef.current = nextX;
-    if (placesRouteRafRef.current !== null) window.cancelAnimationFrame(placesRouteRafRef.current);
-    placesRouteRafRef.current = window.requestAnimationFrame(() => {
-      const element = placesRouteCarouselRef.current;
-      if (element) {
-        element.style.transition = animate ? 'transform 280ms cubic-bezier(.22,.72,.22,1)' : 'none';
-        element.style.transform = `translate3d(${nextX}px,0,0)`;
-      }
-      placesRouteRafRef.current = null;
-    });
-  }
-
-  async function getPreparedPlacesPlanning(branchId: string | null) {
-    const key = branchId ?? 'main';
-    const cached = placesPlanningCacheRef.current.get(key);
-    if (cached) return cached;
-    const [nextPhases, nextDestinations] = await Promise.all([
-      getRoutePhases(routeId, branchId),
-      getRouteDestinations(routeId, branchId),
-    ]);
-    const prepared = { phases: nextPhases, destinations: nextDestinations };
-    placesPlanningCacheRef.current.set(key, prepared);
-    return prepared;
-  }
-
-  async function movePlacesRoute(nextIndex: number) {
+  function movePlacesRoute(nextIndex: number) {
     const bounded = Math.max(0, Math.min(placesRouteIds.length - 1, nextIndex));
-    if (bounded === activePlacesRouteIndex || placesRouteSettling) return;
-
-    const direction: 'next' | 'previous' = bounded > activePlacesRouteIndex ? 'next' : 'previous';
-    const targetBranchId = placesRouteIds[bounded];
-    const token = ++placesRouteSwitchTokenRef.current;
-    const width = Math.max(placesRouteCarouselRef.current?.clientWidth ?? 0, 280);
-
-    clearPlacesRouteSettleTimer();
-    setPlacesRouteDragging(false);
-    setPlacesRouteSettling(true);
-
-    try {
-      // Route画面と同様、切替先を先に用意してからカードを送り出す。
-      const prepared = await getPreparedPlacesPlanning(targetBranchId);
-      if (token !== placesRouteSwitchTokenRef.current) return;
-
-      applyPlacesRouteVisualOffset(direction === 'next' ? -width : width, true);
-      placesRouteSettleTimerRef.current = window.setTimeout(() => {
-        if (token !== placesRouteSwitchTokenRef.current) return;
-
-        setPlacesRouteDirection(direction);
-        setPlacesRouteMotionId((current) => current + 1);
-        setActiveBranchId(targetBranchId);
-        setPhases(prepared.phases);
-        setDestinations(prepared.destinations);
-        setError(null);
-        setLoading(false);
-
-        // 新しい切替枠を反対側の近位置に置き、次フレームで中央へ戻す。
-        applyPlacesRouteVisualOffset(direction === 'next' ? width * .22 : -width * .22, false);
-        window.requestAnimationFrame(() => {
-          window.requestAnimationFrame(() => applyPlacesRouteVisualOffset(0, true));
-        });
-
-        placesRouteSettleTimerRef.current = window.setTimeout(() => {
-          setPlacesRouteSettling(false);
-          placesRouteSettleTimerRef.current = null;
-        }, 280);
-      }, 190);
-    } catch (err) {
-      if (token === placesRouteSwitchTokenRef.current) {
-        setError(getErrorMessage(err, 'Placesを読み込めませんでした。'));
-        applyPlacesRouteVisualOffset(0, true);
-        setPlacesRouteSettling(false);
-      }
-    }
+    if (bounded === activePlacesRouteIndex) return;
+    setPlacesRouteDirection(bounded > activePlacesRouteIndex ? 'next' : 'previous');
+    setPlacesRouteMotionId((current) => current + 1);
+    setActiveBranchId(placesRouteIds[bounded]);
   }
 
   function handlePlacesRouteTouchStart(event: React.TouchEvent<HTMLElement>) {
-    if (alternateRouteOpen || createOpen || editing || phaseCreateOpen || phaseEditing || placesRouteSettling) return;
-    clearPlacesRouteSettleTimer();
+    if (alternateRouteOpen || createOpen || editing || phaseCreateOpen || phaseEditing) return;
     placesSwipeStartXRef.current = event.touches[0]?.clientX ?? null;
     placesSwipeStartYRef.current = event.touches[0]?.clientY ?? null;
     placesRouteSwipeStartTimeRef.current = performance.now();
+    setPlacesRouteSettling(false);
     setPlacesRouteDragging(true);
-    applyPlacesRouteVisualOffset(0, false);
   }
 
   function handlePlacesRouteTouchMove(event: React.TouchEvent<HTMLElement>) {
     const startX = placesSwipeStartXRef.current;
     const startY = placesSwipeStartYRef.current;
     const touch = event.touches[0];
-    if (startX === null || startY === null || !touch || placesRouteSettling) return;
+    if (startX === null || startY === null || !touch) return;
     const deltaX = touch.clientX - startX;
     const deltaY = touch.clientY - startY;
-    if (Math.abs(deltaX) <= Math.abs(deltaY)) return;
-    event.preventDefault();
+    if (Math.abs(deltaY) > Math.abs(deltaX) * 1.2) return;
     const atStart = activePlacesRouteIndex === 0 && deltaX > 0;
     const atEnd = activePlacesRouteIndex >= placesRouteIds.length - 1 && deltaX < 0;
-    applyPlacesRouteVisualOffset(atStart || atEnd ? deltaX * .24 : deltaX, false);
+    setPlacesRouteDragX((atStart || atEnd) ? deltaX * .24 : deltaX);
   }
 
   function handlePlacesRouteTouchEnd(event: React.TouchEvent<HTMLElement>) {
     const startX = placesSwipeStartXRef.current;
+    const touch = event.changedTouches[0];
     placesSwipeStartXRef.current = null;
     placesSwipeStartYRef.current = null;
-    const endX = event.changedTouches[0]?.clientX;
-    if (startX === null || endX === undefined) {
-      setPlacesRouteDragging(false);
-      applyPlacesRouteVisualOffset(0, true);
-      return;
-    }
-
-    const delta = endX - startX;
+    if (startX === null || !touch) { setPlacesRouteDragging(false); setPlacesRouteDragX(0); return; }
+    const deltaX = touch.clientX - startX;
     const elapsed = Math.max(1, performance.now() - placesRouteSwipeStartTimeRef.current);
-    const velocity = delta / elapsed;
-    const wantsNext = delta < 0 && activePlacesRouteIndex < placesRouteIds.length - 1;
-    const wantsPrevious = delta > 0 && activePlacesRouteIndex > 0;
-    const shouldChange = Math.abs(delta) >= 72 || Math.abs(velocity) >= .48;
+    const velocity = deltaX / elapsed;
+    const next = deltaX < 0 && activePlacesRouteIndex < placesRouteIds.length - 1;
+    const previous = deltaX > 0 && activePlacesRouteIndex > 0;
+    const change = Math.abs(deltaX) >= 58 || Math.abs(velocity) >= .42;
     setPlacesRouteDragging(false);
-
-    if (shouldChange && wantsNext) void movePlacesRoute(activePlacesRouteIndex + 1);
-    else if (shouldChange && wantsPrevious) void movePlacesRoute(activePlacesRouteIndex - 1);
-    else {
-      setPlacesRouteSettling(true);
-      applyPlacesRouteVisualOffset(0, true);
-      placesRouteSettleTimerRef.current = window.setTimeout(() => {
-        setPlacesRouteSettling(false);
-        placesRouteSettleTimerRef.current = null;
-      }, 260);
-    }
+    setPlacesRouteSettling(true);
+    setPlacesRouteDragX(0);
+    if (change && next) movePlacesRoute(activePlacesRouteIndex + 1);
+    else if (change && previous) movePlacesRoute(activePlacesRouteIndex - 1);
+    window.setTimeout(() => setPlacesRouteSettling(false), 300);
   }
 
-  useEffect(() => {
-    if (alternateRoutes.length === 0) return;
-    let cancelled = false;
-    alternateRoutes.forEach((route) => {
-      if (placesPlanningCacheRef.current.has(route.id)) return;
-      void Promise.all([getRoutePhases(routeId, route.id), getRouteDestinations(routeId, route.id)])
-        .then(([nextPhases, nextDestinations]) => {
-          if (!cancelled) placesPlanningCacheRef.current.set(route.id, { phases: nextPhases, destinations: nextDestinations });
-        })
-        .catch(() => { /* 先読み失敗時は切替時に再取得する */ });
-    });
-    return () => { cancelled = true; };
-  }, [routeId, alternateRoutes]);
-
-  useEffect(() => () => {
-    clearPlacesRouteSettleTimer();
-    if (placesRouteRafRef.current !== null) window.cancelAnimationFrame(placesRouteRafRef.current);
-  }, []);
+  const placesRouteDragStyle = {
+    transform: `translate3d(${placesRouteDragX}px,0,0)`,
+    transition: placesRouteDragging ? 'none' : 'transform 300ms cubic-bezier(.22,.72,.22,1)',
+  };
 
   function getDestinationDragShift(index: number) {
     const session = dragSessionRef.current;
@@ -1302,20 +1011,6 @@ function requestDestinationDelete(destination: DestinationSummary) {
     return 0;
   }
 
-  function resolvedDestinationMyMembers(destination: DestinationSummary): MyMember[] {
-    const memberIds = destination.assignmentMode === 'override'
-      ? destinationMyMemberAssignments.filter((item) => item.destinationId === destination.id).map((item) => item.myMemberId)
-      : destination.branchId
-        ? alternateRouteMyMemberAssignments.filter((item) => item.branchId === destination.branchId).map((item) => item.myMemberId)
-        : [];
-    return memberIds.map((id) => alternateRouteMyMembers.find((member) => member.id === id)).filter((member): member is MyMember => Boolean(member));
-  }
-
-  function toggleDestinationMember(id: string, editingMode = false) {
-    const setter = editingMode ? setEditSelectedDestinationMyMemberIds : setSelectedDestinationMyMemberIds;
-    setter((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
-  }
-
   async function handleDeleteDestination() {
     if (!deleteTarget || deleting) return;
 
@@ -1326,48 +1021,42 @@ function requestDestinationDelete(destination: DestinationSummary) {
       setDestinations((current) => current.filter((item) => item.id !== deleteTarget.id));
       setDeleteTarget(null);
       setEditing(null);
-      setToast('予定を削除しました');
+      setToast('目的地を削除しました');
     } catch (err) {
-      setDeleteError(getErrorMessage(err, '予定を削除できませんでした。'));
+      setDeleteError(getErrorMessage(err, '目的地を削除できませんでした。'));
     } finally {
       setDeleting(false);
     }
   }
 
   return (
-    <RouteWorkspacePage footerLabel="Planning Core">
+    <main className="app-shell route-tab-shell">
+      <header className="global-header">
+        <div className="header-brand"><BrandMark size={34} /><strong>D Route</strong></div>
+        <div className="header-actions">
+          <Link className="icon-button header-link" to="/routes">一覧へ戻る</Link>
+          <RefreshButton placement="header" />
+        </div>
+      </header>
 
       <section className="page-content route-tab-content" aria-labelledby="places-title">
-        <section ref={placesRouteCarouselRef} className="places-route-carousel" aria-label="編集するRouteを選択" onTouchStart={handlePlacesRouteTouchStart} onTouchMove={handlePlacesRouteTouchMove} onTouchEnd={handlePlacesRouteTouchEnd} onTouchCancel={handlePlacesRouteTouchEnd}>
-          <button type="button" className="places-route-arrow" onClick={() => void movePlacesRoute(activePlacesRouteIndex - 1)} disabled={activePlacesRouteIndex === 0} aria-label="前のRouteを見る">‹</button>
+        <section className="places-route-carousel" aria-label="編集するRouteを選択" onTouchStart={handlePlacesRouteTouchStart} onTouchMove={handlePlacesRouteTouchMove} onTouchEnd={handlePlacesRouteTouchEnd} onTouchCancel={handlePlacesRouteTouchEnd} style={placesRouteDragStyle}>
+          <button type="button" className="places-route-arrow" onClick={() => movePlacesRoute(activePlacesRouteIndex - 1)} disabled={activePlacesRouteIndex === 0} aria-label="前のRouteを見る">‹</button>
           <div className="places-route-carousel-title">
             <small>{placesRouteCategory}</small>
             <strong>{activePlacesRoute?.name ?? 'メインの予定'}</strong>
-            <MemberAssignees members={activePlacesRouteMyMembers} />
-            <span className="places-route-count">{activePlacesRouteIndex + 1} / {placesRouteIds.length}</span>
+            <span>{activePlacesRouteIndex + 1} / {placesRouteIds.length}</span>
           </div>
-          <button type="button" className="places-route-arrow" onClick={() => void movePlacesRoute(activePlacesRouteIndex + 1)} disabled={activePlacesRouteIndex >= placesRouteIds.length - 1} aria-label="次のRouteを見る">›</button>
-          <div className="places-route-dots">{placesRouteIds.map((id,index)=><button type="button" key={id ?? 'main'} className={index===activePlacesRouteIndex?'is-active':''} onClick={()=>void movePlacesRoute(index)} aria-label={`${index+1}ページ目を見る`}/>)}</div>
+          <button type="button" className="places-route-arrow" onClick={() => movePlacesRoute(activePlacesRouteIndex + 1)} disabled={activePlacesRouteIndex >= placesRouteIds.length - 1} aria-label="次のRouteを見る">›</button>
+          <div className="places-route-dots">{placesRouteIds.map((id,index)=><button type="button" key={id ?? 'main'} className={index===activePlacesRouteIndex?'is-active':''} onClick={()=>movePlacesRoute(index)} aria-label={`${index+1}ページ目を見る`}/>)}</div>
         </section>
-        <div ref={placesRouteContentRef} className="places-route-content-buffer"><div ref={placesRouteMotionRef} className={`places-route-motion is-${placesRouteDirection}`} key={`places-route-${placesRouteMotionId}`}>
+        <div className={`places-route-motion is-${placesRouteDirection}`} key={`places-route-${placesRouteMotionId}`}>
         <div className="route-tab-heading places-compact-heading">
-          <div className="places-title-block">
+          <div>
             <p className="eyebrow">{activeBranchId ? 'SUB ROUTE' : 'PLACES'}</p>
-            <h1 id="places-title" title={activeBranchId ? (alternateRoutes.find((route) => route.id === activeBranchId)?.name ?? 'サブRoute') : '予定'}>{activeBranchId ? (alternateRoutes.find((route) => route.id === activeBranchId)?.name ?? 'サブRoute') : '予定'}</h1>
+            <h1 id="places-title">{activeBranchId ? (alternateRoutes.find((route) => route.id === activeBranchId)?.name ?? 'サブRoute') : '目的地'}</h1>
           </div>
-          <div className="places-heading-actions">
-            {activePlacesRoute ? <button className="secondary-button places-route-edit-button" type="button" aria-label="サブRouteを編集" title="サブRouteを編集" onClick={() => openAlternateRouteEdit(activePlacesRoute)}><span aria-hidden="true">✎</span><span className="sr-only">サブRouteを編集</span></button> : null}
-          <button
-            className="primary-button places-add-menu-button"
-            type="button"
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={(event) => {
-              event.stopPropagation();
-              closeDestinationSwipe();
-              setAddMenuOpen(true);
-            }}
-          >＋ 追加</button>
-          </div>
+          <button className="primary-button places-add-menu-button" type="button" onClick={() => setAddMenuOpen(true)}>＋ 追加</button>
         </div>
 
         {loading ? (
@@ -1376,33 +1065,26 @@ function requestDestinationDelete(destination: DestinationSummary) {
           <section className="empty-state" role="alert"><div className="empty-orbit" aria-hidden="true"><BrandMark size={58} /></div><h2>Placesを読み込めませんでした</h2><p>{error}</p><button className="secondary-button" type="button" onClick={() => void loadPlanning()}>再読み込み</button></section>
         ) : (
           <div className="phase-planning-list">
-            {phases.length === 0 && activeBranchId ? (
-              <section className="empty-state subroute-phase-empty">
-                <h2>このサブRouteにはPhaseがありません</h2>
-                <p>最初のPhaseを追加して予定を組み立ててください。</p>
-                <button className="primary-button" type="button" onClick={() => openPhaseCreate()}>＋ Phase</button>
-              </section>
-            ) : null}
             {phases.map((phase) => {
               const phaseDestinations = destinationsByPhase.get(phase.id) ?? [];
               return (
                 <section className="places-phase-section" key={phase.id}>
                   <header className="places-phase-header">
                     <div className="places-phase-copy">
-                      <div className="places-phase-titleline"><h2 title={phase.name || 'Phase'}>{phase.name || 'Phase'}</h2>{!phase.name && <span className="phase-unnamed-badge">名前未設定</span>}{phase.startTime && <span className="phase-start-badge">{phase.startTime.slice(0, 5)}〜</span>}<span className="phase-destination-count">{phaseDestinations.length}件</span></div>
+                      <div className="places-phase-titleline"><h2>{phase.name || 'Phase'}</h2>{!phase.name && <span className="phase-unnamed-badge">名前未設定</span>}{phase.startTime && <span className="phase-start-badge">{phase.startTime.slice(0, 5)}〜</span>}</div>
                       {phase.description && <p>{phase.description}</p>}
                     </div>
-                    <div className="places-phase-actions"><button className="phase-edit-button" type="button" aria-label={`${phase.name || 'Phase'}を編集`} title="Phaseを編集" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeDestinationSwipe(); openPhaseEdit(phase); }}><span aria-hidden="true">✎</span><span className="sr-only">Phaseを編集</span></button><button className="phase-add-place-button" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeDestinationSwipe(); openCreateModal(phase.id); }}>＋予定</button></div>
+                    <div className="places-phase-actions"><button className="phase-edit-button" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeDestinationSwipe(); openPhaseEdit(phase); }}>編集</button><button className="phase-add-place-button" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeDestinationSwipe(); openCreateModal(phase.id); }}>＋ 目的地</button></div>
                   </header>
                   {phaseDestinations.length === 0 ? (
-                    <button className="phase-empty-add" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeDestinationSwipe(); openCreateModal(phase.id); }}>このPhaseに最初の予定を追加</button>
+                    <button className="phase-empty-add" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeDestinationSwipe(); openCreateModal(phase.id); }}>このPhaseに最初の目的地を追加</button>
                   ) : (
                     <div className="places-list">
                       {phaseDestinations.map((destination, index) => { const dragShift = getDestinationDragShift(index); return (
                         <div data-destination-interaction="true" className={`places-destination-swipe-shell${swipedDestinationId === destination.id ? ' is-open' : ''}`} key={destination.id} style={dragShift !== 0 ? { transform: `translateY(${dragShift}px)` } : undefined} onTouchStart={(event) => event.stopPropagation()} onTouchEnd={(event) => event.stopPropagation()}>
                           <button className="places-destination-swipe-delete" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => requestDestinationDelete(destination)}>削除</button>
                           <article className={`place-card places-destination-swipe-panel${reorderingId === destination.id ? ' is-drag-placeholder' : ''}${dragShift !== 0 ? ' is-reorder-shifting' : ''}${reorderingId && reorderOverId === destination.id && reorderingId !== destination.id ? ' is-reorder-over' : ''}`} data-destination-id={destination.id} data-phase-id={phase.id} data-draggable={destination.timeType === 'none' ? 'true' : 'false'} style={{ transform: `translateX(${swipedDestinationId === destination.id ? destinationSwipeOffset : 0}px)` }} onPointerDown={(event) => handleDestinationPointerDown(event, destination.id)} onPointerMove={(event) => handleDestinationPointerMove(event, destination.id)} onPointerUp={(event) => handleDestinationPointerEnd(event, destination.id)} onPointerCancel={(event) => handleDestinationPointerEnd(event, destination.id)}>
-                          <div className="place-order" aria-label={`${index + 1}番目`}>{index + 1}</div><div className="place-icon" aria-hidden="true">🗓️</div>
+                          <div className="place-order" aria-label={`${index + 1}番目`}>{index + 1}</div><div className="place-icon" aria-hidden="true">📍</div>
                           <div className="place-copy">
                             <div className="place-meta">
                               {destination.importance === 'must' ? <span className="place-required-mark" aria-label="必須" title="必須">★</span> : null}
@@ -1411,11 +1093,10 @@ function requestDestinationDelete(destination: DestinationSummary) {
                             {destination.locationName ? <div className="place-location-line">{destination.locationName}</div> : null}
                             <h2>{destination.name}</h2>
                             <p>{destination.description ?? '説明はまだありません。'}</p>
-                            {resolvedDestinationMyMembers(destination).length > 0 ? <div className="destination-assignees" aria-label={`担当 ${resolvedDestinationMyMembers(destination).map((member) => member.name).join('、')}`}>{resolvedDestinationMyMembers(destination).map((member) => <span className={`is-color-${member.colorKey}`} key={member.id}><i aria-hidden="true"/>{member.name}</span>)}</div> : null}
                             {!activeBranchId && (mainConnectionsByDestination.get(destination.id)?.length ?? 0) > 0 ? (
                               <div className="place-route-connections">
                                 {mainConnectionsByDestination.get(destination.id)?.map((connection) => (
-                                  <button className={`place-route-connection is-${connection.kind}`} type="button" key={`${connection.route.id}-${connection.kind}`} onPointerDown={(event) => event.stopPropagation()} onClick={() => { const index = placesRouteIds.findIndex((id) => id === connection.route.id); if (index >= 0) void movePlacesRoute(index); }}>
+                                  <button className={`place-route-connection is-${connection.kind}`} type="button" key={`${connection.route.id}-${connection.kind}`} onPointerDown={(event) => event.stopPropagation()} onClick={() => setActiveBranchId(connection.route.id)}>
                                     <span className="place-route-connection-mark" aria-hidden="true">{connection.kind === 'start' ? '↗' : '↘'}</span>
                                     <span><strong>{connection.label}</strong><small>{connection.detail}</small></span>
                                     <span className="place-route-connection-arrow" aria-hidden="true">›</span>
@@ -1424,7 +1105,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
                               </div>
                             ) : null}
                           </div>
-                          <div className={`place-card-actions ${destination.timeType !== 'none' ? 'is-timed' : ''}`}><button className="place-edit-button" type="button" aria-label={`${destination.name}を編集`} title="予定を編集" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeDestinationSwipe(); openEditModal(destination); }} disabled={Boolean(reorderingId) || reorderSaving}><span aria-hidden="true">✎</span><span className="sr-only">予定を編集</span></button>{destination.timeType === 'none' ? <button data-destination-interaction="true" data-destination-drag-handle="true" className="place-drag-handle" type="button" aria-label={`${destination.name}を長押しして並び替え`} disabled={reorderSaving || (Boolean(reorderingId) && reorderingId !== destination.id)} onPointerDown={(event) => beginDestinationDrag(event, destination.id, phase.id)} onPointerMove={moveDraggedDestination} onPointerUp={(event) => void finishDestinationDrag(event)} onPointerCancel={cancelDestinationDrag} onLostPointerCapture={handleLostDestinationPointerCapture}><span className="drag-dot-grid" aria-hidden="true"><i /><i /><i /><i /><i /><i /></span></button> : null}</div>
+                          <div className={`place-card-actions ${destination.timeType !== 'none' ? 'is-timed' : ''}`}><button className="place-edit-button" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeDestinationSwipe(); openEditModal(destination); }} disabled={Boolean(reorderingId) || reorderSaving}>編集</button>{destination.timeType === 'none' ? <button data-destination-interaction="true" data-destination-drag-handle="true" className="place-drag-handle" type="button" aria-label={`${destination.name}を長押しして並び替え`} disabled={reorderSaving || (Boolean(reorderingId) && reorderingId !== destination.id)} onPointerDown={(event) => beginDestinationDrag(event, destination.id, phase.id)} onPointerMove={moveDraggedDestination} onPointerUp={(event) => void finishDestinationDrag(event)} onPointerCancel={cancelDestinationDrag} onLostPointerCapture={handleLostDestinationPointerCapture}><span className="drag-dot-grid" aria-hidden="true"><i /><i /><i /><i /><i /><i /></span></button> : null}</div>
                           </article>
                         </div>
                       ); })}
@@ -1446,7 +1127,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
                     <article className="place-card is-exception" key={destination.id}>
                       <div className="place-order">{index + 1}</div>
                       <div className="place-copy"><div className="place-meta">{destination.importance === 'must' ? <span className="place-required-mark" aria-label="必須" title="必須">★</span> : null}{formatDestinationTime(destination) ? <span className="place-time-badge is-exception-time">{formatDestinationTime(destination)}</span> : null}</div><h2>{destination.name}</h2><p>所属：{phases.find((phase) => phase.id === destination.phaseId)?.name || '名前未設定のPhase'}</p></div>
-                      <div className="place-card-actions"><button className="place-edit-button" type="button" aria-label={`${destination.name}を編集`} title="予定を編集" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeDestinationSwipe(); openEditModal(destination); }}><span aria-hidden="true">✎</span><span className="sr-only">予定を編集</span></button></div>
+                      <div className="place-card-actions"><button className="place-edit-button" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => { closeDestinationSwipe(); openEditModal(destination); }}>編集</button></div>
                     </article>
                   ))}
                 </div>
@@ -1454,7 +1135,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
             ) : null}
           </div>
         )}
-        </div></div>
+        </div>
       </section>
 
       {dragOverlay && (() => {
@@ -1472,7 +1153,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
             }}
           >
             <div className="place-order">{destinations.findIndex((item) => item.id === dragged.id) + 1}</div>
-            <div className="place-icon">🗓️</div>
+            <div className="place-icon">📍</div>
             <div className="place-copy">
               <div className="place-meta">
                 <span>{getImportanceLabel(dragged.importance)}</span>
@@ -1491,69 +1172,8 @@ function requestDestinationDelete(destination: DestinationSummary) {
         );
       })()}
 
-
-      {addMenuOpen && (
-        <div
-          className="modal-backdrop places-add-sheet-backdrop"
-          role="presentation"
-          onPointerDown={(event) => event.stopPropagation()}
-          onMouseDown={(event) => { if (event.target === event.currentTarget) setAddMenuOpen(false); }}
-        >
-          <section className="places-add-sheet" role="dialog" aria-modal="true" aria-label="追加する項目を選択">
-            <div className="places-add-sheet-handle" aria-hidden="true" />
-            <button type="button" onClick={() => { setAddMenuOpen(false); openCreateModal(); }}>予定を追加</button>
-            <button type="button" onClick={() => { setAddMenuOpen(false); openPhaseCreate(); }}>Phaseを追加</button>
-            {!activePlacesRoute ? (
-              <button type="button" onClick={() => { setAddMenuOpen(false); openAlternateRouteCreate(); }}>サブRouteを追加</button>
-            ) : (
-              <button type="button" onClick={() => { setAddMenuOpen(false); openAlternateRouteEdit(activePlacesRoute); }}>接続設定を開く</button>
-            )}
-            {alternateRoutes.length > 0 ? <button type="button" onClick={() => { setAddMenuOpen(false); closeAlternateRouteSwipe(); setAlternateRouteManageOpen(true); }}>サブRouteを管理</button> : null}
-            <button className="is-cancel" type="button" onClick={() => setAddMenuOpen(false)}>キャンセル</button>
-          </section>
-        </div>
-      )}
-
-      {alternateRouteManageOpen && (
-        <div className="modal-backdrop alternate-route-manage-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) { closeAlternateRouteSwipe(); setAlternateRouteManageOpen(false); } }}>
-          <section className="route-modal alternate-route-manage-modal" role="dialog" aria-modal="true" aria-labelledby="alternate-route-manage-title">
-            <div className="modal-header"><div><p className="eyebrow">SUB ROUTES</p><h2 id="alternate-route-manage-title">サブRouteを管理</h2></div><button className="modal-close-button" type="button" onClick={() => { closeAlternateRouteSwipe(); setAlternateRouteManageOpen(false); }} aria-label="閉じる">×</button></div>
-            <div className="alternate-route-manage-list">
-              {alternateRoutes.map((route) => (
-                <div className={`alternate-route-manage-swipe-shell${swipedAlternateRouteId === route.id ? ' is-open' : ''}`} key={route.id}>
-                  <button className="alternate-route-manage-delete" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => requestAlternateRouteDelete(route)}>削除</button>
-                  <button
-                    className="alternate-route-manage-card"
-                    type="button"
-                    style={{ transform: `translateX(${swipedAlternateRouteId === route.id ? alternateRouteSwipeOffset : 0}px)` }}
-                    onPointerDown={(event) => handleAlternateRoutePointerDown(event, route.id)}
-                    onPointerMove={(event) => handleAlternateRoutePointerMove(event, route.id)}
-                    onPointerUp={(event) => handleAlternateRoutePointerEnd(event, route.id)}
-                    onPointerCancel={(event) => handleAlternateRoutePointerEnd(event, route.id)}
-                    onClick={() => { if (swipedAlternateRouteId === route.id) { closeAlternateRouteSwipe(); return; } setAlternateRouteManageOpen(false); openAlternateRouteEdit(route); }}
-                  >
-                    <span><strong>{route.name}</strong><small>{alternateRouteTypeLabel(route.connectionType)}</small></span><span aria-hidden="true">›</span>
-                  </button>
-                </div>
-              ))}
-            </div>
-            <p className="field-hint">左へスワイプすると削除できます。カードを押すと編集できます。</p>
-          </section>
-        </div>
-      )}
-
-      {alternateRouteDeleteTarget && (
-        <div className="modal-backdrop centered-confirm-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !alternateRouteDeleting) setAlternateRouteDeleteTarget(null); }}>
-          <section className="route-modal centered-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="alternate-route-delete-title">
-            <div className="route-list-delete-icon" aria-hidden="true">!</div>
-            <h2 id="alternate-route-delete-title">サブRouteを削除しますか？</h2>
-            <p className="route-list-delete-name">「{alternateRouteDeleteTarget.name}」</p>
-            <p className="route-list-delete-copy">このサブRoute内のPhase・予定・担当設定も削除されます。</p>
-            {alternateRouteError ? <div className="route-inline-error" role="alert">{alternateRouteError}</div> : null}
-            <div className="modal-actions"><button className="secondary-button" type="button" onClick={() => setAlternateRouteDeleteTarget(null)} disabled={alternateRouteDeleting}>キャンセル</button><button className="route-list-delete-confirm" type="button" onClick={() => void handleAlternateRouteDelete()} disabled={alternateRouteDeleting}>{alternateRouteDeleting ? '削除中…' : '削除する'}</button></div>
-          </section>
-        </div>
-      )}
+      <footer className="app-footer"><VersionBadge /><span>Planning Core</span></footer>
+      <RouteBottomNav routeId={routeId} />
 
       {createOpen && (
         <div className="modal-backdrop" onMouseDown={(event) => {
@@ -1562,8 +1182,8 @@ function requestDestinationDelete(destination: DestinationSummary) {
           <section className="route-modal place-scroll-modal" role="dialog" aria-modal="true" aria-labelledby="create-destination-title">
             <div className="modal-header">
               <div>
-                <p className="eyebrow">NEW SCHEDULE</p>
-                <h2 id="create-destination-title">予定を追加</h2>
+                <p className="eyebrow">NEW PLACE</p>
+                <h2 id="create-destination-title">目的地を追加</h2>
               </div>
               <button className="modal-close-button" type="button" onClick={closeCreateModal} aria-label="閉じる" disabled={saving}>×</button>
             </div>
@@ -1573,9 +1193,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
               <div className="field-group compact-time-type">
                 <span className="field-label">時間</span>
                 <div className="time-type-segment" role="group" aria-label="時間">
-                  <button className={`time-type-option ${timeType === 'none' ? 'is-active' : ''}`} type="button" onClick={() => { setTimeType('none'); setStartTime(''); setEndTime('');
-    setAssignmentMode(activeBranchId ? 'inherit' : 'override');
-    setSelectedDestinationMyMemberIds([]); setFormError(null); }} disabled={saving} aria-pressed={timeType === 'none'}>なし</button>
+                  <button className={`time-type-option ${timeType === 'none' ? 'is-active' : ''}`} type="button" onClick={() => { setTimeType('none'); setStartTime(''); setEndTime(''); setFormError(null); }} disabled={saving} aria-pressed={timeType === 'none'}>なし</button>
                   <button className={`time-type-option ${timeType === 'fixed' ? 'is-active' : ''}`} type="button" onClick={() => setTimeType('fixed')} disabled={saving} aria-pressed={timeType === 'fixed'}>確定</button>
                   <button className={`time-type-option ${timeType === 'approx' ? 'is-active' : ''}`} type="button" onClick={() => setTimeType('approx')} disabled={saving} aria-pressed={timeType === 'approx'}>目安</button>
                 </div>
@@ -1623,7 +1241,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
               </label>
 
               <div className="field-group">
-                <label htmlFor="destination-name">予定名</label>
+                <label htmlFor="destination-name">目的地名</label>
                 <input ref={nameInputRef} id="destination-name" value={name}
                   onChange={(event) => setName(event.target.value)}
                   placeholder="例：大観山展望台" maxLength={40} autoComplete="off" disabled={saving} required />
@@ -1644,18 +1262,6 @@ function requestDestinationDelete(destination: DestinationSummary) {
                   placeholder="例：改札を出て右側に集合" maxLength={200} rows={3} disabled={saving} />
                 <p className="field-hint">任意・200文字まで</p>
               </div>
-
-
-              <section className="destination-assignment-field is-compact" aria-labelledby="destination-assignment-title">
-                <div className="destination-assignment-topline">
-                  <strong id="destination-assignment-title">担当</strong>
-                  <div className="assignment-mode-segment" role="radiogroup" aria-label="担当設定">
-                    {activeBranchId ? <label className={assignmentMode === 'inherit' ? 'is-active' : ''}><input type="radio" name="assignment-mode" checked={assignmentMode === 'inherit'} onChange={() => setAssignmentMode('inherit')} disabled={saving}/><span>継承</span></label> : null}
-                    <label className={assignmentMode === 'override' ? 'is-active' : ''}><input type="radio" name="assignment-mode" checked={assignmentMode === 'override'} onChange={() => setAssignmentMode('override')} disabled={saving}/><span>個別指定</span></label>
-                  </div>
-                </div>
-                {assignmentMode === 'override' ? <div className="destination-assignment-list is-compact">{alternateRouteMyMembers.length ? alternateRouteMyMembers.map((member) => <label className={selectedDestinationMyMemberIds.includes(member.id) ? `is-selected is-color-${member.colorKey}` : `is-color-${member.colorKey}`} key={member.id}><input type="checkbox" checked={selectedDestinationMyMemberIds.includes(member.id)} onChange={() => toggleDestinationMember(member.id)} disabled={saving}/><i aria-hidden="true"/><span>{member.name}</span></label>) : <small>My Membersに同行者を追加すると選択できます。</small>}</div> : <small className="assignment-inherit-note">サブRouteの担当を使用します。</small>}
-              </section>
 
               {formError && <p className="form-error" role="alert">{formError}</p>}
 
@@ -1678,8 +1284,8 @@ function requestDestinationDelete(destination: DestinationSummary) {
           <section className="route-modal edit-place-modal place-scroll-modal" role="dialog" aria-modal="true" aria-labelledby="edit-destination-title">
             <div className="modal-header">
               <div>
-                <p className="eyebrow">EDIT SCHEDULE</p>
-                <h2 id="edit-destination-title">予定を編集</h2>
+                <p className="eyebrow">EDIT PLACE</p>
+                <h2 id="edit-destination-title">目的地を編集</h2>
               </div>
               <button className="modal-close-button" type="button" onClick={closeEditModal} aria-label="閉じる" disabled={editSaving}>×</button>
             </div>
@@ -1737,7 +1343,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
               </label>
 
               <div className="field-group">
-                <label htmlFor="edit-destination-name">予定名</label>
+                <label htmlFor="edit-destination-name">目的地名</label>
                 <input ref={editNameInputRef} id="edit-destination-name" value={editName}
                   onChange={(event) => setEditName(event.target.value)}
                   maxLength={40} autoComplete="off" disabled={editSaving} required />
@@ -1759,18 +1365,6 @@ function requestDestinationDelete(destination: DestinationSummary) {
                 <p className="field-hint">任意・200文字まで</p>
               </div>
 
-
-              <section className="destination-assignment-field is-compact" aria-labelledby="edit-destination-assignment-title">
-                <div className="destination-assignment-topline">
-                  <strong id="edit-destination-assignment-title">担当</strong>
-                  <div className="assignment-mode-segment" role="radiogroup" aria-label="担当設定">
-                    {activeBranchId ? <label className={editAssignmentMode === 'inherit' ? 'is-active' : ''}><input type="radio" name="edit-assignment-mode" checked={editAssignmentMode === 'inherit'} onChange={() => setEditAssignmentMode('inherit')} disabled={editSaving}/><span>継承</span></label> : null}
-                    <label className={editAssignmentMode === 'override' ? 'is-active' : ''}><input type="radio" name="edit-assignment-mode" checked={editAssignmentMode === 'override'} onChange={() => setEditAssignmentMode('override')} disabled={editSaving}/><span>個別指定</span></label>
-                  </div>
-                </div>
-                {editAssignmentMode === 'override' ? <div className="destination-assignment-list is-compact">{alternateRouteMyMembers.length ? alternateRouteMyMembers.map((member) => <label className={editSelectedDestinationMyMemberIds.includes(member.id) ? `is-selected is-color-${member.colorKey}` : `is-color-${member.colorKey}`} key={member.id}><input type="checkbox" checked={editSelectedDestinationMyMemberIds.includes(member.id)} onChange={() => toggleDestinationMember(member.id, true)} disabled={editSaving}/><i aria-hidden="true"/><span>{member.name}</span></label>) : <small>My Membersに同行者を追加すると選択できます。</small>}</div> : <small className="assignment-inherit-note">サブRouteの担当を使用します。</small>}
-              </section>
-
               {editError && <p className="form-error" role="alert">{editError}</p>}
 
               <div className="modal-actions edit-place-actions">
@@ -1788,7 +1382,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
                 onClick={askDeleteDestination}
                 disabled={editSaving}
               >
-                この予定を削除
+                この目的地を削除
               </button>
               </div>
             </form>
@@ -1813,8 +1407,8 @@ function requestDestinationDelete(destination: DestinationSummary) {
           >
             <div className="modal-header">
               <div>
-                <p className="eyebrow route-danger-eyebrow">DELETE SCHEDULE</p>
-                <h2 id="delete-destination-title">この予定を削除しますか？</h2>
+                <p className="eyebrow route-danger-eyebrow">DELETE PLACE</p>
+                <h2 id="delete-destination-title">この目的地を削除しますか？</h2>
               </div>
               <button
                 className="modal-close-button"
@@ -1848,7 +1442,7 @@ function requestDestinationDelete(destination: DestinationSummary) {
                 onClick={() => void handleDeleteDestination()}
                 disabled={deleting}
               >
-                {deleting ? '削除中…' : '予定を削除'}
+                {deleting ? '削除中…' : '目的地を削除'}
               </button>
             </div>
           </section>
@@ -1870,22 +1464,6 @@ function requestDestinationDelete(destination: DestinationSummary) {
               {alternateRouteType !== 'leave' ? <div className="field-group"><label htmlFor="alternate-route-end">合流する場所</label><select id="alternate-route-end" value={alternateRouteEndId} onChange={(event) => setAlternateRouteEndId(event.target.value)} disabled={alternateRouteSaving || alternateRouteDeleting}><option value="">メインの予定から選択</option>{timedDestinations.map((destination) => <option key={destination.id} value={destination.id}>{destinationLabel(destination.id)}</option>)}</select></div> : null}
               {timedDestinations.length === 0 ? <p className="form-error">接続先に使える予定がありません。先にメインの予定へ時間を設定してください。</p> : null}
               <div className="field-group"><label htmlFor="alternate-route-description">説明 <span className="field-optional">任意</span></label><textarea id="alternate-route-description" value={alternateRouteDescription} onChange={(event) => setAlternateRouteDescription(event.target.value)} maxLength={200} rows={3} disabled={alternateRouteSaving || alternateRouteDeleting} /></div>
-              <section className="alternate-route-member-editor alternate-route-my-member-editor" aria-labelledby="alternate-route-my-members-title">
-                <div className="alternate-route-member-heading"><div><strong id="alternate-route-my-members-title">My Membersの担当</strong><small>{alternateRouteSelectedMyMemberIds.length}人を選択中</small></div></div>
-                {alternateRouteMyMembers.length ? (
-                  <div className="alternate-route-member-list">{alternateRouteMyMembers.map((member) => {
-                    const selected = alternateRouteSelectedMyMemberIds.includes(member.id);
-                    const assignedElsewhere = alternateRouteMyMemberAssignments.some((assignment) => assignment.myMemberId === member.id && assignment.branchId !== alternateRouteEditing?.id);
-                    return <label className={`alternate-route-member-option${selected ? ' is-selected' : ''}`} key={member.id}>
-                      <input type="checkbox" checked={selected} onChange={() => toggleAlternateRouteMyMember(member.id)} disabled={alternateRouteSaving || alternateRouteDeleting} />
-                      <span className={`alternate-route-member-avatar is-color-${member.colorKey}`} aria-hidden="true">{member.name.slice(0, 2).toUpperCase()}</span>
-                      <span><strong>{member.name}</strong><small>{assignedElsewhere ? '別のサブRouteにも設定中' : 'My Member'}</small></span>
-                      <span className="alternate-route-member-check" aria-hidden="true">{selected ? '✓' : ''}</span>
-                    </label>;
-                  })}</div>
-                ) : <p className="route-tab-demo-note">My Membersが未登録です。Members画面から同行者を追加できます。</p>}
-                <p className="field-hint">招待なしで使える同行者名簿です。複数のサブRouteへ同じ人を設定できます。</p>
-              </section>
               <section className="alternate-route-member-editor" aria-labelledby="alternate-route-members-title">
                 <div className="alternate-route-member-heading"><div><strong id="alternate-route-members-title">この別行動に参加する人</strong><small>{alternateRouteSelectedMemberIds.length}人を選択中</small></div></div>
                 {alternateRouteMembersLoading ? <p className="route-tab-demo-note">参加メンバーを読み込んでいます。</p> : alternateRouteMembers.length ? (
@@ -1903,9 +1481,13 @@ function requestDestinationDelete(destination: DestinationSummary) {
                 ) : <p className="route-tab-demo-note">参加中のメンバーはいません。先にMembersから招待・参加登録を行ってください。</p>}
                 <p className="field-hint">別の別行動に設定中の人を選ぶと、所属先はこちらへ移ります。メンバーは後から変更できます。</p>
               </section>
+              {alternateRouteEditing ? <section className="alternate-destination-editor"><div className="alternate-destination-heading"><div><strong>この別行動の予定</strong><small>{alternateRouteDestinations.length}件</small></div><button type="button" className="secondary-button" onClick={startAlternateDestinationCreate}>＋予定</button></div>
+                <div className="alternate-destination-list">{alternateRouteDestinations.map(item=><div className="alternate-destination-row" key={item.id}><button type="button" onClick={()=>startAlternateDestinationEdit(item)}><strong>{item.startTime ? `${item.startTime} ` : ''}{item.name}</strong><small>{item.locationName || '場所未設定'}</small></button><button type="button" className="alternate-destination-delete" onClick={()=>void handleAlternateDestinationDelete(item)}>削除</button></div>)}</div>
+                <div className="alternate-destination-form"><input value={alternateDestinationName} onChange={e=>setAlternateDestinationName(e.target.value)} placeholder="予定名" maxLength={40}/><input value={alternateDestinationLocation} onChange={e=>setAlternateDestinationLocation(e.target.value)} placeholder="場所（任意）" maxLength={80}/><select value={alternateDestinationTimeType} onChange={e=>setAlternateDestinationTimeType(e.target.value as 'none'|'fixed'|'approx')}><option value="none">時間なし</option><option value="fixed">時間を指定</option><option value="approx">目安時間</option></select>{alternateDestinationTimeType!=='none'?<div className="alternate-destination-times"><input type="time" step="300" value={alternateDestinationStart} onChange={e=>setAlternateDestinationStart(e.target.value)}/><input type="time" step="300" value={alternateDestinationEnd} onChange={e=>setAlternateDestinationEnd(e.target.value)}/></div>:null}<textarea value={alternateDestinationDescription} onChange={e=>setAlternateDestinationDescription(e.target.value)} placeholder="メモ（任意）" maxLength={200} rows={2}/><button type="button" className="primary-button" disabled={!alternateDestinationName.trim()||alternateDestinationSaving} onClick={()=>void handleAlternateDestinationSave()}>{alternateDestinationSaving?'保存中…':alternateDestinationEditing?'予定を更新':'予定を追加'}</button></div>
+              </section> : <p className="route-tab-demo-note">別行動を一度保存すると、その中の予定を追加できます。</p>}
               {alternateRouteError ? <p className="form-error" role="alert">{alternateRouteError}</p> : null}
-              <div className="modal-actions"><button className="secondary-button" type="button" onClick={closeAlternateRouteModal} disabled={alternateRouteSaving || alternateRouteDeleting}>キャンセル</button><button className="primary-button" type="submit" disabled={alternateRouteSaving || alternateRouteDeleting || !alternateRouteName.trim() || (!alternateRouteEditing && timedDestinations.length === 0)}>{alternateRouteSaving ? '保存中…' : alternateRouteEditing ? '保存' : '追加'}</button></div>
-              {alternateRouteEditing ? <button className="alternate-route-delete-button" type="button" onClick={() => alternateRouteEditing && requestAlternateRouteDelete(alternateRouteEditing)} disabled={alternateRouteSaving || alternateRouteDeleting}>{alternateRouteDeleting ? '削除中…' : 'この別行動を削除'}</button> : null}
+              <div className="modal-actions"><button className="secondary-button" type="button" onClick={closeAlternateRouteModal} disabled={alternateRouteSaving || alternateRouteDeleting}>キャンセル</button><button className="primary-button" type="submit" disabled={alternateRouteSaving || alternateRouteDeleting || !alternateRouteName.trim() || timedDestinations.length === 0}>{alternateRouteSaving ? '保存中…' : alternateRouteEditing ? '保存' : '追加'}</button></div>
+              {alternateRouteEditing ? <button className="alternate-route-delete-button" type="button" onClick={() => void handleAlternateRouteDelete()} disabled={alternateRouteSaving || alternateRouteDeleting}>{alternateRouteDeleting ? '削除中…' : 'この別行動を削除'}</button> : null}
             </form>
           </section>
         </div>
@@ -1941,24 +1523,10 @@ function requestDestinationDelete(destination: DestinationSummary) {
               <div className="field-group"><label htmlFor="phase-description">メモ <span className="field-optional">任意</span></label><textarea id="phase-description" value={phaseDescription} onChange={(event) => setPhaseDescription(event.target.value)} maxLength={200} rows={3} disabled={phaseSaving} /></div>
               {phaseError && <p className="form-error" role="alert">{phaseError}</p>}
               <div className="modal-actions"><button className="secondary-button" type="button" disabled={phaseSaving} onClick={() => { setPhaseCreateOpen(false); setPhaseEditing(null); }}>キャンセル</button><button className="primary-button" type="submit" disabled={phaseSaving || (!phaseEditing?.isDefault && !phaseName.trim())}>{phaseSaving ? '保存中…' : phaseEditing ? '保存' : '追加'}</button></div>
-              {phaseEditing ? <button className="phase-delete-button" type="button" onClick={requestPhaseDelete} disabled={phaseSaving || phaseDeleting}>このPhaseを削除</button> : null}
             </form>
           </section>
         </div>
       )}
-
-      {phaseDeleteTarget ? (
-        <div className="modal-backdrop centered-confirm-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !phaseDeleting) setPhaseDeleteTarget(null); }}>
-          <section className="route-modal centered-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="phase-delete-title">
-            <div className="route-list-delete-icon" aria-hidden="true">!</div>
-            <h2 id="phase-delete-title">Phaseを削除しますか？</h2>
-            <p className="route-list-delete-name">「{phaseDeleteTarget.name || '名前未設定のPhase'}」</p>
-            <p className="route-list-delete-copy">{activeBranchId ? 'このPhase内の予定も削除されます。サブRouteでは最後のPhaseも削除できます。' : 'このPhase内の予定は、残っている別のPhaseへ移動します。最後のPhaseは削除できません。'}</p>
-            {phaseDeleteError ? <div className="route-inline-error" role="alert">{phaseDeleteError}</div> : null}
-            <div className="modal-actions"><button className="secondary-button" type="button" onClick={() => setPhaseDeleteTarget(null)} disabled={phaseDeleting}>キャンセル</button><button className="route-list-delete-confirm" type="button" onClick={() => void handlePhaseDelete()} disabled={phaseDeleting}>{phaseDeleting ? '削除中…' : '削除する'}</button></div>
-          </section>
-        </div>
-      ) : null}
-    </RouteWorkspacePage>
+    </main>
   );
 }

@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useRef, useState, type TouchEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { BrandMark } from '../../shared/ui/BrandMark';
-import { RouteWorkspacePage } from '../../shared/ui/RouteWorkspacePage';
+import { RefreshButton } from '../../shared/ui/RefreshButton';
+import { VersionBadge } from '../../shared/ui/VersionBadge';
 import { getRoute, type RouteSummary } from './routes';
 import { getRoutePhases, type PhaseSummary } from './phases';
 import { getRouteDestinations, setRouteDestinationCompleted, type DestinationSummary } from './destinations';
 import { getSupabaseClient } from '../../shared/api/supabase';
+import { RouteBottomNav } from './RouteBottomNav';
 import { formatChatTime, getLatestRouteChatMessages, type RouteChatMessage } from './chat';
-import { getOwnRouteMember, respondToRouteInvite, type RouteMember } from './members';
+import { getOwnRouteMember, type RouteMember } from './members';
 import {
   listRouteBranches,
   listAlternateRouteDestinations,
@@ -15,13 +17,6 @@ import {
   type RouteBranch,
   type AlternateRouteDestination,
 } from './branches';
-import { MemberAssignees } from '../../shared/ui/MemberAssignees';
-import {
-  listMyMembers,
-  listRouteBranchMyMemberAssignments,
-  type MyMember,
-  type RouteBranchMyMemberAssignment,
-} from '../my-members/myMembers';
 
 function timeToMinutes(value: string | null | undefined): number | null {
   if (!value) return null;
@@ -105,7 +100,6 @@ function PhaseDashboard({ routeId, participantView, memberUserId }: { routeId: s
   const [progressSavingId, setProgressSavingId] = useState<string | null>(null);
   const [travelMode, setTravelMode] = useState<'driving' | 'walking' | 'transit'>('walking');
   const [progressError, setProgressError] = useState<string | null>(null);
-  const [routeCompleteSaving, setRouteCompleteSaving] = useState(false);
   const [viewPhaseId, setViewPhaseId] = useState<string | null>(null);
   const [latestChats, setLatestChats] = useState<RouteChatMessage[]>([]);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
@@ -114,8 +108,6 @@ function PhaseDashboard({ routeId, participantView, memberUserId }: { routeId: s
   const [alternateLoading, setAlternateLoading] = useState(true);
   const [alternateError, setAlternateError] = useState<string | null>(null);
   const [assignedAlternateRouteId, setAssignedAlternateRouteId] = useState<string | null>(null);
-  const [myMembers, setMyMembers] = useState<MyMember[]>([]);
-  const [myMemberAssignments, setMyMemberAssignments] = useState<RouteBranchMyMemberAssignment[]>([]);
   const [routePageIndex, setRoutePageIndex] = useState(0);
   const [routePageDirection, setRoutePageDirection] = useState<'next' | 'previous'>('next');
   const [routePageAnimationId, setRoutePageAnimationId] = useState(0);
@@ -185,10 +177,8 @@ function PhaseDashboard({ routeId, participantView, memberUserId }: { routeId: s
     void Promise.all([
       listRouteBranches(routeId),
       memberUserId ? listRouteBranchAssignments(routeId) : Promise.resolve([]),
-      listMyMembers(),
-      listRouteBranchMyMemberAssignments(routeId),
     ])
-      .then(async ([routes, assignments, nextMyMembers, nextMyMemberAssignments]) => {
+      .then(async ([routes, assignments]) => {
         const configured = routes.filter((item) => item.connectionType);
         const assignedId = memberUserId
           ? assignments.find((item) => item.memberUserId === memberUserId)?.branchId ?? null
@@ -202,8 +192,6 @@ function PhaseDashboard({ routeId, participantView, memberUserId }: { routeId: s
         ] as const));
         if (!active) return;
         setAssignedAlternateRouteId(assignedId);
-        setMyMembers(nextMyMembers);
-        setMyMemberAssignments(nextMyMemberAssignments);
         setAlternateRoutes(ordered);
         setAlternateDestinations(Object.fromEntries(pairs));
         setRoutePageIndex((current) => {
@@ -325,41 +313,8 @@ const completedCount = useMemo(
 
   const participantStepLabels = ['現在', '次', 'その次'] as const;
 
-const routeAllCompleted = destinations.length > 0 && destinations.every((destination) => Boolean(destination.completedAt));
-
-const toggleRouteCompleted = async () => {
-  if (routeCompleteSaving || progressSavingId || destinations.length === 0) return;
-
-  const nextCompleted = !routeAllCompleted;
-  const previousDestinations = destinations;
-  const optimisticCompletedAt = nextCompleted ? new Date().toISOString() : null;
-
-  setRouteCompleteSaving(true);
-  setProgressError(null);
-  setDestinations((current) => current.map((destination) => ({
-    ...destination,
-    completedAt: optimisticCompletedAt,
-    completedBy: null,
-  })));
-
-  try {
-    const saved = await Promise.all(
-      previousDestinations.map((destination) =>
-        setRouteDestinationCompleted(routeId, destination.id, nextCompleted)
-      )
-    );
-    const savedById = new Map(saved.map((destination) => [destination.id, destination]));
-    setDestinations((current) => current.map((destination) => savedById.get(destination.id) ?? destination));
-  } catch (error) {
-    setDestinations(previousDestinations);
-    setProgressError(getErrorMessage(error, nextCompleted ? 'Routeを完了できませんでした。' : 'Routeの完了を解除できませんでした。'));
-  } finally {
-    setRouteCompleteSaving(false);
-  }
-};
-
 const toggleDestinationCompleted = async (destination: DestinationSummary) => {
-  if (progressSavingId || routeCompleteSaving) return;
+  if (progressSavingId) return;
 
   const nextCompleted = !destination.completedAt;
   setProgressSavingId(destination.id);
@@ -457,12 +412,6 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
   const activeAlternateRoute = routePageIndex > 0 ? alternateRoutes[routePageIndex - 1] ?? null : null;
   const activeAlternateDestinations = activeAlternateRoute
     ? alternateDestinations[activeAlternateRoute.id] ?? []
-    : [];
-  const activeAlternateMyMembers = activeAlternateRoute
-    ? myMemberAssignments
-      .filter((assignment) => assignment.branchId === activeAlternateRoute.id)
-      .map((assignment) => myMembers.find((member) => member.id === assignment.myMemberId))
-      .filter((member): member is MyMember => Boolean(member))
     : [];
 
   const destinationLabelById = (destinationId: string | null) => {
@@ -593,8 +542,7 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
       <div className="v2-route-page-title">
         <small>{routePageIndex === 0 ? 'メインRoute' : activeAlternateRoute ? alternateRouteCategory(activeAlternateRoute.connectionType) : '別行動Route'}</small>
         <strong>{routePageIndex === 0 ? 'メインの予定' : activeAlternateRoute?.name ?? '別行動'}{activeAlternateRoute?.id === assignedAlternateRouteId ? <em className="v2-route-page-own">あなたのRoute</em> : null}</strong>
-        <MemberAssignees members={activeAlternateMyMembers} />
-        <span className="v2-route-page-count">{routePageIndex + 1} / {routePageCount}</span>
+        <span>{routePageIndex + 1} / {routePageCount}</span>
       </div>
       <button type="button" onClick={showNextRoutePage} disabled={routePageIndex >= routePageCount - 1} aria-label="次のRouteを見る">›</button>
       <div className="v2-route-page-dots">
@@ -611,12 +559,11 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
     return (
       <>
         {routeSwitcher}
-        <article className={`v2-alternate-route-panel v2-route-page-motion is-${routePageDirection}`} key={`alternate-${routePageAnimationId}`} style={routeDragStyle}>
+        <article className={`v2-alternate-route-panel v2-route-page-motion is-${routePageDirection}`} key={`alternate-${routePageAnimationId}`}>
           <div className="v2-section-heading">
             <div>
               <p className="eyebrow">{alternateRouteCategory(activeAlternateRoute.connectionType)}</p>
               <h2>{activeAlternateRoute.name}</h2>
-              <MemberAssignees members={activeAlternateMyMembers} variant="chips" maxVisible={4} />
             </div>
             <span className="v2-alternate-route-badge">{activeAlternateRoute.id === assignedAlternateRouteId ? 'あなたの別行動' : alternateTypeLabel(activeAlternateRoute.connectionType)}</span>
           </div>
@@ -661,11 +608,73 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
     );
   }
 
+  if (participantView) {
+    return (
+      <>
+        {routeSwitcher}
+        <article className={`v2-participant-route v2-route-page-motion is-${routePageDirection}`} key={`participant-${routePageAnimationId}`} aria-labelledby="participant-route-title">
+          <div className="v2-section-heading">
+            <div>
+              <p className="eyebrow">YOUR ROUTE</p>
+              <h2 id="participant-route-title">いま必要な流れ</h2>
+            </div>
+            <span className="v2-participant-view-badge">参加者表示</span>
+          </div>
+
+          {participantSteps.length ? (
+            <div className="v2-participant-step-list">
+              {participantSteps.map((destination, index) => {
+                const phase = phases.find((item) => item.id === destination.phaseId);
+                const timeLabel = formatDestinationTime(destination);
+                return (
+                  <article className={`v2-participant-step is-${index === 0 ? 'current' : index === 1 ? 'next' : 'later'}`} key={destination.id}>
+                    <div className="v2-participant-step-label">
+                      <span>{participantStepLabels[index]}</span>
+                      {phase?.name ? <small>{phase.name}</small> : null}
+                    </div>
+                    <div className="v2-participant-step-content">
+                      {timeLabel ? <time>{timeLabel}</time> : null}
+                      <h3>{destination.name}</h3>
+                      {getDestinationNote(destination) ? <p>{getDestinationNote(destination)}</p> : null}
+                      {getDestinationDirectionsUrl(destination, 'walking') ? (
+                        <a href={getDestinationDirectionsUrl(destination, 'walking') ?? undefined} target="_blank" rel="noreferrer">地図で確認 ›</a>
+                      ) : null}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="v2-phase-empty"><p>現在案内する予定はありません。</p></div>
+          )}
+
+          <p className="v2-participant-route-note">分岐構造は内部で管理し、参加者には必要な順番だけを表示します。</p>
+        </article>
+
+        <article className="v2-chat-summary">
+          <div className="v2-section-heading">
+            <div><p className="eyebrow">CHAT</p><h2>連絡</h2></div>
+            <Link className="v2-text-link" to={`/routes/${routeId}/chat`}>Chatを見る ›</Link>
+          </div>
+          {latestChats.length ? (
+            <div className="v2-route-chat-preview">
+              {latestChats.map((message) => (
+                <div className={`v2-route-chat-line${message.isImportant ? ' is-priority' : ''}`} key={message.id}>
+                  <div className="v2-route-chat-meta">{message.isImportant ? <span className="v2-route-chat-important">重要</span> : null}<strong>{message.authorName}</strong><time>{formatChatTime(message.createdAt)}</time></div>
+                  <p>{message.body}</p>
+                </div>
+              ))}
+            </div>
+          ) : <div className="v2-latest-message is-empty"><div className="v2-empty-message-copy"><strong>まだ連絡はありません。</strong><p>必要な連絡があればChatで共有できます。</p></div></div>}
+        </article>
+      </>
+    );
+  }
 
   return (
     <>
       {routeSwitcher}
-      <article className={`v2-phase-panel v2-route-page-motion is-${routePageDirection}`} key={`main-${routePageAnimationId}`} style={routeDragStyle} aria-labelledby="v2-phase-title">
+      <article className={`v2-phase-panel v2-route-page-motion is-${routePageDirection}`} key={`main-${routePageAnimationId}`} aria-labelledby="v2-phase-title">
         <div className="v2-phase-heading">
           <div>
             <p className="eyebrow">{isManualPhase ? 'VIEWING PHASE' : 'CURRENT PHASE'}</p>
@@ -691,12 +700,12 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
         {!currentPhase ? (
           <div className="v2-phase-empty">
             <p>Phaseがまだありません。</p>
-            {!participantView ? <Link className="v2-text-link" to={`/routes/${routeId}/places`}>PlacesでPlanningする ›</Link> : null}
+            <Link className="v2-text-link" to={`/routes/${routeId}/places`}>PlacesでPlanningする ›</Link>
           </div>
         ) : currentDestinations.length === 0 ? (
           <div className="v2-phase-empty">
-            <p>このPhaseには予定がまだありません。</p>
-            {!participantView ? <Link className="v2-text-link" to={`/routes/${routeId}/places`}>Placesで追加する ›</Link> : null}
+            <p>このPhaseには目的地がまだありません。</p>
+            <Link className="v2-text-link" to={`/routes/${routeId}/places`}>Placesで追加する ›</Link>
           </div>
         ) : (
           <>
@@ -728,8 +737,8 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
                           type="button"
                           aria-label={`${destination.name}を${destination.completedAt ? '未完了に戻す' : '完了にする'}`}
                           aria-pressed={Boolean(destination.completedAt)}
-                          disabled={participantView || progressSavingId === destination.id}
-                          onClick={() => { if (!participantView) void toggleDestinationCompleted(destination); }}
+                          disabled={progressSavingId === destination.id}
+                          onClick={() => void toggleDestinationCompleted(destination)}
                         >
                           <span aria-hidden="true">{destination.completedAt ? '✓' : ''}</span>
                         </button>
@@ -845,23 +854,6 @@ const toggleDestinationCompleted = async (destination: DestinationSummary) => {
           <div className="v2-latest-message is-empty"><div className="v2-empty-message-copy"><strong>まだ連絡はありません。</strong><p>必要な連絡があればChatで共有できます。</p></div></div>
         )}
       </article>
-
-      {!participantView ? (
-        <section className="v2-admin-zone" aria-label="Route管理">
-          <p>Routeの管理</p>
-          <button
-            type="button"
-            className={`v2-complete-button${routeAllCompleted ? ' is-completed' : ''}`}
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={() => void toggleRouteCompleted()}
-            disabled={routeCompleteSaving || Boolean(progressSavingId) || destinations.length === 0}
-            aria-pressed={routeAllCompleted}
-          >
-            {routeCompleteSaving ? '保存中…' : routeAllCompleted ? 'Routeの完了を解除' : 'Routeを完了する'}
-          </button>
-          <small>{destinations.length === 0 ? '完了できる予定がありません。' : routeAllCompleted ? 'すべての予定を未完了へ戻します。' : 'Route内のすべての予定を完了にします。'}</small>
-        </section>
-      ) : null}
     </>
   );
 }
@@ -872,9 +864,6 @@ export function RouteDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [ownMember, setOwnMember] = useState<RouteMember | null>(null);
-  const [membershipResolved, setMembershipResolved] = useState(false);
-  const [inviteResponseSaving, setInviteResponseSaving] = useState(false);
-  const [inviteResponseError, setInviteResponseError] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -897,8 +886,6 @@ export function RouteDetailPage() {
         if (active) setLoading(false);
       });
 
-    setMembershipResolved(false);
-    setInviteResponseError('');
     void getOwnRouteMember(routeId)
       .then((member) => {
         if (active) setOwnMember(member);
@@ -906,33 +893,17 @@ export function RouteDetailPage() {
       .catch(() => {
         // 参加者判定に失敗してもRoute本体の表示は継続する。
         if (active) setOwnMember(null);
-      })
-      .finally(() => {
-        if (active) setMembershipResolved(true);
       });
 
     return () => { active = false; };
   }, [routeId]);
 
-  async function answerRouteInvite(status: 'participating' | 'declined') {
-    if (!routeId || inviteResponseSaving) return;
-    setInviteResponseSaving(true);
-    setInviteResponseError('');
-    try {
-      const updated = await respondToRouteInvite(routeId, status);
-      setOwnMember(updated);
-    } catch (caught) {
-      setInviteResponseError(getErrorMessage(caught, '招待への回答を保存できませんでした。'));
-    } finally {
-      setInviteResponseSaving(false);
-    }
-  }
-
   return (
-    <RouteWorkspacePage shellClassName="v2-dashboard-shell" footerLabel="Route / Current Phase">
+    <main className="app-shell v2-dashboard-shell">
+      <header className="global-header"><div className="header-brand"><BrandMark size={34} /><strong>D Route</strong></div><div className="header-actions"><Link className="icon-button header-link" to="/routes">一覧へ戻る</Link><RefreshButton placement="header" /></div></header>
 
       <section className="page-content route-detail-content v2-dashboard-content" aria-labelledby="route-detail-title">
-        {loading || !membershipResolved ? (
+        {loading ? (
           <section className="route-loading" aria-live="polite">
             <span className="route-loading-spinner" aria-hidden="true" />
             <p>Routeを読み込んでいます</p>
@@ -944,34 +915,12 @@ export function RouteDetailPage() {
             <p>{error ?? 'Routeが見つかりませんでした。'}</p>
             <Link className="primary-button link-button" to="/routes">Route一覧へ戻る</Link>
           </section>
-        ) : ownMember?.role === 'member' && ownMember.status !== 'participating' ? (
-          <section className="route-invite-response" aria-labelledby="route-invite-title">
-            <div className="route-invite-response-mark" aria-hidden="true"><BrandMark size={58} /></div>
-            <p className="eyebrow">ROUTE INVITATION</p>
-            <h1 id="route-invite-title">{route.name}</h1>
-            {route.description?.trim() ? <p className="route-invite-description">{route.description}</p> : null}
-            <div className="route-invite-status">
-              <strong>{ownMember.status === 'declined' ? '参加しないを選択しています' : 'このRouteに招待されています'}</strong>
-              <p>{ownMember.status === 'declined' ? '参加する場合は、ここから回答を変更できます。' : 'Routeに参加すると、当日のRouteとChatを利用できます。'}</p>
-            </div>
-            {inviteResponseError ? <div className="route-inline-error" role="alert">{inviteResponseError}</div> : null}
-            <div className="route-invite-actions">
-              <button className="primary-button" type="button" disabled={inviteResponseSaving} onClick={() => void answerRouteInvite('participating')}>
-                {inviteResponseSaving ? '保存中…' : '参加する'}
-              </button>
-              {ownMember.status === 'unanswered' ? (
-                <button className="secondary-button" type="button" disabled={inviteResponseSaving} onClick={() => void answerRouteInvite('declined')}>参加しない</button>
-              ) : (
-                <Link className="secondary-button link-button" to="/routes">Route一覧へ戻る</Link>
-              )}
-            </div>
-          </section>
         ) : (
           <>
             <section className="v2-route-hero">
               <div className="v2-route-brand" aria-hidden="true"><BrandMark size={48} /></div>
               <div className="v2-route-hero-copy">
-                <p className="eyebrow">ROUTE DASHBOARD</p>
+                <p className="eyebrow">ROUTE DASHBOARD / ALPHA.3</p>
                 <h1 id="route-detail-title">{route.name}</h1>
                 <p><span>現在Phaseを時刻から自動表示</span><span>・</span><span>Planning接続</span></p>
               </div>
@@ -979,10 +928,17 @@ export function RouteDetailPage() {
 
             <PhaseDashboard routeId={routeId ?? route.id} participantView={ownMember?.role === 'member'} memberUserId={ownMember?.userId ?? null} />
 
+            {ownMember?.role !== 'member' ? <section className="v2-admin-zone" aria-label="Route管理">
+              <p>Routeの管理</p>
+              <button type="button" className="v2-complete-button">Routeを完了する</button>
+              <small>プロトタイプのため、このボタンはまだ動作しません。</small>
+            </section> : null}
           </>
         )}
       </section>
 
-    </RouteWorkspacePage>
+      <footer className="app-footer"><VersionBadge /><span>Route / Current Phase</span></footer>
+      {routeId ? <RouteBottomNav routeId={routeId} /> : null}
+    </main>
   );
 }
